@@ -24,6 +24,15 @@ struct CountdownScreen: View {
     /// about what time it is.
     @State private var now = Date.now
 
+    /// Identifies the run the rising area is measuring, so a restart reads as a
+    /// new block and jumps rather than sliding down from full.
+    ///
+    /// Counted here because nothing on the snapshot identifies a run. The
+    /// tracker's `startedAt` is the obvious candidate and is the wrong one: it
+    /// is rewritten on every resume, so a held run would come back as a new
+    /// block. This changes on `start` alone and holds still across a pause.
+    @State private var run = 0
+
     var body: some View {
         // One snapshot per frame. Asking the timer for the phase, then the
         // time, then the fraction would be three different instants, and one
@@ -31,7 +40,7 @@ struct CountdownScreen: View {
         // pill.
         let snapshot = timer.snapshot(at: now)
 
-        PageScaffold(fillFraction: snapshot.fraction) {
+        PageScaffold(fill: fill(for: snapshot)) {
             pill(for: snapshot)
         } content: {
             content(for: snapshot)
@@ -140,6 +149,17 @@ struct CountdownScreen: View {
         let instant = Date.now
         timer.start(at: instant)
         now = instant
+        run += 1
+    }
+
+    /// The area and the block it measures. Idle has no block at all; a finished
+    /// run keeps the identity it counted under, so the area stays full instead
+    /// of restarting in place.
+    private func fill(for snapshot: CountdownTimer.Snapshot) -> FillProgress {
+        switch snapshot.phase {
+        case .idle: .none
+        case .running, .paused, .finished: FillProgress(fraction: snapshot.fraction, block: run)
+        }
     }
 
     private func pause() {
