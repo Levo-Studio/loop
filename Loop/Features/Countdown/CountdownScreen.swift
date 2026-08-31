@@ -84,6 +84,12 @@ struct CountdownScreen: View {
     /// The scale's value. A binding rather than a copy: `ScaleSlider` is built
     /// twice inside the fill surface, and two copies of the same number would
     /// drift apart the moment one of them was dragged.
+    ///
+    /// One of the two reads that go to the timer rather than to the frame's
+    /// snapshot — `canStart` below is the other. Both are pure functions of
+    /// `durationMinutes`, which no time-driven transition touches, so they
+    /// carry no instant to disagree about. Everything that does depend on the
+    /// time still comes from the snapshot, and anything added here should too.
     private var durationMinutes: Binding<Int> {
         Binding(
             get: { timer.durationMinutes },
@@ -101,6 +107,9 @@ struct CountdownScreen: View {
         switch snapshot.phase {
         case .idle:
             ControlRow(
+                // `canStart` off the timer rather than off the snapshot, for
+                // the reason given on `durationMinutes` above: it asks whether
+                // the scale is above zero, which no instant can change.
                 primary: .init(LoopStrings.start, isEnabled: timer.canStart) { start() },
                 // Dead but present, exactly as the export draws it: there is
                 // nothing to reset before a run, and hiding the button would
@@ -167,8 +176,9 @@ struct CountdownScreen: View {
     /// device that slept through a minute of ticks comes back a minute further
     /// on, not a minute behind.
     private func run(phase: CountdownTimer.Phase) async {
-        // Even a page that is not running settles once on arrival — a stored
-        // run may have finished while the app was away.
+        // Even a page that is not running settles once on arrival. A run can
+        // expire while this task is suspended or the page is off-screen, and
+        // the phase it comes back with has to be the one the time says.
         now = .now
         timer.commitTransitions(at: now)
 
