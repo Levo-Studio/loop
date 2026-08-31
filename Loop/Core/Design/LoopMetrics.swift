@@ -218,9 +218,17 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// density is fixed here at what was drawn and the width decides how much
     /// of the scale is visible instead.
     ///
-    /// Deriving the pitch from the width rather than from `scaled(_:)` also
-    /// keeps every layout matching the export by itself — the iPad column is
-    /// `520 × 1.15`, so its ticks come out 1.15 apart without a second rule.
+    /// The pitch is derived from the width rather than from `scaled(_:)`, and
+    /// **not** because the idiom factor comes out of it — it does not. iPhone
+    /// portrait has no content column at all, so its scale is the page width
+    /// less its side padding; iPad has the 598 pt column. Their pitches are
+    /// 5.18 and 9.80, a ratio of 1.89 and nothing like 1.15.
+    ///
+    /// The reason is simpler and stronger: the export draws sixty-one slots
+    /// across whatever width the scale is given, in every layout. Dividing by
+    /// the width reproduces each one from what was actually drawn there, where
+    /// a `scaled(_:)` pitch would be one number asserted against four different
+    /// widths and would match at most one of them.
     static let sliderTickSlotsAcrossWidth = 61
 
     /// The distance between two adjacent minutes on a scale of a given width.
@@ -251,34 +259,30 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     // MARK: - Settings
 
     /// The gaps down the settings column: between its sections, between the
-    /// seconds row and the divider under it, and between the accent heading
-    /// and the list.
+    /// rows of a section, and between the accent heading and the list.
     ///
     /// The landscape values are **derived, not drawn.** The export has no
     /// landscape settings state at all — both files show Settings only in
     /// their portrait section — so unlike every other landscape variant here
-    /// there is no ground truth to check against. But "no ground truth" could
-    /// not stay resolved to the portrait values, because they do not fit: the
-    /// column is 390.6 pt of content against a 346 pt box on a 402 pt
-    /// landscape iPhone, so the navigation dots landed 45 pt past the bottom
-    /// of the page, under the home indicator.
-    ///
-    /// Only 116 pt of that height is gap; the other 274.6 pt is text, the
-    /// toggle, four accent rows, the divider, the footer and the dots, none of
-    /// which this can touch. Fitting 116 pt of gap into the 71.4 pt that is
-    /// left needs a factor of 0.616 or under.
+    /// there is no ground truth to check against. They could not stay resolved
+    /// to the portrait values, because a shallow landscape page did not hold
+    /// the column: the navigation dots landed past the bottom of the page,
+    /// under the home indicator.
     ///
     /// The export offers two portrait→landscape precedents for a column that
     /// has to fit a shallow page: the interval setup closes 24 → 16, a third
     /// off, and the countdown's idle state closes 26 → 14, closer to a half.
-    /// A third off is **not** enough here — it leaves the column 5.9 pt over
-    /// the box, still overflowing. So these follow the countdown's ratio,
-    /// which lands 8.4 pt inside it.
+    /// These follow the countdown's ratio, the tighter of the two, because a
+    /// third off was not enough.
     ///
-    /// That slack is thin, and it is thin at exactly one height. A landscape
-    /// iPhone shorter than this one would overflow again, and the honest fix
-    /// for that is a scrolling column — which is a layout the export never
-    /// drew and therefore the owner's call, not this file's.
+    /// **What this file deliberately does not state is how much room that
+    /// leaves.** It once did, down to the tenth of a point, and the arithmetic
+    /// went stale the moment the screen grew a row — a comment that had been
+    /// checked against a column that no longer existed, still reading as if it
+    /// had been. How much content the settings column holds is the settings
+    /// screen's business and changes with it; these are gaps, and a gap has no
+    /// opinion about what it separates. The screen owns whether it fits, and
+    /// it answers that by scrolling.
     var settingsSectionSpacing: CGFloat { scaled(isLandscape ? 15 : 28) }
     var settingsRowSpacing: CGFloat { scaled(isLandscape ? 8 : 14) }
     var accentSectionSpacing: CGFloat { scaled(isLandscape ? 7 : 13) }
