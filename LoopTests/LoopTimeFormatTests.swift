@@ -61,17 +61,24 @@ struct LoopTimeFormatTests {
         #expect(LoopTimeFormat.hoursAndMinutes(0) == "0:00")
     }
 
-    @Test("The wall clock is 24-hour, with seconds only when they are asked for")
-    func wallClock() {
-        let date = Self.date(hour: 9, minute: 41, second: 7)
+    @Test("A 24-hour region gets 24-hour time, with seconds only when asked for")
+    func wallClockOn24Hours() {
+        let date = Self.date(hour: 17, minute: 5, second: 7)
 
-        #expect(LoopTimeFormat.wallClock(date, showSeconds: true, calendar: Self.calendar) == "09:41:07")
-        #expect(LoopTimeFormat.wallClock(date, showSeconds: false, calendar: Self.calendar) == "09:41")
+        #expect(Self.wallClock(date, showSeconds: true, locale: "en_GB") == "17:05:07")
+        #expect(Self.wallClock(date, showSeconds: false, locale: "en_GB") == "17:05")
+    }
 
-        // The afternoon is 17:05, not 5:05 — the type scale is built around a
-        // maximum of eight characters.
-        let afternoon = Self.date(hour: 17, minute: 5, second: 0)
-        #expect(LoopTimeFormat.wallClock(afternoon, showSeconds: false, calendar: Self.calendar) == "17:05")
+    @Test("A 12-hour region gets 12-hour time rather than a forced 17:05")
+    func wallClockOn12Hours() {
+        // The type scale shrinks the time by min(1, 5 / characterCount), which
+        // takes the longer string as readily as the shorter one, so there is no
+        // reason to override what the device is set to.
+        let afternoon = Self.date(hour: 17, minute: 5, second: 7)
+        #expect(Self.wallClock(afternoon, showSeconds: true, locale: "en_US") == "5:05:07 PM")
+
+        let morning = Self.date(hour: 9, minute: 41, second: 0)
+        #expect(Self.wallClock(morning, showSeconds: false, locale: "en_US") == "9:41 AM")
     }
 
     @Test("The clock face carries the time and the line under it")
@@ -79,13 +86,27 @@ struct LoopTimeFormatTests {
         let face = ClockFace(
             date: Self.date(hour: 9, minute: 41, second: 7),
             showSeconds: true,
-            calendar: Self.calendar,
             locale: Locale(identifier: "en_GB"),
             timeZone: Self.timeZone
         )
 
         #expect(face.time == "09:41:07")
-        #expect(face.date == "Wednesday 12 March")
+        #expect(face.dateLine == "Wednesday 12 March")
+    }
+
+    /// The system puts a narrow no-break space before AM/PM, which is correct
+    /// and invisible in a comparison — normalised here so a failure reads as a
+    /// failure rather than as two identical strings that are not equal.
+    private static func wallClock(_ date: Date, showSeconds: Bool, locale: String) -> String {
+        let value = LoopTimeFormat.wallClock(
+            date,
+            showSeconds: showSeconds,
+            locale: Locale(identifier: locale),
+            timeZone: timeZone
+        )
+        return value
+            .replacingOccurrences(of: "\u{202F}", with: " ")
+            .replacingOccurrences(of: "\u{00A0}", with: " ")
     }
 
     // MARK: - Fixtures
