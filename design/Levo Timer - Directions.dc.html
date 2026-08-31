@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@400;500;700&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#eceae5;font-family:Helvetica Neue,Helvetica,Arial,sans-serif}
+a{color:#1a1a1a}a:hover{color:#2a78d6}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 Helvetica Neue,Arial,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 Helvetica Neue,Arial,sans-serif;color:rgba(0,0,0,.55);max-width:372px}
+.dv-card{background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.07);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:24px 0 0;font:12px/1.6 Helvetica Neue,Arial,sans-serif;color:rgba(0,0,0,.5)}
+.dv-pairlabel{font:500 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:rgba(0,0,0,.35);text-transform:uppercase;margin:0 0 7px}
+</style></helmet>
+
+<section class="dv-turn" id="t6">
+<div class="dv-thd"><a class="dv-tid" href="#t6">6</a><span class="dv-tname">Gewählt: moderne Fassung, Default <a class="dv-oid" href="#5a">5a</a> Petrol — plus Akzentfarben-Auswahl in den Settings</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="6a">
+<div class="dv-olabel"><a class="dv-oid" href="#6a">6a</a><span><b>FLIEDER</b> — vierter Akzent, gleiche Rolle und Helligkeitslogik wie Petrol, Bernstein, Graphit.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f4f2f6;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.58 0.105 305)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 34px;color:#17141b">
+        <div style="display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:rgba(23,20,27,.06);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.58 0.105 305)"></span>
+            <span>Fokus</span><span style="opacity:.45">Runde 02 / 04</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:-46px">
+          <div style="font-size:104px;line-height:.82;font-weight:300;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;gap:10px;color:#f8f5fa;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;background:rgba(248,245,250,.22)">Pause</span>
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;border:1px solid rgba(248,245,250,.3);opacity:.45">Skip</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#100e13;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.41 0.09 305)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 34px;color:#ece8f2">
+        <div style="display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:rgba(236,232,242,.1);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.65 0.105 305)"></span>
+            <span>Fokus</span><span style="opacity:.45">Runde 02 / 04</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:-46px">
+          <div style="font-size:104px;line-height:.82;font-weight:300;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;gap:10px;color:#f4f0fa;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;background:rgba(244,240,250,.2)">Pause</span>
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;border:1px solid rgba(244,240,250,.28);opacity:.45">Skip</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="6b">
+<div class="dv-olabel"><a class="dv-oid" href="#6b">6b</a><span><b>SETTINGS · AKZENT</b> — vier Akzente zur Wahl, Petrol als Default. Jeder Akzent ist ein Hue, Light/Dark nutzt denselben Ton in zwei Helligkeiten.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f1f5f4;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;gap:38px;padding:56px 26px 40px;color:#111a1b">
+        <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.45">Einstellungen</div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:15px;letter-spacing:-.01em">Sekunden in der Uhr</div>
+            <div style="width:50px;height:29px;border-radius:999px;background:oklch(0.55 0.09 205);position:relative">
+              <div style="position:absolute;top:3px;right:3px;width:23px;height:23px;border-radius:50%;background:#fff"></div>
+            </div>
+          </div>
+          <div style="height:1px;background:rgba(17,26,27,.12)"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.45">Akzentfarbe</div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:rgba(17,26,27,.06);border:1.5px solid oklch(0.55 0.09 205)">
+              <span style="width:22px;height:22px;border-radius:6px;background:oklch(0.55 0.09 205)"></span>
+              <span style="font-size:13px;letter-spacing:.06em">Petrol</span>
+              <span style="margin-left:auto;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.5">Standard</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(17,26,27,.1)">
+              <span style="width:22px;height:22px;border-radius:6px;background:oklch(0.72 0.125 72)"></span>
+              <span style="font-size:13px;letter-spacing:.06em">Bernstein</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(17,26,27,.1)">
+              <span style="width:22px;height:22px;border-radius:6px;background:oklch(0.58 0.105 305)"></span>
+              <span style="font-size:13px;letter-spacing:.06em">Flieder</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(17,26,27,.1)">
+              <span style="width:22px;height:22px;border-radius:6px;background:oklch(0.34 0.008 250)"></span>
+              <span style="font-size:13px;letter-spacing:.06em">Graphit</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:auto;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.35">Levo Studio · Built in Germany</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#0d1213;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;gap:38px;padding:56px 26px 40px;color:#e6f0f0">
+        <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.45">Einstellungen</div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:15px;letter-spacing:-.01em">Sekunden in der Uhr</div>
+            <div style="width:50px;height:29px;border-radius:999px;background:oklch(0.62 0.09 205);position:relative">
+              <div style="position:absolute;top:3px;right:3px;width:23px;height:23px;border-radius:50%;background:#0d1213"></div>
+            </div>
+          </div>
+          <div style="height:1px;background:rgba(230,240,240,.14)"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.45">Akzentfarbe</div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:rgba(230,240,240,.07);border:1.5px solid oklch(0.62 0.09 205)">
+              <span style="width:22px;height:22px;border-radius:6px;background:oklch(0.62 0.09 205)"></span>
+              <span style="font-size:13px;letter-spacing:.06em">Petrol</span>
+              <span style="margin-left:auto;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.5">Standard</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(230,240,240,.12)">
+              <span style="width:22px;height:22px;border-radius:6px;background:oklch(0.68 0.125 72)"></span>
+              <span style="font-size:13px;letter-spacing:.06em">Bernstein</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(230,240,240,.12)">
+              <span style="width:22px;height:22px;border-radius:6px;background:oklch(0.65 0.105 305)"></span>
+              <span style="font-size:13px;letter-spacing:.06em">Flieder</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(230,240,240,.12)">
+              <span style="width:22px;height:22px;border-radius:6px;background:oklch(0.70 0.008 250)"></span>
+              <span style="font-size:13px;letter-spacing:.06em">Graphit</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:auto;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.35">Levo Studio · Built in Germany</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Weiter: „Phase 2 starten" · „Flieder kräftiger" · „Zinnober als fünften Akzent dazu"</p>
+</section>
+
+<section class="dv-turn" id="t5">
+<div class="dv-thd"><a class="dv-tid" href="#t5">5</a><span class="dv-tname">Farbvarianten der modernen Fassung (<a class="dv-oid" href="#4a">4a</a>) — Fläche randlos bündig, 25 %</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="5a">
+<div class="dv-olabel"><a class="dv-oid" href="#5a">5a</a><span><b>PETROL</b> — Kühles Blaugrün, sehr nüchtern.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f1f5f4;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.55 0.09 205)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 34px;color:#111a1b">
+        <div style="display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:rgba(17,26,27,.06);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.55 0.09 205)"></span>
+            <span>Fokus</span><span style="opacity:.45">Runde 02 / 04</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:-46px">
+          <div style="font-size:104px;line-height:.82;font-weight:300;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;gap:10px;color:#f2fafa;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;background:rgba(242,250,250,.22)">Pause</span>
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;border:1px solid rgba(242,250,250,.3);opacity:.45">Skip</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#0d1213;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.38 0.075 205)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 34px;color:#e6f0f0">
+        <div style="display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:rgba(230,240,240,.1);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.62 0.09 205)"></span>
+            <span>Fokus</span><span style="opacity:.45">Runde 02 / 04</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:-46px">
+          <div style="font-size:104px;line-height:.82;font-weight:300;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;gap:10px;color:#eef8f8;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;background:rgba(238,248,248,.2)">Pause</span>
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;border:1px solid rgba(238,248,248,.28);opacity:.45">Skip</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="5b">
+<div class="dv-olabel"><a class="dv-oid" href="#5b">5b</a><span><b>BERNSTEIN</b> — Warm, gedeckt, weniger Signalwirkung als Zinnober.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f6f4ee;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.72 0.125 72)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 34px;color:#1a1710">
+        <div style="display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:rgba(26,23,16,.06);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.72 0.125 72)"></span>
+            <span>Fokus</span><span style="opacity:.45">Runde 02 / 04</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:-46px">
+          <div style="font-size:104px;line-height:.82;font-weight:300;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;gap:10px;color:#1a1710;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;background:rgba(26,23,16,.16)">Pause</span>
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;border:1px solid rgba(26,23,16,.3);opacity:.5">Skip</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#12110c;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.48 0.10 72)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 34px;color:#f2ecdf">
+        <div style="display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:rgba(242,236,223,.1);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.72 0.125 72)"></span>
+            <span>Fokus</span><span style="opacity:.45">Runde 02 / 04</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:-46px">
+          <div style="font-size:104px;line-height:.82;font-weight:300;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;gap:10px;color:#faf3e6;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;background:rgba(250,243,230,.2)">Pause</span>
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;border:1px solid rgba(250,243,230,.28);opacity:.45">Skip</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="5c">
+<div class="dv-olabel"><a class="dv-oid" href="#5c">5c</a><span><b>GRAPHIT</b> — Monochrom, Fläche nur als Helligkeitsstufe. Maximal zurückhaltend.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f4f4f3;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.34 0.008 250)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 34px;color:#16171a">
+        <div style="display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:rgba(22,23,26,.06);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.34 0.008 250)"></span>
+            <span>Fokus</span><span style="opacity:.45">Runde 02 / 04</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:-46px">
+          <div style="font-size:104px;line-height:.82;font-weight:300;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;gap:10px;color:#f6f6f5;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;background:rgba(246,246,245,.2)">Pause</span>
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;border:1px solid rgba(246,246,245,.3);opacity:.45">Skip</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#0f1011;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.70 0.008 250)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 34px;color:#eceded">
+        <div style="display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:rgba(236,237,237,.1);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.70 0.008 250)"></span>
+            <span>Fokus</span><span style="opacity:.45">Runde 02 / 04</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:-46px">
+          <div style="font-size:104px;line-height:.82;font-weight:300;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;gap:10px;color:#15161a;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;background:rgba(21,22,26,.16)">Pause</span>
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;border:1px solid rgba(21,22,26,.3);opacity:.55">Skip</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Weiter: „<a class="dv-oid" href="#5a">5a</a> wählen, Phase 2 starten" · „<a class="dv-oid" href="#5c">5c</a> mit Zinnober als Akzentpunkt" · „noch mehr Farbvarianten"</p>
+</section>
+
+<section class="dv-turn" id="t4">
+<div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">Moderne Fassung von <a class="dv-oid" href="#3a">3a</a> ZINNOBER</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="4a">
+<div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a><span><b>ZINNOBER MODERN</b> — Fläche als eingerückte Rundfläche, die im Screen aufsteigt (25 %). Status als Pille oben, Zeit mittig mit leichterem Schnitt, Steuerung als Pill-Buttons. Gleicher Ton, mehr Luft.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f7f4f1;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.55 0.175 32)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 34px;color:#1a1310">
+        <div style="display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:rgba(26,19,16,.06);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.64 0.175 32)"></span>
+            <span>Fokus</span><span style="opacity:.45">Runde 02 / 04</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:-46px">
+          <div style="font-size:104px;line-height:.82;font-weight:300;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;gap:10px;color:#fdf6f2;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;background:rgba(253,246,242,.22)">Pause</span>
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;border:1px solid rgba(253,246,242,.3);opacity:.45">Skip</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#131110;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.44 0.145 32)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 34px;color:#f4ece7">
+        <div style="display:flex;justify-content:center">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;background:rgba(244,236,231,.1);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span style="width:6px;height:6px;border-radius:50%;background:oklch(0.64 0.175 32)"></span>
+            <span>Fokus</span><span style="opacity:.45">Runde 02 / 04</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:-46px">
+          <div style="font-size:104px;line-height:.82;font-weight:300;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;gap:10px;color:#fdf1eb;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;background:rgba(253,241,235,.2)">Pause</span>
+          <span style="flex:1;text-align:center;padding:15px 0;border-radius:999px;border:1px solid rgba(253,241,235,.28);opacity:.45">Skip</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Weiter: „<a class="dv-oid" href="#4a">4a</a> wählen, Phase 2 starten" · „<a class="dv-oid" href="#4a">4a</a> ohne Rundung, Fläche randlos" · „Status-Pille wieder als Zeile"</p>
+</section>
+
+<section class="dv-turn" id="t3">
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Layout &amp; Font von <a class="dv-oid" href="#2b">2b</a> ZINNOBER — Zeit zentriert, Runde oben, Füllstand echt proportional (6:18 von 25:00 = 25 %)</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="3a">
+<div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a><span><b>ZINNOBER</b> — Originalton, enges Spacing. Kopfzeile knapp am Rand, Zeit exakt mittig, Steuerung tief in der Fläche.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f6f3ef;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.55 0.175 32)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 38px;color:#1a1310">
+        <div style="display:flex;justify-content:space-between;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500">
+          <span>Fokus-Block</span><span style="opacity:.5">Runde 02 / 04</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;margin-top:-40px">
+          <div style="font-size:98px;line-height:.82;font-weight:500;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.5">von 25:00</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:#fdf6f2">
+          <span>Pause</span><span style="opacity:.4">Skip —</span><span style="opacity:.62">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#12100e;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.44 0.145 32)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:44px 26px 38px;color:#f4ece7">
+        <div style="display:flex;justify-content:space-between;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500">
+          <span>Fokus-Block</span><span style="opacity:.5">Runde 02 / 04</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;margin-top:-40px">
+          <div style="font-size:98px;line-height:.82;font-weight:500;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.5">von 25:00</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+          <span>Pause</span><span style="opacity:.4">Skip —</span><span style="opacity:.62">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="3b">
+<div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a><span><b>KOBALT</b> — Kühler Ton, großzügiges Spacing. Runde als eigene Zeile unter dem Status, Zeit größer, Steuerung mit mehr Luft.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f2f4f7;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.55 0.155 258)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:64px 34px 54px;color:#131720">
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+          <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:500">Fokus-Block</div>
+          <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.45">Runde 02 / 04</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;margin-top:-30px">
+          <div style="font-size:108px;line-height:.8;font-weight:400;letter-spacing:-.06em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:38px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;color:#f4f7fd">
+          <span>Pause</span><span style="opacity:.4">Skip</span><span style="opacity:.62">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#0d0f14;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.40 0.125 258)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:64px 34px 54px;color:#e9edf5">
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+          <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:500">Fokus-Block</div>
+          <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.45">Runde 02 / 04</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;margin-top:-30px">
+          <div style="font-size:108px;line-height:.8;font-weight:400;letter-spacing:-.06em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.45">von 25:00</div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:38px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:500">
+          <span>Pause</span><span style="opacity:.4">Skip</span><span style="opacity:.62">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="3c">
+<div class="dv-olabel"><a class="dv-oid" href="#3c">3c</a><span><b>MOOS</b> — Gedeckter Grünton, mittleres Spacing. Kopfzeile links gesetzt, Zeit mittig, dünne Kante markiert den Füllstand zusätzlich als Linie.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f3f4f0;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.56 0.095 148)"></div>
+      <div style="position:absolute;left:0;right:0;bottom:25%;height:1px;background:oklch(0.40 0.07 148)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:54px 30px 46px;color:#141a13">
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+          <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">Fokus-Block</div>
+          <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.45">Runde 02 / 04</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;margin-top:-24px">
+          <div style="font-size:102px;line-height:.82;font-weight:500;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00 · 25 %</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:#f2f7f0">
+          <span>Pause</span><span style="opacity:.4">Skip —</span><span style="opacity:.62">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#0e110d;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:25%;background:oklch(0.40 0.08 148)"></div>
+      <div style="position:absolute;left:0;right:0;bottom:25%;height:1px;background:oklch(0.62 0.09 148)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:54px 30px 46px;color:#e7efe6">
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+          <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">Fokus-Block</div>
+          <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.45">Runde 02 / 04</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;margin-top:-24px">
+          <div style="font-size:102px;line-height:.82;font-weight:500;letter-spacing:-.055em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.45">von 25:00 · 25 %</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+          <span>Pause</span><span style="opacity:.4">Skip —</span><span style="opacity:.62">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Weiter: „<a class="dv-oid" href="#3a">3a</a> wählen, Phase 2 starten" · „<a class="dv-oid" href="#3b">3b</a> mit dem Zinnober-Ton" · „Füllung soll nach unten leer laufen statt aufsteigen"</p>
+</section>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Varianten von <a class="dv-oid" href="#1a">1a</a> MERIDIAN — gleiches Prinzip (Säule von unten, Monospace-Messwert), moderner, andere Farbwelten</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a><span><b>GRAPHIT</b> — Kühles Neutral, Signalblau. Die Ziffer sitzt auf der Füllkante und wird von ihr überlaufen: dieselbe Zahl, oben Ton auf Grund, unten Ton auf Fläche.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f2f3f5;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:47%;background:oklch(0.66 0.135 250)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:54px 28px 44px;color:#14171c">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500">
+          <span>Fokus</span><span style="opacity:.5">02 / 04</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;align-items:flex-start;margin-bottom:22px">
+          <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.5">verbleibend im Block</div>
+          <div style="font-size:96px;line-height:.84;font-weight:400;letter-spacing:-.05em;font-variant-numeric:tabular-nums;margin-left:-5px">18:42</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1;text-align:center;padding:15px 0;border-radius:11px;background:rgba(20,23,28,.09);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">Pause</div>
+          <div style="flex:1;text-align:center;padding:15px 0;border-radius:11px;background:rgba(20,23,28,.04);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500;opacity:.3">Skip</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#0e1014;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:47%;background:oklch(0.42 0.115 250)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:54px 28px 44px;color:#e8ecf2">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500">
+          <span>Fokus</span><span style="opacity:.5">02 / 04</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;align-items:flex-start;margin-bottom:22px">
+          <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.5">verbleibend im Block</div>
+          <div style="font-size:96px;line-height:.84;font-weight:400;letter-spacing:-.05em;font-variant-numeric:tabular-nums;margin-left:-5px">18:42</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1;text-align:center;padding:15px 0;border-radius:11px;background:rgba(232,236,242,.14);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">Pause</div>
+          <div style="flex:1;text-align:center;padding:15px 0;border-radius:11px;background:rgba(232,236,242,.06);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500;opacity:.3">Skip</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="2b">
+<div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a><span><b>ZINNOBER</b> — Warmes Papier, Rot-Orange. Höchster Kontrast der drei, Zeit oben verankert, Fläche läuft ihr entgegen. Status als Zeile direkt auf der Kante.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f6f3ef;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:47%;background:oklch(0.55 0.175 32)"></div>
+      <div style="position:absolute;left:0;right:0;bottom:47%;display:flex;justify-content:space-between;padding:0 28px 9px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;color:#1a1310">
+        <span>Fokus-Block</span><span style="opacity:.5">Runde 02 / 04</span>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:66px 28px 44px;color:#1a1310">
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+          <div style="font-size:100px;line-height:.82;font-weight:500;letter-spacing:-.055em;font-variant-numeric:tabular-nums;margin-left:-6px">18:42</div>
+          <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.5">von 25:00</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:#fdf6f2">
+          <span>Pause</span><span style="opacity:.35">Skip —</span><span style="opacity:.6">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#12100e;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:47%;background:oklch(0.44 0.145 32)"></div>
+      <div style="position:absolute;left:0;right:0;bottom:47%;display:flex;justify-content:space-between;padding:0 28px 9px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;color:#f4ece7">
+        <span>Fokus-Block</span><span style="opacity:.5">Runde 02 / 04</span>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:66px 28px 44px;color:#f4ece7">
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+          <div style="font-size:100px;line-height:.82;font-weight:500;letter-spacing:-.055em;font-variant-numeric:tabular-nums;margin-left:-6px">18:42</div>
+          <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.5">von 25:00</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+          <span>Pause</span><span style="opacity:.35">Skip —</span><span style="opacity:.6">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="2c">
+<div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a><span><b>INDIGO</b> — Modernste Fassung: die Fläche ist eine gerundete Karte, die im Screen aufsteigt, Zeit zentriert darauf. Weicher, aber immer noch nur eine Fortschrittsanzeige.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f4f3f7;overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:12px;right:12px;bottom:12px;height:calc(47% + 12px);border-radius:26px;background:oklch(0.62 0.13 288);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:46px 24px 34px;color:#fbfaff">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div style="font-size:90px;line-height:.86;font-weight:400;letter-spacing:-.05em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.72">verbleibend</div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="padding:13px 26px;border-radius:999px;background:rgba(251,250,255,.2)">Pause</span>
+          <span style="padding:13px 26px;border-radius:999px;border:1px solid rgba(251,250,255,.3);opacity:.45">Skip</span>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:0;padding:56px 30px 0">
+        <div style="display:flex;align-items:center;gap:9px;color:#17141d;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500">
+          <span style="width:7px;height:7px;border-radius:50%;background:oklch(0.62 0.13 288)"></span>
+          <span>Fokus</span><span style="opacity:.45;margin-left:auto">Runde 02 / 04</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#0f0e13;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:12px;right:12px;bottom:12px;height:calc(47% + 12px);border-radius:26px;background:oklch(0.40 0.11 288);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:46px 24px 34px;color:#f2f0fa">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div style="font-size:90px;line-height:.86;font-weight:400;letter-spacing:-.05em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.72">verbleibend</div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+          <span style="padding:13px 26px;border-radius:999px;background:rgba(242,240,250,.18)">Pause</span>
+          <span style="padding:13px 26px;border-radius:999px;border:1px solid rgba(242,240,250,.28);opacity:.45">Skip</span>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:0;padding:56px 30px 0">
+        <div style="display:flex;align-items:center;gap:9px;color:#eae7f2;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500">
+          <span style="width:7px;height:7px;border-radius:50%;background:oklch(0.62 0.13 288)"></span>
+          <span>Fokus</span><span style="opacity:.45;margin-left:auto">Runde 02 / 04</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Weiter: „<a class="dv-oid" href="#2b">2b</a> wählen, Phase 2 starten" · „<a class="dv-oid" href="#2a">2a</a> mit dem Layout von <a class="dv-oid" href="#2c">2c</a>" · „andere Farbe für <a class="dv-oid" href="#2c">2c</a>"</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Drei Design-Sprachen — Countdown Intervall, laufender Fokus-Block (iPhone-Format, Light + Dark)</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a><span><b>MERIDIAN</b> — Monospace-Instrument. Die Fläche steigt als massive Säule von unten. Zahlen als Messwert, alles andere auf Beschriftungsgröße. Ton: Bernstein.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f3f1ec;font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:47%;background:oklch(0.78 0.115 72)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:54px 30px 44px;color:#17150f">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500">
+          <span>Fokus</span><span style="opacity:.5">Runde 02 / 04</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;align-items:flex-start">
+          <div style="font-size:88px;line-height:.86;font-weight:300;letter-spacing:-.04em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.55">verbleibend im Block</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="height:1px;background:rgba(23,21,15,.22)"></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span>Pause</span><span style="opacity:.28">Skip —</span><span style="opacity:.55">Stop</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#100f0c;border-color:rgba(255,255,255,.12);font-family:IBM Plex Mono,ui-monospace,monospace">
+      <div style="position:absolute;left:0;right:0;bottom:0;height:47%;background:oklch(0.52 0.098 72)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:54px 30px 44px;color:#f0ece1">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500">
+          <span>Fokus</span><span style="opacity:.5">Runde 02 / 04</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;align-items:flex-start">
+          <div style="font-size:88px;line-height:.86;font-weight:300;letter-spacing:-.04em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.55">verbleibend im Block</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="height:1px;background:rgba(240,236,225,.22)"></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+            <span>Pause</span><span style="opacity:.28">Skip —</span><span style="opacity:.55">Stop</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a><span><b>KONTUR</b> — Schweizer Grotesk auf Papier. Die Fläche wandert als Tintenfeld von links; die Ziffern invertieren dort, wo sie überläuft. Kein zweites Element auf dem Screen.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#f7f6f3;isolation:isolate;font-family:Helvetica Neue,Helvetica,Arial,sans-serif">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:47%;background:oklch(0.30 0.045 250)"></div>
+      <div style="position:absolute;inset:0;mix-blend-mode:difference;color:#ffffff;display:flex;flex-direction:column;justify-content:space-between;padding:56px 28px 46px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:13px;font-weight:600;letter-spacing:-.01em">Fokus</div>
+          <div style="font-size:13px;font-weight:400;opacity:.62;letter-spacing:-.01em">Runde 2 von 4</div>
+        </div>
+        <div style="font-size:104px;line-height:.82;font-weight:500;letter-spacing:-.055em;font-variant-numeric:tabular-nums;margin-left:-6px">18:42</div>
+        <div style="display:flex;gap:26px;font-size:15px;font-weight:500;letter-spacing:-.01em">
+          <span>Pause</span><span style="opacity:.32">Skip</span><span style="opacity:.62">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#0d0f12;border-color:rgba(255,255,255,.12);isolation:isolate;font-family:Helvetica Neue,Helvetica,Arial,sans-serif">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:47%;background:oklch(0.86 0.045 250)"></div>
+      <div style="position:absolute;inset:0;mix-blend-mode:difference;color:#ffffff;display:flex;flex-direction:column;justify-content:space-between;padding:56px 28px 46px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:13px;font-weight:600;letter-spacing:-.01em">Fokus</div>
+          <div style="font-size:13px;font-weight:400;opacity:.62;letter-spacing:-.01em">Runde 2 von 4</div>
+        </div>
+        <div style="font-size:104px;line-height:.82;font-weight:500;letter-spacing:-.055em;font-variant-numeric:tabular-nums;margin-left:-6px">18:42</div>
+        <div style="display:flex;gap:26px;font-size:15px;font-weight:500;letter-spacing:-.01em">
+          <span>Pause</span><span style="opacity:.32">Skip</span><span style="opacity:.62">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a><span><b>RASTER</b> — Technische Zeichnung. Hairline-Grid über die ganze Fläche, der Füllstand liegt als klare Kante darin. Space Grotesk, Ziffern zentriert, Status auf der Kante.</span></div>
+<div style="display:flex;gap:16px">
+  <div>
+    <p class="dv-pairlabel">Light</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#eef0ee;overflow:hidden;font-family:Space Grotesk,Helvetica Neue,Arial,sans-serif">
+      <div style="position:absolute;inset:0;background-image:linear-gradient(to right,rgba(20,32,26,.10) 1px,transparent 1px),linear-gradient(to bottom,rgba(20,32,26,.10) 1px,transparent 1px);background-size:34px 34px"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:47%;background:oklch(0.80 0.10 165)"></div>
+      <div style="position:absolute;left:0;right:0;bottom:47%;height:2px;background:oklch(0.45 0.09 165)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:52px 26px 42px;color:#111a15">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 9px;border:1.5px solid #111a15">Fokus</div>
+          <div style="font-family:IBM Plex Mono,monospace;font-size:12px;letter-spacing:.08em;opacity:.6">02/04</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:-30px">
+          <div style="font-size:92px;line-height:.84;font-weight:700;letter-spacing:-.045em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-family:IBM Plex Mono,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.55">47 % des Blocks</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:IBM Plex Mono,monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase">
+          <span style="font-weight:500">Pause</span><span style="opacity:.28">Skip</span><span style="opacity:.55">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <p class="dv-pairlabel">Dark</p>
+    <div class="dv-card" style="width:340px;height:736px;position:relative;background:#0b100d;border-color:rgba(255,255,255,.12);overflow:hidden;font-family:Space Grotesk,Helvetica Neue,Arial,sans-serif">
+      <div style="position:absolute;inset:0;background-image:linear-gradient(to right,rgba(226,240,232,.11) 1px,transparent 1px),linear-gradient(to bottom,rgba(226,240,232,.11) 1px,transparent 1px);background-size:34px 34px"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:47%;background:oklch(0.44 0.085 165)"></div>
+      <div style="position:absolute;left:0;right:0;bottom:47%;height:2px;background:oklch(0.72 0.10 165)"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:52px 26px 42px;color:#e4f0e8">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 9px;border:1.5px solid #e4f0e8">Fokus</div>
+          <div style="font-family:IBM Plex Mono,monospace;font-size:12px;letter-spacing:.08em;opacity:.6">02/04</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:-30px">
+          <div style="font-size:92px;line-height:.84;font-weight:700;letter-spacing:-.045em;font-variant-numeric:tabular-nums">18:42</div>
+          <div style="font-family:IBM Plex Mono,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.55">47 % des Blocks</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:IBM Plex Mono,monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase">
+          <span style="font-weight:500">Pause</span><span style="opacity:.28">Skip</span><span style="opacity:.55">Stop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Weiter: „<a class="dv-oid" href="#1a">1a</a> wählen, Phase 2 starten" · „<a class="dv-oid" href="#1b">1b</a>, aber Fläche von unten statt von links" · „neue Richtungen"</p>
+</section>
+
+</x-dc>
+</body>
+</html>

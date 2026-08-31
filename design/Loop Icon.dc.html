@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#eceae5;font-family:IBM Plex Mono,ui-monospace,monospace}
+a{color:#111a1b}a:hover{color:oklch(0.68 0.10 205)}
+</style></helmet>
+
+<div style="padding:48px;display:flex;flex-direction:column;gap:28px;align-items:flex-start">
+  <div style="display:flex;align-items:baseline;gap:10px">
+    <span style="font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#111a1b;color:#fff;border-radius:4px">P2 · 1</span>
+    <span style="font:500 13px/1.2 IBM Plex Mono,monospace;color:#111a1b">LOOP — App Icon, Block-Loop, 1024 × 1024, freigestellt</span>
+  </div>
+  <p style="font:400 11px/1.6 IBM Plex Mono,monospace;color:rgba(17,26,27,.55);max-width:660px;margin:0">Ein Ton: Petrol hell, oklch(0.68 0.10 205). Ring 149 px stark, Radius 214 px, Zeichen 708 × 708 zentriert auf 1024 × 1024, Hintergrund transparent. Der PNG-Export unten wird direkt im Browser gezeichnet, ohne Hintergrund.</p>
+
+  <div style="display:flex;gap:36px;align-items:flex-start;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font:500 10px/1 IBM Plex Mono,monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(17,26,27,.45)">1024 × 1024 · transparent</div>
+      <div style="width:1024px;height:1024px;position:relative;background-color:#0d1213;background-image:linear-gradient(45deg,rgba(255,255,255,.10) 25%,transparent 25%),linear-gradient(-45deg,rgba(255,255,255,.10) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,rgba(255,255,255,.10) 75%),linear-gradient(-45deg,transparent 75%,rgba(255,255,255,.10) 75%);background-size:64px 64px;background-position:0 0,0 32px,32px -32px,-32px 0">
+        <div style="position:absolute;left:158px;top:158px;width:708px;height:708px;border-radius:214px;border:149px solid oklch(0.68 0.10 205);box-sizing:border-box"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font:500 10px/1 IBM Plex Mono,monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(17,26,27,.45)">180 px</div>
+        <div style="width:180px;height:180px;position:relative;background-color:#0d1213">
+          <div style="position:absolute;left:28px;top:28px;width:124px;height:124px;border-radius:38px;border:26px solid oklch(0.68 0.10 205);box-sizing:border-box"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font:500 10px/1 IBM Plex Mono,monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(17,26,27,.45)">60 px</div>
+        <div style="width:60px;height:60px;position:relative;background-color:#0d1213">
+          <div style="position:absolute;left:9px;top:9px;width:42px;height:42px;border-radius:13px;border:9px solid oklch(0.68 0.10 205);box-sizing:border-box"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font:500 10px/1 IBM Plex Mono,monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(17,26,27,.45)">29 px</div>
+        <div style="width:29px;height:29px;position:relative;background-color:#0d1213">
+          <div style="position:absolute;left:4px;top:4px;width:21px;height:21px;border-radius:6px;border:4px solid oklch(0.68 0.10 205);box-sizing:border-box"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <button onClick="{{ download1024 }}" style="font:500 12px/1 IBM Plex Mono,monospace;letter-spacing:.12em;text-transform:uppercase;padding:15px 22px;border-radius:999px;border:none;background:#111a1b;color:#f1f5f4;cursor:pointer" style-hover="background:oklch(0.30 0.05 205)">PNG 1024 laden</button>
+    <button onClick="{{ download512 }}" style="font:500 12px/1 IBM Plex Mono,monospace;letter-spacing:.12em;text-transform:uppercase;padding:15px 22px;border-radius:999px;border:1.5px solid rgba(17,26,27,.25);background:transparent;color:#111a1b;cursor:pointer" style-hover="border-color:#111a1b">PNG 512</button>
+    <button onClick="{{ download180 }}" style="font:500 12px/1 IBM Plex Mono,monospace;letter-spacing:.12em;text-transform:uppercase;padding:15px 22px;border-radius:999px;border:1.5px solid rgba(17,26,27,.25);background:transparent;color:#111a1b;cursor:pointer" style-hover="border-color:#111a1b">PNG 180</button>
+    <span style="font:400 11px/1.5 IBM Plex Mono,monospace;color:rgba(17,26,27,.45)">{{ status }}</span>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { status: "" };
+
+  draw(size) {
+    const c = document.createElement("canvas");
+    c.width = size; c.height = size;
+    const ctx = c.getContext("2d");
+    const k = size / 1024;
+    const lw = 149 * k;
+    const outer = 708 * k, left = 158 * k;
+    const x = left + lw / 2, w = outer - lw, r = 214 * k - lw / 2;
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = "oklch(0.68 0.10 205)";
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, x, w, w, r);
+    else ctx.rect(x, x, w, w);
+    ctx.stroke();
+    return c;
+  }
+
+  save(size) {
+    this.draw(size).toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "loop-icon-" + size + ".png";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      this.setState({ status: "loop-icon-" + size + ".png geladen" });
+    }, "image/png");
+  }
+
+  renderVals() {
+    return {
+      status: this.state.status,
+      download1024: () => this.save(1024),
+      download512: () => this.save(512),
+      download180: () => this.save(180),
+    };
+  }
+}
+</script>
+</body>
+</html>
