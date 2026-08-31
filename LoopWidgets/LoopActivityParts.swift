@@ -32,44 +32,23 @@ struct LoopActivityTime: View {
 
 // MARK: - Progress
 
-/// The rising area, as far as a system surface allows one.
-///
-/// Loop has exactly one progress indicator and it is an area that rises from the
-/// bottom edge. A Live Activity cannot draw it: the only progress iOS animates
-/// without an update is `ProgressView(timerInterval:)`, and it animates it for
-/// the built-in styles only — a custom `ProgressViewStyle` is handed a `nil`
-/// `fractionCompleted` and would have to be driven by a push every second. So
-/// the area is kept as the accent fill and flattened into the band the system
-/// will move, flush against the bottom edge where the app's fill begins.
-///
-/// A held run is drawn from `pausedFraction` instead. `ProgressView` has no
-/// `pauseTime`, so a running one left in place would keep rising under digits
-/// that had already stopped.
-struct LoopActivityProgress: View {
-
-    let state: LoopActivityAttributes.ContentState
-
-    @Environment(\.loopPalette) private var palette
-
-    var body: some View {
-        Group {
-            if state.isPaused {
-                ProgressView(value: state.pausedFraction)
-            } else {
-                // `countsDown: false` so the bar rises with elapsed time, the
-                // direction the app's area moves in.
-                ProgressView(timerInterval: state.window, countsDown: false) {
-                    EmptyView()
-                } currentValueLabel: {
-                    EmptyView()
-                }
-            }
-        }
-        .progressViewStyle(.linear)
-        .tint(palette.fill)
-        .frame(height: LoopActivityMetrics.progressHeight)
-    }
-}
+// There is deliberately no progress view here.
+//
+// Loop has exactly one progress indicator and it is an area that rises from the
+// bottom edge. A Live Activity cannot draw it: the only progress iOS animates
+// without an update is `ProgressView(timerInterval:)`, and it animates it for
+// the built-in styles only — a custom `ProgressViewStyle` is handed a `nil`
+// `fractionCompleted`, so an area shaped like Loop's would have to be driven by
+// a push every second. ActivityKit throttles those and drops the ones over
+// budget, which would spend the budget on frames that look identical and leave
+// none for the block boundary that matters.
+//
+// A plain system bar was tried and taken out again: the rising area is the
+// app's, and a band that is not it is a second progress indicator rather than a
+// smaller version of the first. The lock screen shows the time, and on an
+// interval the block and the round. That is the whole card.
+//
+// So: if you are about to add a `ProgressView` back, this is what it costs.
 
 // MARK: - Status
 

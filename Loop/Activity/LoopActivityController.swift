@@ -27,6 +27,15 @@ final class LoopActivityController {
     /// nothing is never sent. See `hasMoved(from:to:)`.
     private var pushed: LoopActivityAttributes.ContentState?
 
+    /// Set when a request was refused, and cleared when the run ends.
+    ///
+    /// `apply` is called on the screen's tick, so without this a request that
+    /// throws — Live Activities switched off, the per-app limit reached, a
+    /// state over budget — would be retried once a second for the length of the
+    /// run. The answer will not have changed by the next tick, and the run that
+    /// failed to start one is not the run that should keep asking.
+    private var isRefused = false
+
     // MARK: - Countdown
 
     /// Brings the Live Activity in line with a countdown frame.
@@ -47,7 +56,10 @@ final class LoopActivityController {
                     rounds: 1,
                     window: Self.window(remaining: snapshot.remaining, duration: snapshot.duration, at: now),
                     pausedAt: snapshot.phase == .paused ? now : nil,
-                    accentID: accent.rawValue
+                    accentID: accent.rawValue,
+                    // A countdown is one block. There is nothing after it, so
+                    // there is no boundary it could be asleep through.
+                    upcoming: []
                 )
             )
         }
@@ -63,17 +75,96 @@ final class LoopActivityController {
             end()
 
         case .running, .paused:
+            let window = Self.window(remaining: snapshot.remaining, duration: snapshot.blockDuration, at: now)
+
             apply(
                 LoopActivityAttributes.ContentState(
                     block: snapshot.blockKind == .focus ? .focus : .rest,
                     round: snapshot.round,
                     rounds: snapshot.rounds,
-                    window: Self.window(remaining: snapshot.remaining, duration: snapshot.blockDuration, at: now),
+                    window: window,
                     pausedAt: snapshot.phase == .paused ? now : nil,
-                    accentID: accent.rawValue
+                    accentID: accent.rawValue,
+                    upcoming: Self.upcoming(after: snapshot, endingAt: window.upperBound)
                 )
             )
         }
+    }
+
+    // MARK: - The rest of the schedule
+
+    /// How many blocks past the current one the state carries.
+    ///
+    /// The bound is the content state's own budget: ActivityKit caps it at
+    /// 4 KB, and a block encodes as a kind, a round and two dates — on the order
+    /// of a hundred bytes. Twenty-four leaves the encoded state comfortably
+    /// inside the cap with the rest of the fields, and `LoopActivityStateTests`
+    /// encodes a fully loaded state and asserts it.
+    ///
+    /// It is a bound rather than the whole schedule because rounds go to 99,
+    /// which is 197 blocks and several times the budget. Twenty-four covers a
+    /// twelve-round run outright, and any longer run for its first
+    /// twenty-four boundaries — far past the eight hours ActivityKit gives the
+    /// Activity anyway.
+    nonisolated static let maxUpcomingBlocks = 24
+
+    /// The blocks that follow the one the snapshot is in, in order.
+    ///
+    /// This walks the same rule as `IntervalTimer.schedule` — focus, break,
+    /// focus, break, and no break after the final round — from the three scales
+    /// the snapshot carries, because a snapshot is one frame and does not hand
+    /// out the schedule around it. Two readings of one rule is exactly the
+    /// duplication this project does not want, so `LoopActivityBoundaryTests`
+    /// checks this against `IntervalTimer.schedule` itself, block for block, for
+    /// a range of configurations. If the engine's shape ever changes, that test
+    /// goes red rather than the lock screen going quietly wrong.
+    nonisolated static func upcoming(
+        after snapshot: IntervalTimer.Snapshot,
+        endingAt blockEnd: Date
+    ) -> [LoopActivityAttributes.Upcoming] {
+        let focus = TimeInterval(snapshot.focusMinutes) * 60
+        let rest = TimeInterval(snapshot.breakMinutes) * 60
+
+        var blocks: [LoopActivityAttributes.Upcoming] = []
+        var kind = snapshot.blockKind
+        var round = snapshot.round
+        var start = blockEnd
+
+        while blocks.count < maxUpcomingBlocks {
+            let next: (block: LoopActivityAttributes.Block, round: Int, duration: TimeInterval)?
+
+            switch kind {
+            case .focus where round >= snapshot.rounds:
+                // The run ends on a focus block: there is no break after the
+                // last round and nothing follows it.
+                next = nil
+
+            // A zero-minute break is legal and means focus blocks back to back.
+            // The engine steps over a block that ends where it starts rather
+            // than showing it for a frame, and so does this.
+            case .focus where rest > 0:
+                next = (.rest, round, rest)
+
+            case .focus:
+                next = (.focus, round + 1, focus)
+
+            case .break:
+                next = (.focus, round + 1, focus)
+            }
+
+            guard let next else { break }
+
+            let end = start.addingTimeInterval(max(next.duration, 1))
+            blocks.append(
+                LoopActivityAttributes.Upcoming(block: next.block, round: next.round, window: start...end)
+            )
+
+            kind = next.block == .focus ? .focus : .break
+            round = next.round
+            start = end
+        }
+
+        return blocks
     }
 
     // MARK: - Ending
@@ -89,8 +180,9 @@ final class LoopActivityController {
 
         self.activity = nil
         pushed = nil
+        isRefused = false
 
-        Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        enqueue { await activity.end(nil, dismissalPolicy: .immediate) }
     }
 
     // MARK: - The window
@@ -118,6 +210,7 @@ final class LoopActivityController {
 
     private func apply(_ state: LoopActivityAttributes.ContentState) {
         guard let pushed else {
+            guard !isRefused else { return }
             start(state)
             return
         }
@@ -127,7 +220,30 @@ final class LoopActivityController {
         self.pushed = state
         let content = Self.content(state)
 
-        Task { [activity] in await activity?.update(content) }
+        enqueue { [activity] in await activity?.update(content) }
+    }
+
+    // MARK: - Ordering
+
+    /// The last handed-off piece of ActivityKit work, so the next one can wait
+    /// for it.
+    ///
+    /// `Activity.update` and `Activity.end` are `async`, and unstructured tasks
+    /// start in no particular order. A skip landing right behind a resume could
+    /// otherwise be applied first, leaving the lock screen on the older frame
+    /// while `pushed` insists the newer one was sent — and nothing would push
+    /// again until the next boundary. Chaining them keeps the order the screen
+    /// produced them in.
+    private var pending: Task<Void, Never>?
+
+    /// The work stays on the main actor, because `Activity` is not `Sendable`
+    /// and the handle cannot cross to another one.
+    private func enqueue(_ work: @escaping @MainActor () async -> Void) {
+        let previous = pending
+        pending = Task { @MainActor in
+            await previous?.value
+            await work()
+        }
     }
 
     private func start(_ state: LoopActivityAttributes.ContentState) {
@@ -145,6 +261,7 @@ final class LoopActivityController {
         // request that left `pushed` set would suppress every later update and
         // the lock screen would stay empty for the rest of the run.
         pushed = activity == nil ? nil : state
+        isRefused = activity == nil
     }
 
     private static func content(

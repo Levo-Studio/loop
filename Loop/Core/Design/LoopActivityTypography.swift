@@ -11,9 +11,8 @@ import SwiftUI
 /// light weight and the tight tracking, not the size — at the two sizes this
 /// surface has room for.
 ///
-/// It lives in the extension rather than in `Loop/Core/Design/` only because
-/// the Live Activity is the only thing that draws it. A second surface needing
-/// these sizes is the moment they move next to the rest of the scale.
+/// They sit beside the rest of the scale rather than in the extension: the
+/// target that draws a value is not what decides where it is written down.
 enum LoopActivityTypography {
 
     /// The tracking of the big time, which is what makes the digits read as
