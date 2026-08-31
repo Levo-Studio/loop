@@ -215,10 +215,11 @@ purpose.
 
 ## 12. Third-party components
 
-The bundled font IBM Plex Mono is licensed separately under the SIL Open Font
-License 1.1. Its license text is included with the font files. This license does
-not restrict your rights in that font, and the SIL Open Font License grants you
-no rights in the remaining parts of the software.
+Loop uses the font IBM Plex Mono, which is licensed separately under the SIL
+Open Font License 1.1. Wherever the font files are shipped — in this repository
+or in a build of the software — that license accompanies them and governs them.
+This license does not restrict your rights in that font, and the SIL Open Font
+License grants you no rights in the remaining parts of the software.
 
 ## 13. Further rights
 
