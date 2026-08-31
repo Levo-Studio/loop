@@ -46,7 +46,9 @@ nonisolated enum LoopIdleTimer {
     /// alive because the user swiped over to the clock, and the finished state
     /// stops being one whether or not anybody is looking at it.
     ///
-    /// **The stopwatch deliberately does not count.** The other two run towards
+    /// **The stopwatch deliberately does not count**, and this is the one place
+    /// the rule is narrower than the design notes, which say the screen stays on
+    /// "as long as a timer runs". The other two run towards
     /// a moment: the number on screen is worth reading precisely because it is
     /// about to reach zero, and a display that has gone dark by then has failed
     /// at the one job. A count-up has no such moment — it is started and left,
