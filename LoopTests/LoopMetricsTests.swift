@@ -88,6 +88,95 @@ struct LoopMetricsTests {
         #expect(LoopMetrics(isPad: false, isLandscape: false).timeBlockOffset < 0)
     }
 
+    /// Every scalar on `LoopMetrics`, by name. Both the idiom test and the
+    /// orientation test walk this list, so a value added without a thought for
+    /// either axis is covered by both the moment it appears here.
+    private static let scalars: [(String, (LoopMetrics) -> CGFloat)] = [
+        ("timeBlockSpacing", \.timeBlockSpacing),
+        ("timeBlockOffset", \.timeBlockOffset),
+        ("countdownIdleSpacing", \.countdownIdleSpacing),
+        ("intervalSetupSpacing", \.intervalSetupSpacing),
+        ("pillSpacing", \.pillSpacing),
+        ("pillDotSize", \.pillDotSize),
+        ("buttonVerticalPadding", \.buttonVerticalPadding),
+        ("controlRowSpacing", \.controlRowSpacing),
+        ("hairlineWidth", \.hairlineWidth),
+        ("activeDotSize", \.activeDotSize),
+        ("inactiveDotSize", \.inactiveDotSize),
+        ("dotSpacing", \.dotSpacing),
+        ("dotsTopPadding", \.dotsTopPadding),
+        ("sliderSpacing", \.sliderSpacing),
+        ("sliderScaleTopPadding", \.sliderScaleTopPadding),
+        ("sliderTickRowHeight", \.sliderTickRowHeight),
+        ("sliderMinuteTickWidth", \.sliderMinuteTickWidth),
+        ("sliderMinuteTickHeight", \.sliderMinuteTickHeight),
+        ("sliderMajorTickWidth", \.sliderMajorTickWidth),
+        ("sliderMajorTickHeight", \.sliderMajorTickHeight),
+        ("sliderNumberRowHeight", \.sliderNumberRowHeight),
+        ("sliderNumberRowTopPadding", \.sliderNumberRowTopPadding),
+        ("sliderMarkerWidth", \.sliderMarkerWidth),
+        ("sliderMarkerHeight", \.sliderMarkerHeight),
+        ("stepperDiameter", \.stepperDiameter),
+        ("stepperSpacing", \.stepperSpacing),
+        ("stepperValueWidth", \.stepperValueWidth),
+        ("settingsSectionSpacing", \.settingsSectionSpacing),
+        ("settingsRowSpacing", \.settingsRowSpacing),
+        ("accentSectionSpacing", \.accentSectionSpacing),
+        ("accentListSpacing", \.accentListSpacing),
+        ("accentRowSpacing", \.accentRowSpacing),
+        ("accentRowRadius", \.accentRowRadius),
+        ("accentRowBorderWidth", \.accentRowBorderWidth),
+        ("accentSwatchSize", \.accentSwatchSize),
+        ("accentSwatchRadius", \.accentSwatchRadius),
+        ("toggleKnobSize", \.toggleKnobSize),
+        ("toggleKnobInset", \.toggleKnobInset),
+    ]
+
+    /// The values the export draws differently in landscape, portrait first.
+    ///
+    /// Everything on `LoopMetrics` that is not in here is drawn at the same
+    /// size in both orientations, and the test below holds it to that — an
+    /// orientation variant invented where the export has none fails just as
+    /// loudly as one that was missed.
+    private static let landscapeVariants: [String: (CGFloat, CGFloat)] = [
+        "countdownIdleSpacing": (26, 14),
+        "intervalSetupSpacing": (24, 16),
+        "sliderTickRowHeight": (19, 16),
+        "sliderMinuteTickHeight": (8, 7),
+        "sliderMajorTickHeight": (17, 14),
+        "sliderMarkerHeight": (30, 26),
+    ]
+
+    @Test("Only the values the export redraws change with the orientation")
+    func orientationVariants() {
+        let portrait = LoopMetrics(isPad: false, isLandscape: false)
+        let landscape = LoopMetrics(isPad: false, isLandscape: true)
+
+        for (name, value) in Self.scalars {
+            if let (expectedPortrait, expectedLandscape) = Self.landscapeVariants[name] {
+                #expect(value(portrait) == expectedPortrait, "\(name) portrait")
+                #expect(value(landscape) == expectedLandscape, "\(name) landscape")
+            } else {
+                #expect(
+                    value(portrait) == value(landscape),
+                    "\(name) changes with the orientation, and the export does not"
+                )
+            }
+        }
+    }
+
+    @Test("The landscape variants hold at the iPad factor too")
+    func orientationVariantsScale() {
+        let portrait = LoopMetrics(isPad: true, isLandscape: false)
+        let landscape = LoopMetrics(isPad: true, isLandscape: true)
+
+        for (name, value) in Self.scalars {
+            guard let (expectedPortrait, expectedLandscape) = Self.landscapeVariants[name] else { continue }
+            #expect(abs(value(portrait) - expectedPortrait * 1.15) < 0.001, "\(name) iPad portrait")
+            #expect(abs(value(landscape) - expectedLandscape * 1.15) < 0.001, "\(name) iPad landscape")
+        }
+    }
+
     @Test("iPad is the iPhone layout at 1.15, everywhere")
     func padScalesEverything() {
         // This is the arithmetic worth testing, and where a mistake would
@@ -97,30 +186,7 @@ struct LoopMetricsTests {
         let pad = LoopMetrics(isPad: true, isLandscape: true)
         let factor: CGFloat = 1.15
 
-        let values: [(String, (LoopMetrics) -> CGFloat)] = [
-            ("timeBlockSpacing", \.timeBlockSpacing),
-            ("timeBlockOffset", \.timeBlockOffset),
-            ("countdownIdleSpacing", \.countdownIdleSpacing),
-            ("pillSpacing", \.pillSpacing),
-            ("pillDotSize", \.pillDotSize),
-            ("buttonVerticalPadding", \.buttonVerticalPadding),
-            ("controlRowSpacing", \.controlRowSpacing),
-            ("hairlineWidth", \.hairlineWidth),
-            ("activeDotSize", \.activeDotSize),
-            ("inactiveDotSize", \.inactiveDotSize),
-            ("dotSpacing", \.dotSpacing),
-            ("dotsTopPadding", \.dotsTopPadding),
-            ("sliderSpacing", \.sliderSpacing),
-            ("sliderTickRowHeight", \.sliderTickRowHeight),
-            ("sliderMajorTickHeight", \.sliderMajorTickHeight),
-            ("sliderMarkerHeight", \.sliderMarkerHeight),
-            ("stepperDiameter", \.stepperDiameter),
-            ("stepperSpacing", \.stepperSpacing),
-            ("accentRowRadius", \.accentRowRadius),
-            ("accentSwatchSize", \.accentSwatchSize),
-        ]
-
-        for (name, value) in values {
+        for (name, value) in Self.scalars {
             #expect(
                 abs(value(pad) - value(phone) * factor) < 0.001,
                 "\(name) does not scale by 1.15"

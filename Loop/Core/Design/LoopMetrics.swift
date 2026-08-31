@@ -85,6 +85,13 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// the preview and the slider have to share a shallow page.
     var countdownIdleSpacing: CGFloat { scaled(isLandscape ? 14 : 26) }
 
+    /// The gap between the two scales, the divider, the round stepper and the
+    /// total on the interval setup page.
+    ///
+    /// Closes up in landscape like the countdown's idle state does, and for
+    /// the same reason — this page carries the most content of the five.
+    var intervalSetupSpacing: CGFloat { scaled(isLandscape ? 16 : 24) }
+
     /// The time block sits 30 pt above the centre of the space it is given.
     /// Optical centring: the block is read against the page as a whole, and the
     /// controls at the bottom pull the perceived centre downwards.
@@ -137,12 +144,17 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     var sliderScaleTopPadding: CGFloat { scaled(5) }
 
     /// The height of the tick row. Ticks are bottom-aligned inside it.
-    var sliderTickRowHeight: CGFloat { scaled(19) }
+    ///
+    /// The whole bar is shorter in landscape — 16/7/14/26 against 19/8/17/30,
+    /// each a clean base at the 1.15 factor on iPad. A shallow page has to fit
+    /// a preview, a scale and a control row, and the scale is what gives.
+    /// The widths do not change, and neither does the number row beneath.
+    var sliderTickRowHeight: CGFloat { scaled(isLandscape ? 16 : 19) }
 
     var sliderMinuteTickWidth: CGFloat { scaled(1) }
-    var sliderMinuteTickHeight: CGFloat { scaled(8) }
+    var sliderMinuteTickHeight: CGFloat { scaled(isLandscape ? 7 : 8) }
     var sliderMajorTickWidth: CGFloat { scaled(1.5) }
-    var sliderMajorTickHeight: CGFloat { scaled(17) }
+    var sliderMajorTickHeight: CGFloat { scaled(isLandscape ? 14 : 17) }
 
     static let sliderMinuteTickOpacity: Double = 0.25
     static let sliderMajorTickOpacity: Double = 0.55
@@ -154,7 +166,7 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     var sliderNumberRowTopPadding: CGFloat { scaled(3) }
 
     var sliderMarkerWidth: CGFloat { scaled(3) }
-    var sliderMarkerHeight: CGFloat { scaled(30) }
+    var sliderMarkerHeight: CGFloat { scaled(isLandscape ? 26 : 30) }
 
     // MARK: - Stepper
 
@@ -166,6 +178,32 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     var stepperValueWidth: CGFloat { scaled(44) }
 
     // MARK: - Settings
+
+    /// The gaps down the settings column: between its sections, between the
+    /// seconds row and the divider under it, and between the accent heading
+    /// and the list.
+    ///
+    /// These carry no landscape variant, unlike the slider and the interval
+    /// column. Not because they were checked and found equal — the export has
+    /// no landscape settings state at all, so there is nothing to check
+    /// against. They scale by idiom and hold their portrait value until a
+    /// landscape settings screen exists to say otherwise.
+    var settingsSectionSpacing: CGFloat { scaled(28) }
+    var settingsRowSpacing: CGFloat { scaled(14) }
+    var accentSectionSpacing: CGFloat { scaled(13) }
+
+    /// The gap between two accent rows.
+    var accentListSpacing: CGFloat { scaled(11) }
+
+    /// The gap between a swatch, its name and the active marker.
+    var accentRowSpacing: CGFloat { scaled(12) }
+
+    /// The seconds toggle: a 50 × 29 pt track with a 23 pt knob inset by 3 pt.
+    /// The knob is drawn in the page background rather than in an ink, so it
+    /// reads as a hole in the accent rather than as a dot on top of it.
+    var toggleSize: CGSize { CGSize(width: scaled(50), height: scaled(29)) }
+    var toggleKnobSize: CGFloat { scaled(23) }
+    var toggleKnobInset: CGFloat { scaled(3) }
 
     /// The radius of an accent row in the settings list.
     var accentRowRadius: CGFloat { scaled(13) }
