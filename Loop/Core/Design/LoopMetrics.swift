@@ -54,9 +54,24 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
         )
     }
 
-    /// The width the content is held to on iPad, or `nil` on iPhone where the
-    /// content simply fills the page between its paddings.
-    var contentColumnWidth: CGFloat? { isPad ? scaled(520) : nil }
+    /// The width the content is held to, or `nil` where it simply fills the
+    /// page between its paddings.
+    ///
+    /// One rule, not an iPad special case. The column is `520 × scale`
+    /// wherever the layout is wider than iPhone portrait: the export carries
+    /// `max-width:520px` on the control rows, the sliders and the idle preview
+    /// through every iPhone landscape state, and `max-width:598px` — the same
+    /// 520 at the iPad factor — through both iPad orientations. iPhone
+    /// portrait is the only layout narrow enough not to need it, and it has
+    /// none.
+    ///
+    /// It also settles the landscape side padding. A notched iPhone reports a
+    /// side inset well beyond the drawn 40 pt, but the column binds first, so
+    /// the row lands where it was drawn rather than where the inset would put
+    /// it.
+    var contentColumnWidth: CGFloat? {
+        isPad || isLandscape ? scaled(520) : nil
+    }
 
     // MARK: - Time block
 

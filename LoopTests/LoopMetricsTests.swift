@@ -43,14 +43,20 @@ struct LoopMetricsTests {
         #expect(abs(landscape.bottom - 27.6) < 0.001)
     }
 
-    @Test("The content column is an iPad idea only")
+    @Test("Every layout but iPhone portrait holds content to a column")
     func contentColumn() {
+        // iPhone portrait is the only one drawn without a column.
         #expect(LoopMetrics(isPad: false, isLandscape: false).contentColumnWidth == nil)
 
-        // 520 pt in the notes, drawn at 598 px because the whole iPad layout
-        // carries the 1.15 factor.
-        let column = LoopMetrics(isPad: true, isLandscape: false).contentColumnWidth
-        #expect(column.map { abs($0 - 598) < 0.001 } == true)
+        // iPhone landscape carries max-width:520px through every state. Left
+        // unbounded, a control row there draws about 725 pt wide.
+        #expect(LoopMetrics(isPad: false, isLandscape: true).contentColumnWidth == 520)
+
+        // iPad draws the same column at the 1.15 factor, in both orientations.
+        for isLandscape in [false, true] {
+            let column = LoopMetrics(isPad: true, isLandscape: isLandscape).contentColumnWidth
+            #expect(column.map { abs($0 - 598) < 0.001 } == true)
+        }
     }
 
     @Test("The navigation dots keep their drawn sizes")
