@@ -140,11 +140,21 @@ nonisolated struct LoopActivityAttributes: ActivityAttributes {
             window.upperBound.timeIntervalSince(window.lowerBound)
         }
 
-        /// Whether the digits carry an hour field.
+        /// Whether the digits may carry an hour field.
         ///
-        /// Decided by the block's own length rather than by the value being
-        /// drawn, so `1:00:00` does not become `59:59` a second later and take
-        /// the layout with it.
+        /// Decided by the block's own length rather than by what is left of it,
+        /// because the flag has to be right for the whole block and the app is
+        /// not awake to change it.
+        ///
+        /// It **permits** the hour field rather than holding it: iOS drops the
+        /// hours once the value falls under an hour, so a block longer than an
+        /// hour still narrows from `1:00:00` to `59:59` as it crosses. Rendering
+        /// the text at a range of lengths is what showed this; passing `false`
+        /// would be worse, since a two-hour block would then print `00:00` at
+        /// the hour mark rather than merely changing width.
+        ///
+        /// Past twenty-four hours it does not wrap: a thirty-hour countdown —
+        /// which the scale allows — prints `30:00:00`, verified by rendering it.
         var showsHours: Bool { duration >= 3_600 }
 
         /// The height of the rising area at the instant the run was held.
