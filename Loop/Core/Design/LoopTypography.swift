@@ -8,6 +8,12 @@ nonisolated struct LoopTextStyle: Equatable, Sendable {
 
     let font: Font
 
+    /// The resolved point size, after the idiom scale and, for the big time,
+    /// after the auto-scaling rule. Kept rather than folded away into `font`,
+    /// because `Font` will not give it back and the line height is a multiple
+    /// of it.
+    let size: CGFloat
+
     /// Tracking in **points**. The export writes letter-spacing in `em`; the
     /// conversion `em × fontSize` happens once, in `init`, because SwiftUI's
     /// `.tracking` takes points and doing it at every call site is where the
@@ -21,8 +27,15 @@ nonisolated struct LoopTextStyle: Equatable, Sendable {
     /// Whether the role is set in capitals.
     let isUppercased: Bool
 
-    /// Line spacing adjustment in points, or `nil` when the role uses the
-    /// font's own leading. Derived from the export's `line-height`.
+    /// The height of the line box in points, or `nil` where the role uses the
+    /// font's own leading.
+    ///
+    /// The export's `line-height` is well under 1 for the two large roles —
+    /// .82 on the big time, .86 on the countdown preview — against a natural
+    /// leading of roughly 1.3. At 104 pt that is a box some 50 pt shorter than
+    /// the font would draw on its own, and the 14 pt gap to the secondary line
+    /// and the −30 pt offset of the whole block are both measured from it. It
+    /// is not a detail; it is where the time sits on the page.
     let lineHeight: CGFloat?
 
     init(
@@ -34,6 +47,7 @@ nonisolated struct LoopTextStyle: Equatable, Sendable {
         lineHeightFactor: CGFloat? = nil
     ) {
         self.font = LoopFonts.font(weight, size: size)
+        self.size = size
         self.tracking = trackingEm * size
         self.opacity = opacity
         self.isUppercased = uppercased
@@ -183,6 +197,34 @@ extension View {
             .tracking(style.tracking)
             .textCase(style.isUppercased ? .uppercase : nil)
             .opacity(style.opacity)
+            .modifier(LoopLineHeight(height: style.lineHeight))
+    }
+}
+
+// MARK: - Line height
+
+/// Holds a single line of text to the height of the export's line box.
+///
+/// CSS centres the glyphs in the line box with half-leading above and below,
+/// and a `frame` of an exact height centres its content the same way — so for
+/// one line the two are the same drawing. A box shorter than the glyphs need
+/// is the point rather than a mistake: the type overflows it and the layout
+/// around it closes up, which is what a `line-height` below 1 does in the
+/// browser too.
+///
+/// Only the big time and the countdown preview carry a line height, and both
+/// are always one line. A multi-line role must not be given one — the frame
+/// would hold every line inside the height of a single one.
+private struct LoopLineHeight: ViewModifier {
+
+    let height: CGFloat?
+
+    func body(content: Content) -> some View {
+        if let height {
+            content.frame(height: height)
+        } else {
+            content
+        }
     }
 }
 
