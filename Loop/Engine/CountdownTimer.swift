@@ -21,20 +21,38 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
 
     // MARK: - Snapshot
 
-    /// Everything one frame of the countdown screen needs, read at a single
-    /// instant.
+    /// Everything the countdown screen draws, read at a single instant.
     ///
     /// The screen must not ask for the phase, then the time, then the fraction:
     /// three calls are three different `now` values, and one that lands either
     /// side of the finish shows a full area under a running pill. One snapshot
     /// per frame settles the timer once and answers from that.
+    ///
+    /// Whether a control is live belongs here too, even though `canStart` does
+    /// not depend on the instant today. It is read every frame to enable a
+    /// button, it is the obvious thing to copy off the timer, and the day
+    /// someone gives it a time-dependent condition the copy is wrong without a
+    /// word of warning. The rule a screen can rely on: if it is drawn, it is on
+    /// the snapshot.    ///
+    /// A snapshot is one frame, frozen. It is safe as a binding's getter only
+    /// because `body` rebuilds it on every pass; hoisted into a stored property
+    /// it would go stale silently, showing a value the timer no longer holds.
     struct Snapshot: Sendable, Equatable {
         let phase: Phase
+
+        /// The scale's value, for the "25 min" beside it. Writing goes through
+        /// `setDuration(minutes:at:)`; a binding reads here and writes there.
+        let durationMinutes: Int
+
         let duration: TimeInterval
         let remaining: TimeInterval
 
         /// Height of the rising area, 0…1.
         let fraction: Double
+
+        /// Whether the start button is live. A zero-minute duration has nothing
+        /// to count.
+        let canStart: Bool
     }
 
     // MARK: - Storage
@@ -65,7 +83,14 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
     /// A zero-minute duration is reachable on the scale, and it has nothing to
     /// count. Rather than starting a timer that finishes in the same frame, the
     /// engine refuses to start it at all and the button stays disabled.
-    var canStart: Bool { durationMinutes > 0 }
+    ///
+    /// Private, and reachable only as `snapshot(at:).canStart`. Leaving a
+    /// second way in would leave the copy this was moved to prevent: the day
+    /// the condition depends on the instant, a screen still reading it here
+    /// would be wrong with nothing to warn it. There is no such risk in the
+    /// scales — a binding legitimately writes through those — so they stay
+    /// readable.
+    private var canStart: Bool { durationMinutes > 0 }
 
     /// The whole readable state at one instant. This is what a screen draws
     /// from; the accessors below are conveniences for a single value.
@@ -76,9 +101,11 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
 
         return Snapshot(
             phase: resolved.storedPhase,
+            durationMinutes: resolved.durationMinutes,
             duration: duration,
             remaining: remaining,
-            fraction: Self.fraction(phase: resolved.storedPhase, remaining: remaining, duration: duration)
+            fraction: Self.fraction(phase: resolved.storedPhase, remaining: remaining, duration: duration),
+            canStart: resolved.canStart
         )
     }
 
