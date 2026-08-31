@@ -378,13 +378,19 @@ An entry that ignores this gets removed without comment.
 ## License
 
 Loop is **source-available and strict** (see [`LICENSE`](LICENSE)). Reading,
-changing, building and running it on your own devices is allowed. **Distribution
-is not — in any form.** Not the App Store, not any other store, not TestFlight
-including your own, not sideloading to third parties, not handing a compiled
-build to anyone. No sale and no transfer for money. No presenting yourself as
-the author or provider of Loop, and no use of the name, the mark, the logo, the
-app icon or the visual design for your own product. Loop is and stays a product
-of Levo Studio.
+changing, building and running it on your own devices is allowed.
+**Distribution is not**, with one narrow exception. Not the App Store, not any
+other store, not TestFlight including your own, not sideloading to third
+parties, not handing a compiled build to anyone. No sale and no transfer for
+money. No presenting yourself as the author or provider of Loop, and no use of
+the name, the mark, the logo, the app icon or the visual design for your own
+product. Loop is and stays a product of Levo Studio.
+
+The exception is the fork you work in: a **source-only public fork** on a
+code-hosting platform, notices left intact, for preparing a contribution or for
+your own use. That is why the workflow above starts with one. It covers source
+code only — a compiled binary still goes to nobody, including the people
+testing your branch. The conditions are in section 3 of the license.
 
 All of that binds you, not Levo Studio: the rights stay here, and if Loop is
 ever released, it is released by Levo Studio. With a PR you grant Levo Studio

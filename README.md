@@ -192,12 +192,17 @@ point.
 Source-available, and stricter than it looks. Read the code, clone it, change
 it, build it and run it on devices you own. That is the whole of it.
 
-**No distribution of any kind.** Not the App Store, not any other store, not
-TestFlight — not even your own — not sideloading to somebody else, not handing
-a compiled build to a friend. No sale and no transfer for money. No presenting
-yourself as the author or provider of Loop, and no use of the name "Loop", the
-Levo Studio mark, the logo, the app icon or the visual design for your own
-product. Loop is and stays a product of Levo Studio.
+**No distribution, with one narrow exception.** Not the App Store, not any other
+store, not TestFlight — not even your own — not sideloading to somebody else,
+not handing a compiled build to a friend. No sale and no transfer for money. No
+presenting yourself as the author or provider of Loop, and no use of the name
+"Loop", the Levo Studio mark, the logo, the app icon or the visual design for
+your own product. Loop is and stays a product of Levo Studio.
+
+The exception is the one contributing needs: a **source-only public fork** on a
+code-hosting platform, with the notices left intact, for preparing a
+contribution or for your own use. Source code, not builds — a compiled binary
+still goes to nobody. The conditions are in section 3 of the license.
 
 None of that binds Levo Studio, which holds the rights and keeps them: if Loop
 is ever released, it is released by Levo Studio. Anyone contributing by pull

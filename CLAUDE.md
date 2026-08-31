@@ -15,9 +15,10 @@ anything:
 - `CONTRIBUTING.md` — the same content as here, in full prose and written for
   humans. In case of doubt, what it says wins.
 - `README.md` — what Loop is and how it is built.
-- `LICENSE` — source-available, **no redistribution of any kind**. Stricter than
-  it looks at first glance. Read section 3 before you suggest anything involving
-  TestFlight, sideloading or a store.
+- `LICENSE` — source-available, **no distribution**, with one narrow exception:
+  a source-only public fork on a code-hosting platform, for contributing or your
+  own use. Stricter than it looks at first glance. Read section 3 before you
+  suggest anything involving TestFlight, sideloading or a store.
 
 ## Language
 
@@ -315,8 +316,10 @@ it was always there.
 ## License context
 
 Loop is source-available and **stricter than Score**: read, clone, build, run on
-your own devices. **No distribution of any kind** — no App Store, no TestFlight,
-no sideloading to third parties, no sale, no giving the build to anyone else.
+your own devices. **No distribution** — no App Store, no TestFlight, no
+sideloading to third parties, no sale, no giving the build to anyone else. The
+one exception is a source-only public fork on a code-hosting platform, notices
+intact, for contributing or your own use; it covers source code, never a build.
 Copyright stays with Levo Studio. Contributors keep authorship, grant Levo Studio
 the usage rights, and are named in the credits.
 
