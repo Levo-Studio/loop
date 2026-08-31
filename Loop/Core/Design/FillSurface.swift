@@ -6,6 +6,10 @@ import SwiftUI
 /// its height a fraction of the page, and every piece of content that crosses
 /// its edge drawn in two tones.
 ///
+/// It takes a `FillProgress` rather than a bare fraction, because the area
+/// moves in two different ways and only the caller knows which is happening:
+/// it slides while a block runs, and jumps when the block changes.
+///
 /// The content closure is written **once** by the screen and evaluated twice
 /// here — once in ink on the background, once in the on-fill tone clipped to the
 /// area. That is the prototype's `clip-path` trick, and it is the reason the
@@ -44,22 +48,27 @@ import SwiftUI
 /// until a layout pass disagrees.
 struct FillSurface<Content: View>: View {
 
-    /// How full the area is, 0…1, over the duration of the **current** block.
-    /// Values outside the range are clamped; a caller mid-transition should not
-    /// be able to draw an area taller than the page.
-    let fraction: Double
+    /// How full the area is and which block it measures.
+    let progress: FillProgress
 
     @ViewBuilder let content: () -> Content
 
     @Environment(\.loopPalette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(fraction: Double = 0, @ViewBuilder content: @escaping () -> Content) {
-        self.fraction = fraction
+    /// The fraction actually drawn.
+    ///
+    /// Held separately from `progress.fraction` so that moving to a new value
+    /// can be animated or not, decided per change. `.animation(_:value:)`
+    /// cannot express that: it applies one animation to every change of the
+    /// value it watches, which is exactly the bug — it slid the area down over
+    /// a second at a block boundary that the design says should jump.
+    @State private var drawnFraction: Double = 0
+
+    init(progress: FillProgress = .none, @ViewBuilder content: @escaping () -> Content) {
+        self.progress = progress
         self.content = content
     }
-
-    private var clampedFraction: Double { min(1, max(0, fraction)) }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -80,21 +89,29 @@ struct FillSurface<Content: View>: View {
                 // toss over which one owns the gesture.
                 .allowsHitTesting(false)
         }
-        .animation(LoopMotion.resolve(LoopMotion.fill, reduceMotion: reduceMotion), value: clampedFraction)
         .ignoresSafeArea()
+        .onChange(of: progress, initial: true) { previous, current in
+            // A new block starts at whatever it starts at, with no travel from
+            // the last one. Within a block the area interpolates towards the
+            // timer.
+            let blockChanged = previous.block != current.block
+            withAnimation(LoopMotion.fill(blockChanged: blockChanged, reduceMotion: reduceMotion)) {
+                drawnFraction = current.fraction
+            }
+        }
     }
 
     /// The area itself. `scaleEffect` on the y axis from the bottom anchor is
     /// what makes an empty fill a zero-height rectangle rather than a hairline.
     private var area: some Shape {
-        Rectangle().scale(x: 1, y: clampedFraction, anchor: .bottom)
+        Rectangle().scale(x: 1, y: drawnFraction, anchor: .bottom)
     }
 }
 
 // MARK: - Preview
 
 #Preview {
-    FillSurface(fraction: 0.4) {
+    FillSurface(progress: FillProgress(fraction: 0.4, block: 0)) {
         InkText()
     }
 }
