@@ -21,10 +21,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		76098AEE30456C190060E0C6 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		76098ACC30456C180060E0C6 /* Loop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Loop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		76098AE130456C190060E0C6 /* LoopTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LoopTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		76098AEC30456C190060E0C6 /* loop-icon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "loop-icon.icon"; sourceTree = "<group>"; };
+		76098AEE30456C190060E0C6 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
