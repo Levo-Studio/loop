@@ -18,14 +18,12 @@ struct RootShell: View {
     /// stands after the geometry moves.
     ///
     /// Deliberately not the scroll view's own position. A rotation resizes every
-    /// page, and the `LazyHStack` reports the new content width one page at a
-    /// time as it re-measures; in between, the strip is narrower than five pages
-    /// and `UIScrollView` clamps the offset into what is left. Measured on an
-    /// iPhone 17 Pro from the interval page: portrait offset 1206 of 2010,
-    /// landscape content briefly 2884 rather than 4370, offset clamped to 874 —
-    /// the count-up page. The clamp is not a scroll, so nothing puts the strip
-    /// back afterwards, and the user rotates the phone onto a screen they never
-    /// asked for.
+    /// page, and the scroll view settles the offset inside whatever content it
+    /// has at that moment — which is not a scroll, so nothing puts the strip
+    /// back afterwards and the user rotates the phone onto a screen they never
+    /// asked for. Measured on an iPhone 17 Pro from the interval page: portrait
+    /// offset 1206 of 2010, and after a turn to landscape and back, 804 — the
+    /// countdown page.
     ///
     /// Keeping the intent separate is what makes it recoverable: only a settled
     /// gesture writes this, and a change of size re-asserts it.
@@ -133,4 +131,5 @@ struct RootShell: View {
 #Preview {
     RootShell()
         .environment(LoopSettings(defaults: UserDefaults(suiteName: "preview") ?? .standard))
+        .environment(LoopTimers(store: TimerStateStore(defaults: UserDefaults(suiteName: "preview") ?? .standard)))
 }
