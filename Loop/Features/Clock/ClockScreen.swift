@@ -33,6 +33,12 @@ struct ClockScreen: View {
                 EmptyView()
             }
         }
+        // A `TimelineSchedule` is not `Equatable`, so a `TimelineView` handed a
+        // new one is not obliged to throw the running schedule away. Turning
+        // seconds on while the minute cadence was in force would then leave the
+        // seconds frozen for up to a minute. Identity by cadence makes the
+        // change a rebuild instead of a hope.
+        .id(cadence)
     }
 
     // MARK: - Cadence
@@ -113,6 +119,12 @@ private struct WallClockSchedule: TimelineSchedule {
     let period: TimeInterval
 
     func entries(from startDate: Date, mode: Mode) -> AnyIterator<Date> {
+        // `.lowFrequency` is the system asking for fewer updates — a dimmed
+        // always-on screen, where a second hand is neither readable nor worth
+        // the wake. It drops to the minute, which is the coarsest cadence this
+        // page has and still shows the right time.
+        let period = mode == .lowFrequency ? max(self.period, Self.lowFrequencyPeriod) : self.period
+
         // The first entry is the moment asked for, so the page draws
         // immediately rather than waiting out the first boundary.
         var pending: Date? = startDate
@@ -137,6 +149,9 @@ private struct WallClockSchedule: TimelineSchedule {
         let elapsed = date.timeIntervalSinceReferenceDate
         return Date(timeIntervalSinceReferenceDate: (elapsed / period).rounded(.down) * period + period)
     }
+
+    /// The slowest the clock is allowed to run, in seconds.
+    private static let lowFrequencyPeriod: TimeInterval = 60
 }
 
 // MARK: - Preview
