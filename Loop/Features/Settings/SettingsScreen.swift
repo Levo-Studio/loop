@@ -2,11 +2,11 @@ import SwiftUI
 
 // MARK: - Settings
 
-/// The seconds toggle and the accent list, over a footer. No status pill and no
+/// The switches and the accent list, over a footer. No status pill and no
 /// rising area — this page is the only one that is not a timer, so there is no
 /// duration to measure and nothing to show progress against.
 ///
-/// Both settings are written straight into `LoopSettings`, which the shell reads
+/// Every setting is written straight into `LoopSettings`, which the shell reads
 /// to build the palette. That is why the accent list needs no callback and no
 /// local copy of the choice: tapping a row changes the one value the whole app
 /// resolves its colours from, and every page recolours with it.
@@ -24,7 +24,12 @@ struct SettingsScreen: View {
         return PageScaffold {
             EmptyView()
         } content: {
-            SettingsColumn(showSeconds: $settings.showSeconds, accent: $settings.accent)
+            SettingsColumn(
+                showSeconds: $settings.showSeconds,
+                sound: $settings.sound,
+                swipeToDismiss: $settings.swipeToDismiss,
+                accent: $settings.accent
+            )
         } controls: {
             SettingsFooter()
         }
@@ -33,7 +38,7 @@ struct SettingsScreen: View {
 
 // MARK: - Column
 
-/// The heading, the seconds row and the accent list.
+/// The heading, the switch block and the accent list.
 ///
 /// A view of its own rather than a `@ViewBuilder` on the screen, because the ink
 /// has to be read from inside `PageScaffold`. `FillSurface` puts the tone for
@@ -44,6 +49,8 @@ struct SettingsScreen: View {
 private struct SettingsColumn: View {
 
     @Binding var showSeconds: Bool
+    @Binding var sound: Bool
+    @Binding var swipeToDismiss: Bool
     @Binding var accent: LoopAccent
 
     @Environment(\.loopMetrics) private var metrics
@@ -56,44 +63,39 @@ private struct SettingsColumn: View {
             Text(LoopStrings.settings)
                 .loopTextStyle(typography.sectionHeading)
 
-            secondsSection
+            switchSection
             accentSection
         }
         .foregroundStyle(ink.base)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Seconds
+    // MARK: - Switches
 
-    /// The seconds row and the divider under it. The divider belongs to this
-    /// section rather than sitting between the two, because the export ties it
-    /// to the row with the tighter of the two gaps.
-    private var secondsSection: some View {
+    /// The three switches and the divider under them.
+    ///
+    /// **One block, not one section per switch.** The screen already
+    /// establishes the pattern: an unheaded block of rows directly under the
+    /// page heading, then a headed section for the accent list. All three
+    /// switches are the same kind of thing — a label and a track, on or off —
+    /// so they belong to that block, and a heading over each would invent a
+    /// taxonomy for three rows. It also keeps the column as short as it can
+    /// be, which is the constraint that actually bites in landscape.
+    ///
+    /// The order is by reach. Sound is heard on the countdown *and* the
+    /// interval and is the switch a user is most likely to go looking for, so
+    /// it leads. Seconds change one page, and swipe-to-dismiss changes one
+    /// state on one page, so it trails.
+    ///
+    /// The divider belongs to this section rather than sitting between the
+    /// two, because the export ties it to the rows with the tighter of the two
+    /// gaps. It closes the block, so it stays last no matter how many rows sit
+    /// above it.
+    private var switchSection: some View {
         VStack(spacing: metrics.settingsRowSpacing) {
-            Button {
-                withAnimation(LoopMotion.resolve(LoopMotion.selection, reduceMotion: reduceMotion)) {
-                    showSeconds.toggle()
-                }
-            } label: {
-                HStack(spacing: 0) {
-                    Text(LoopStrings.secondsInTheClock)
-                        .loopTextStyle(typography.settingsRow)
-
-                    Spacer(minLength: 0)
-
-                    SecondsToggle(isOn: showSeconds)
-                }
-                // The whole row takes the tap, not just the pill. The row is as
-                // tall as the track the design draws, so this does not buy the
-                // 44 pt a finger wants — it widens the target rather than
-                // heightening it, and a settings row that reacts to a tap
-                // anywhere along it is what the platform does everywhere else.
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityRepresentation {
-                Toggle(isOn: $showSeconds) { Text(LoopStrings.secondsInTheClock) }
-            }
+            SettingsToggleRow(label: LoopStrings.sound, isOn: $sound)
+            SettingsToggleRow(label: LoopStrings.secondsInTheClock, isOn: $showSeconds)
+            SettingsToggleRow(label: LoopStrings.swipeToDismiss, isOn: $swipeToDismiss)
 
             Rectangle()
                 .fill(ink.hair)
@@ -138,7 +140,52 @@ private struct SettingsFooter: View {
     }
 }
 
-// MARK: - Seconds toggle
+// MARK: - Switch row
+
+/// One row of the switch block: a label on the leading edge and a track on the
+/// trailing one.
+///
+/// A type of its own rather than three copies of the same `HStack`. Three rows
+/// that look alike by accident drift the moment one of them is touched, and the
+/// export draws exactly one row style here — so there is one row, called three
+/// times, and no way for the second one to end up 2 pt taller than the first.
+private struct SettingsToggleRow: View {
+
+    let label: LocalizedStringResource
+    @Binding var isOn: Bool
+
+    @Environment(\.loopTypography) private var typography
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Button {
+            withAnimation(LoopMotion.resolve(LoopMotion.selection, reduceMotion: reduceMotion)) {
+                isOn.toggle()
+            }
+        } label: {
+            HStack(spacing: 0) {
+                Text(label)
+                    .loopTextStyle(typography.settingsRow)
+
+                Spacer(minLength: 0)
+
+                SettingsToggle(isOn: isOn)
+            }
+            // The whole row takes the tap, not just the pill. The row is as
+            // tall as the track the design draws, so this does not buy the
+            // 44 pt a finger wants — it widens the target rather than
+            // heightening it, and a settings row that reacts to a tap
+            // anywhere along it is what the platform does everywhere else.
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityRepresentation {
+            Toggle(isOn: $isOn) { Text(label) }
+        }
+    }
+}
+
+// MARK: - Toggle
 
 /// The 50 × 29 pt track with its 23 pt knob.
 ///
@@ -152,7 +199,7 @@ private struct SettingsFooter: View {
 ///   an inactive *object* — the stepper circles, the secondary button — rather
 ///   than `hair`, which belongs to 1 pt lines. A 50 × 29 pt capsule at 15 %
 ///   sits at 1.19 : 1 against the background and all but vanishes.
-private struct SecondsToggle: View {
+private struct SettingsToggle: View {
 
     let isOn: Bool
 
