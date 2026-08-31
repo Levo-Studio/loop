@@ -207,6 +207,12 @@ private struct AccentRow: View {
             }
             .foregroundStyle(ink.base)
             .padding(metrics.accentRowPadding)
+            // The border sits *outside* the padding. The export has no
+            // `box-sizing` reset, so its rows are content-box: 20 pt of swatch,
+            // 22 pt of padding and 3 pt of border make a 45 pt row. A stroke
+            // drawn inside the padded frame would eat 1.5 pt off every edge and
+            // leave every row 3 pt short.
+            .padding(metrics.accentRowBorderWidth)
             .background(background)
             .contentShape(.rect)
         }
@@ -217,6 +223,11 @@ private struct AccentRow: View {
     /// The active row is filled and outlined in the accent; the others carry
     /// the inactive hairline and no fill. Both borders are 1.5 pt — the export
     /// draws the inactive ones at the same width, only in a different tone.
+    ///
+    /// `strokeBorder` on the outer frame is what makes this a CSS border: it
+    /// strokes inwards from the edge the radius is measured on, so the 1.5 pt
+    /// lands between the frame and the padding, exactly where the export puts
+    /// it.
     private var background: some View {
         RoundedRectangle(cornerRadius: metrics.accentRowRadius)
             .fill(isActive ? ink.chip : .clear)
