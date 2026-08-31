@@ -37,9 +37,6 @@ struct ScaleSlider: View {
             scale
         }
         .foregroundStyle(ink.base)
-        // One tick of feedback per detent, which is what makes a drag over the
-        // scale feel like counting minutes rather than sliding a value.
-        .sensoryFeedback(.selection, trigger: minutes)
     }
 
     // MARK: - Header
@@ -161,6 +158,12 @@ struct ScaleSlider: View {
                 let snapped = Int((position * CGFloat(maximumMinutes)).rounded())
                 if snapped != minutes {
                     minutes = snapped
+                    // Fired here rather than by watching `minutes`: this view
+                    // is built twice inside `FillSurface`, and a modifier that
+                    // watches the binding would fire from both copies. One
+                    // tick per detent is what makes the drag feel like
+                    // counting minutes rather than sliding a value.
+                    LoopHaptics.detent()
                 }
             }
     }

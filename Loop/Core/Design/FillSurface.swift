@@ -14,6 +14,25 @@ import SwiftUI
 /// blend. A blend mode would shift the hue of everything underneath and would
 /// have to be undone for the accent dot, which is not two-toned.
 ///
+/// ## What the content closure may contain
+///
+/// Twice-built content is the price of the edge, and it comes with two rules
+/// that are not obvious from a call site:
+///
+/// - **The content must be a pure drawing of state owned above the surface.**
+///   The two layers are separate positions in the view tree, so they get
+///   separate identities and separate storage. A `@State` declared inside the
+///   closure exists twice and the copies drift apart the moment one is
+///   touched — the visible half would move and the clipped half would not.
+///   Bindings passed in from the screen are fine; they are one value read
+///   twice, which is the whole idea.
+/// - **Nothing inside may react to a value changing.** `.onChange`, `.task`
+///   and `.sensoryFeedback` are installed on both layers and fire on both.
+///   That is why the slider and the stepper fire `LoopHaptics` from their
+///   gesture handlers rather than watching their own binding.
+///
+/// Only one layer takes interactions, so a button or a drag is handled once.
+///
 /// The area is a full-size rectangle scaled from its bottom anchor rather than
 /// a rectangle of a measured height. Both read the same on screen, but the
 /// scaled version needs no geometry reader, so the mask and the fill are
@@ -51,6 +70,11 @@ struct FillSurface<Content: View>: View {
             content()
                 .environment(\.loopInk, palette.inkOnFill)
                 .mask(alignment: .bottom) { area }
+                // The on-fill layer is a drawing of the layer beneath it and
+                // nothing more. Without this both copies are live and a tap
+                // near the fill edge could land on either, which is a coin
+                // toss over which one owns the gesture.
+                .allowsHitTesting(false)
         }
         .animation(LoopMotion.resolve(LoopMotion.fill, reduceMotion: reduceMotion), value: clampedFraction)
         .ignoresSafeArea()

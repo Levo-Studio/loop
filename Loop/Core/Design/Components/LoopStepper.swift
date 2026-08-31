@@ -51,12 +51,16 @@ struct LoopStepper: View {
             }
         }
         .foregroundStyle(ink.base)
-        .sensoryFeedback(.selection, trigger: value)
     }
 
     private func circle(_ glyph: String, step: Int, isEnabled: Bool) -> some View {
         Button {
-            value = min(range.upperBound, max(range.lowerBound, value + step))
+            let stepped = min(range.upperBound, max(range.lowerBound, value + step))
+            guard stepped != value else { return }
+            value = stepped
+            // See `ScaleSlider`: fired from the handler, because the view is
+            // built twice inside `FillSurface`.
+            LoopHaptics.detent()
         } label: {
             Text(verbatim: glyph)
                 .loopTextStyle(typography.stepperGlyph)
