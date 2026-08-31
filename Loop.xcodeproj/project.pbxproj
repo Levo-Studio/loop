@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		76098AFC30456C190060E0C6 /* LoopWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 76098AF130456C190060E0C6 /* LoopWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		76098AED30456C190060E0C6 /* loop-icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 76098AEC30456C190060E0C6 /* loop-icon.icon */; };
 /* End PBXBuildFile section */
 
@@ -18,12 +19,34 @@
 			remoteGlobalIDString = 76098ACB30456C180060E0C6;
 			remoteInfo = Loop;
 		};
+		76098AFE30456C190060E0C6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 76098AC430456C180060E0C6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 76098AF030456C190060E0C6;
+			remoteInfo = LoopWidgets;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		76098AFB30456C190060E0C6 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				76098AFC30456C190060E0C6 /* LoopWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		76098AEE30456C190060E0C6 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		76098ACC30456C180060E0C6 /* Loop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Loop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		76098AE130456C190060E0C6 /* LoopTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LoopTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		76098AF130456C190060E0C6 /* LoopWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LoopWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		76098AEC30456C190060E0C6 /* loop-icon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "loop-icon.icon"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -35,6 +58,32 @@
 			);
 			target = 76098ACB30456C180060E0C6 /* Loop */;
 		};
+		76098AF630456C190060E0C6 /* Exceptions for "LoopWidgets" folder in "LoopWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 76098AF030456C190060E0C6 /* LoopWidgets */;
+		};
+		76098AF730456C190060E0C6 /* Exceptions for "Loop" folder in "LoopWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Activity/LoopActivityAttributes.swift,
+				Core/Design/Components/StatusPill.swift,
+				Core/Design/LoopAccent.swift,
+				Core/Design/LoopFonts.swift,
+				Core/Design/LoopMetrics.swift,
+				Core/Design/LoopPalette.swift,
+				Core/Design/LoopTypography.swift,
+				Core/Design/OKLCH.swift,
+				Core/LoopStrings.swift,
+				Resources/Fonts/IBMPlexMono-Light.ttf,
+				Resources/Fonts/IBMPlexMono-Medium.ttf,
+				Resources/Fonts/IBMPlexMono-Regular.ttf,
+				Resources/Localizable.xcstrings,
+			);
+			target = 76098AF030456C190060E0C6 /* LoopWidgets */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -42,6 +91,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				76098AEB30456C190060E0C6 /* Exceptions for "Loop" folder in "Loop" target */,
+				76098AF730456C190060E0C6 /* Exceptions for "Loop" folder in "LoopWidgets" target */,
 			);
 			path = Loop;
 			sourceTree = "<group>";
@@ -49,6 +99,14 @@
 		76098AE230456C190060E0C6 /* LoopTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = LoopTests;
+			sourceTree = "<group>";
+		};
+		76098AF530456C190060E0C6 /* LoopWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				76098AF630456C190060E0C6 /* Exceptions for "LoopWidgets" folder in "LoopWidgets" target */,
+			);
+			path = LoopWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -68,6 +126,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		76098AF330456C190060E0C6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -77,6 +142,7 @@
 				76098AEE30456C190060E0C6 /* Base.xcconfig */,
 				76098ACE30456C180060E0C6 /* Loop */,
 				76098AE230456C190060E0C6 /* LoopTests */,
+				76098AF530456C190060E0C6 /* LoopWidgets */,
 				76098AEC30456C190060E0C6 /* loop-icon.icon */,
 				76098ACD30456C180060E0C6 /* Products */,
 			);
@@ -87,6 +153,7 @@
 			children = (
 				76098ACC30456C180060E0C6 /* Loop.app */,
 				76098AE130456C190060E0C6 /* LoopTests.xctest */,
+				76098AF130456C190060E0C6 /* LoopWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -101,10 +168,12 @@
 				76098AC830456C180060E0C6 /* Sources */,
 				76098AC930456C180060E0C6 /* Frameworks */,
 				76098ACA30456C180060E0C6 /* Resources */,
+				76098AFB30456C190060E0C6 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				76098AFD30456C190060E0C6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				76098ACE30456C180060E0C6 /* Loop */,
@@ -139,6 +208,28 @@
 			productReference = 76098AE130456C190060E0C6 /* LoopTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		76098AF030456C190060E0C6 /* LoopWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 76098AFA30456C190060E0C6 /* Build configuration list for PBXNativeTarget "LoopWidgets" */;
+			buildPhases = (
+				76098AF230456C190060E0C6 /* Sources */,
+				76098AF330456C190060E0C6 /* Frameworks */,
+				76098AF430456C190060E0C6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				76098AF530456C190060E0C6 /* LoopWidgets */,
+			);
+			name = LoopWidgets;
+			packageProductDependencies = (
+			);
+			productName = LoopWidgets;
+			productReference = 76098AF130456C190060E0C6 /* LoopWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -155,6 +246,9 @@
 					76098AE030456C190060E0C6 = {
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = 76098ACB30456C180060E0C6;
+					};
+					76098AF030456C190060E0C6 = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -174,6 +268,7 @@
 			targets = (
 				76098ACB30456C180060E0C6 /* Loop */,
 				76098AE030456C190060E0C6 /* LoopTests */,
+				76098AF030456C190060E0C6 /* LoopWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -188,6 +283,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		76098AE530456C190060E0C6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		76098AF430456C190060E0C6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -211,6 +313,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		76098AF230456C190060E0C6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -218,6 +327,11 @@
 			isa = PBXTargetDependency;
 			target = 76098ACB30456C180060E0C6 /* Loop */;
 			targetProxy = 76098AEA30456C190060E0C6 /* PBXContainerItemProxy */;
+		};
+		76098AFD30456C190060E0C6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 76098AF030456C190060E0C6 /* LoopWidgets */;
+			targetProxy = 76098AFE30456C190060E0C6 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -447,6 +561,62 @@
 			};
 			name = Release;
 		};
+		76098AF830456C190060E0C6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LoopWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Loop;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "apps.levo-studio.Loop.LoopWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		76098AF930456C190060E0C6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LoopWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Loop;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "apps.levo-studio.Loop.LoopWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -473,6 +643,15 @@
 			buildConfigurations = (
 				76098AE730456C190060E0C6 /* Debug */,
 				76098AE830456C190060E0C6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		76098AFA30456C190060E0C6 /* Build configuration list for PBXNativeTarget "LoopWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				76098AF830456C190060E0C6 /* Debug */,
+				76098AF930456C190060E0C6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
