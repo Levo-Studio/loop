@@ -158,9 +158,10 @@ missing it goes into the design layer, not into the call site.
 `LoopMotion.resolve(_:reduceMotion:)` handles *Reduce Motion* centrally — at a
 hundred call sites it would be forgotten at ninety of them.
 
-**The fill is one component, used four times.** Countdown and Interval do not
-each grow their own copy of the rising area and the two-tone text. There is one
-implementation in the design layer and the screens hand it a fraction.
+**The fill is one component.** Countdown and Interval — the two screens that
+have a total duration and therefore a progress to show — do not each grow their
+own copy of the rising area and the two-tone text. There is one implementation
+in the design layer and the screens hand it a fraction.
 
 **Visible text belongs in `Loop/Resources/Localizable.xcstrings`.** The catalog
 is maintained by hand (`extractionState: manual`); Xcode's automatic extraction
