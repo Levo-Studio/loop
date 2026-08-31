@@ -9,9 +9,11 @@ The source code of Loop is open. You may read it, clone it, study it, change it,
 build it yourself and run it on devices you own. What you may not do is pass it
 on: no store, no TestFlight — not even your own — no sideloading to anyone
 else, no handing a compiled build to a friend, no selling it, and no presenting
-yourself as the author or provider of Loop under any name whatsoever. Loop is
-and stays a product of Levo Studio. Pull requests are expressly welcome, and
-every contribution is named in the credits.
+yourself as the author or provider of Loop under any name whatsoever. The one
+exception is the fork you need in order to contribute: a public fork carrying
+the source code and the notices, but no build. Loop is and stays a product of
+Levo Studio. Pull requests are expressly welcome, and every contribution is
+named in the credits.
 
 This is not an open-source license in the sense of the Open Source Definition,
 because it restricts distribution and commercial use. From here on the sections
@@ -36,9 +38,9 @@ right
   (c) to modify the software for your own use and to build and run the modified
       version under the terms of (b); and
 
-  (d) to make the source code available as a public fork within the narrow
-      limits set out at the end of section 3, and to submit contributions under
-      section 4.
+  (d) to make the source code available as a public fork within the limits of
+      the paragraph "Public forks" in section 3, and to submit contributions
+      under section 4.
 
 No further rights are granted. Section 3 limits this grant and prevails in the
 event of a conflict.
@@ -72,8 +74,8 @@ prohibited:
 
   (f) making a modified version of the software publicly available, publishing
       it or distributing it publicly; the only exceptions are the submission of
-      contributions under section 4 and a public fork within the limits set out
-      at the end of this section;
+      contributions under section 4 and a public fork within the limits of the
+      paragraph "Public forks" below;
 
   (g) removing, altering or obscuring copyright, license or provenance notices
       in the software;
