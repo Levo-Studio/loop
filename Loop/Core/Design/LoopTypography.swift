@@ -66,8 +66,8 @@ nonisolated struct LoopTypography: Equatable, Sendable {
     /// The size multiplier: 1.0 on iPhone, 1.15 on iPad.
     let scale: CGFloat
 
-    /// Whether the device is in landscape. The big time is the only role that
-    /// changes with orientation.
+    /// Whether the device is in landscape. The two large roles — the big time
+    /// and the countdown preview — are the only ones that change with it.
     let isLandscape: Bool
 
     init(scale: CGFloat, isLandscape: Bool) {
@@ -98,10 +98,14 @@ nonisolated struct LoopTypography: Equatable, Sendable {
 
     /// The countdown's idle preview — larger than a label, smaller than the
     /// running time, and with its own line height and tracking.
+    ///
+    /// It drops in landscape like the big time does, and by more: 76 to 52,
+    /// against the running time's 104 to 84. The idle state carries a slider
+    /// under the preview and a shallow landscape page has to fit both.
     var countdownPreview: LoopTextStyle {
         LoopTextStyle(
             weight: .light,
-            size: 76 * scale,
+            size: (isLandscape ? 52 : 76) * scale,
             trackingEm: -0.05,
             lineHeightFactor: 0.86
         )

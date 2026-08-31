@@ -73,6 +73,15 @@ struct LoopMetricsTests {
         #expect(abs(pad.inactiveDotSize - 6.9) < 0.001)
     }
 
+    @Test("The countdown's idle state closes up in landscape")
+    func countdownIdleSpacing() {
+        // 26 pt portrait, 14 pt landscape, and both at the iPad factor.
+        #expect(LoopMetrics(isPad: false, isLandscape: false).countdownIdleSpacing == 26)
+        #expect(LoopMetrics(isPad: false, isLandscape: true).countdownIdleSpacing == 14)
+        #expect(abs(LoopMetrics(isPad: true, isLandscape: false).countdownIdleSpacing - 29.9) < 0.001)
+        #expect(abs(LoopMetrics(isPad: true, isLandscape: true).countdownIdleSpacing - 16.1) < 0.001)
+    }
+
     @Test("The time block sits 30 pt high of centre")
     func timeBlock() {
         let phone = LoopMetrics(isPad: false, isLandscape: false)

@@ -78,6 +78,13 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// The gap between the big time and the line under it.
     var timeBlockSpacing: CGFloat { scaled(14) }
 
+    /// The gap between the countdown's idle preview and the scale under it.
+    ///
+    /// Not `timeBlockSpacing`: the idle state is its own layout in the export,
+    /// centred without the −30 pt offset, and it closes up in landscape where
+    /// the preview and the slider have to share a shallow page.
+    var countdownIdleSpacing: CGFloat { scaled(isLandscape ? 14 : 26) }
+
     /// The time block sits 30 pt above the centre of the space it is given.
     /// Optical centring: the block is read against the page as a whole, and the
     /// controls at the bottom pull the perceived centre downwards.

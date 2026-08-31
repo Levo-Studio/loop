@@ -59,6 +59,16 @@ struct LoopTypographyTests {
         #expect(phone.bigTime(characterCount: 1).size == 104)
     }
 
+    @Test("The countdown preview shrinks in landscape too")
+    func countdownPreviewAutoScale() {
+        // 76 portrait, 52 landscape, and the same two at the iPad factor —
+        // 87.4 and 59.8, both drawn in the iPad export.
+        #expect(abs(phone.countdownPreview.size - 76) < 0.001)
+        #expect(abs(phoneLandscape.countdownPreview.size - 52) < 0.001)
+        #expect(abs(pad.countdownPreview.size - 87.4) < 0.001)
+        #expect(abs(padLandscape.countdownPreview.size - 59.8) < 0.001)
+    }
+
     @Test("Roles carry their own opacity and casing")
     func rolesCarryTheirOwnTreatment() {
         #expect(phone.secondaryLine.opacity == 0.62)
