@@ -93,8 +93,9 @@ the stored instant and the user's choices, nothing more.
 
 **`Loop/Features/`** is one folder per screen plus the shell that pages between
 them. Feature files compose; they do not define values. The rising fill is one
-component used by several screens — Countdown and Interval do not each grow
-their own copy.
+component. Countdown and Interval are the only two screens with a total
+duration and therefore the only two with a progress to show, and they do not
+each grow their own copy.
 
 **`Loop/Resources/`** holds IBM Plex Mono and `Localizable.xcstrings`. Every
 visible string lives in the catalog, which is maintained by hand
