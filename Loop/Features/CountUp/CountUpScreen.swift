@@ -95,18 +95,18 @@ struct CountUpScreen: View {
         }
     }
 
-    /// The line under the time.
-    private func secondary(for frame: CountUpTimer.Snapshot) -> LocalizedStringResource {
+    /// The line under the time, or none where there is nothing true to say.
+    ///
+    /// The running case can only lose its start date if the engine contradicts
+    /// itself, which it does not — but the answer to an impossible state is to
+    /// print nothing rather than to print a word. Every word available here
+    /// would be false under a time that is visibly counting, and a line that
+    /// lies is worse than a line that is absent.
+    private func secondary(for frame: CountUpTimer.Snapshot) -> LocalizedStringResource? {
         switch frame.phase {
-        case .idle:
-            LoopStrings.ready
-        case .running:
-            // The start date is only ever `nil` while idle, so the fallback is
-            // unreachable; it is here because a crash is not the right answer
-            // to a line of text.
-            frame.startDate.map { LoopStrings.since(startTime(of: $0)) } ?? LoopStrings.ready
-        case .paused:
-            LoopStrings.onHold
+        case .idle: return LoopStrings.ready
+        case .running: return frame.startDate.map { LoopStrings.since(startTime(of: $0)) }
+        case .paused: return LoopStrings.onHold
         }
     }
 
