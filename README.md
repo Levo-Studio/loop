@@ -199,9 +199,11 @@ yourself as the author or provider of Loop, and no use of the name "Loop", the
 Levo Studio mark, the logo, the app icon or the visual design for your own
 product. Loop is and stays a product of Levo Studio.
 
-Anyone contributing by pull request grants Levo Studio the rights to use the
-contribution in the project and in the published app — but keeps their
-authorship and is named in the [credits](#credits).
+None of that binds Levo Studio, which holds the rights and keeps them: if Loop
+is ever released, it is released by Levo Studio. Anyone contributing by pull
+request grants Levo Studio the rights to use the contribution in the project and
+in any such release — but keeps their authorship and is named in the
+[credits](#credits).
 
 The full text is in [`LICENSE`](LICENSE). Read section 3 before you suggest
 anything involving a store, TestFlight or sideloading.

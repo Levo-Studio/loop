@@ -386,10 +386,11 @@ the author or provider of Loop, and no use of the name, the mark, the logo, the
 app icon or the visual design for your own product. Loop is and stays a product
 of Levo Studio.
 
-With a PR you grant Levo Studio the right to use your contribution in the
-project and in the published app, including future versions. Your authorship
-stays yours and you are named in the [credits](README.md#credits). That is the
-deal, and it holds in both directions.
+All of that binds you, not Levo Studio: the rights stay here, and if Loop is
+ever released, it is released by Levo Studio. With a PR you grant Levo Studio
+the right to use your contribution in the project and in any such release. Your
+authorship stays yours and you are named in the
+[credits](README.md#credits). That is the deal, and it holds in both directions.
 
 Please do not propose a distribution path the license does not allow, and please
 do not ask me to soften the text so one fits.
