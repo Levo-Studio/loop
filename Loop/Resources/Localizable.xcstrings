@@ -397,6 +397,30 @@
         }
       }
     },
+    "settings.sound": {
+      "comment": "Label of the toggle that turns the app's three tones on and off",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sound"
+          }
+        }
+      }
+    },
+    "settings.swipeToDismiss": {
+      "comment": "Label of the toggle that makes a finished countdown wait for a swipe, like an alarm",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe to dismiss the countdown"
+          }
+        }
+      }
+    },
     "setup.total": {
       "comment": "Sum of an interval's blocks under the round stepper, as \"Total 2:00 h\"",
       "extractionState": "manual",
