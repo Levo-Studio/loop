@@ -19,9 +19,14 @@ nonisolated struct CountUpTimer: Sendable, Codable, Equatable {
 
     // MARK: - Snapshot
 
-    /// Everything one frame of the count-up screen needs, read at a single
-    /// instant — the same shape the other two timers offer, so all three
-    /// screens are written the same way.
+    /// Everything the count-up screen draws, read at a single instant — the
+    /// same shape the other two timers offer, so all three screens are written
+    /// the same way.
+    ///
+    /// Nothing is deliberately left off here. The page has no scale, no total
+    /// and no round counter; its three states differ only in the phase, and
+    /// which of Start, Pause, Resume and Reset is live follows from that alone,
+    /// so there is no `canStart` to carry.
     struct Snapshot: Sendable, Equatable {
         let phase: Phase
         let elapsed: TimeInterval

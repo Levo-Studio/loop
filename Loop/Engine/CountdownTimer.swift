@@ -21,20 +21,35 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
 
     // MARK: - Snapshot
 
-    /// Everything one frame of the countdown screen needs, read at a single
-    /// instant.
+    /// Everything the countdown screen draws, read at a single instant.
     ///
     /// The screen must not ask for the phase, then the time, then the fraction:
     /// three calls are three different `now` values, and one that lands either
     /// side of the finish shows a full area under a running pill. One snapshot
     /// per frame settles the timer once and answers from that.
+    ///
+    /// Whether a control is live belongs here too, even though `canStart` does
+    /// not depend on the instant today. It is read every frame to enable a
+    /// button, it is the obvious thing to copy off the timer, and the day
+    /// someone gives it a time-dependent condition the copy is wrong without a
+    /// word of warning. The rule a screen can rely on: if it is drawn, it is on
+    /// the snapshot.
     struct Snapshot: Sendable, Equatable {
         let phase: Phase
+
+        /// The scale's value, for the "25 min" beside it. Writing goes through
+        /// `setDuration(minutes:at:)`; a binding reads here and writes there.
+        let durationMinutes: Int
+
         let duration: TimeInterval
         let remaining: TimeInterval
 
         /// Height of the rising area, 0…1.
         let fraction: Double
+
+        /// Whether the start button is live. A zero-minute duration has nothing
+        /// to count.
+        let canStart: Bool
     }
 
     // MARK: - Storage
@@ -76,9 +91,11 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
 
         return Snapshot(
             phase: resolved.storedPhase,
+            durationMinutes: resolved.durationMinutes,
             duration: duration,
             remaining: remaining,
-            fraction: Self.fraction(phase: resolved.storedPhase, remaining: remaining, duration: duration)
+            fraction: Self.fraction(phase: resolved.storedPhase, remaining: remaining, duration: duration),
+            canStart: resolved.canStart
         )
     }
 

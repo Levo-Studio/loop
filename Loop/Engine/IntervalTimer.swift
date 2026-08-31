@@ -48,17 +48,30 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
     /// a fraction that belongs to the break, and the flicker gets blamed on the
     /// view.
     ///
-    /// What is *not* here is what does not move with time: the setup screen's
-    /// sum is `plannedDuration`, and the large number on the finished screen is
-    /// `focusedDuration`. Both are properties of the timer, and neither is
-    /// `blockDuration` — reaching for the snapshot there would print one focus
-    /// block, 25:00, where the total, 1:40, belongs.
+    /// Whether a control is live belongs here too, even though `canStart` does
+    /// not depend on the instant today. It is read every frame to enable a
+    /// button, it is the obvious thing to copy off the timer, and the day
+    /// someone gives it a time-dependent condition the copy is wrong without a
+    /// word of warning.
+    ///
+    /// Exactly two values a screen draws are **not** here, and they are named
+    /// so nobody has to wonder whether they were forgotten: the setup screen's
+    /// sum is `plannedDuration` and the large number on the finished screen is
+    /// `focusedDuration`. Both are arithmetic over the three scales rather than
+    /// anything the run moves, and neither is `blockDuration` — reaching for
+    /// the snapshot there would print one focus block, 25:00, where the total,
+    /// 1:40, belongs.
     struct Snapshot: Sendable, Equatable {
         let phase: Phase
         let blockKind: BlockKind
 
         /// 1-based round for the counter, "Round 02 / 04".
         let round: Int
+
+        /// The three scales, for the values drawn beside them. Writing goes
+        /// through the `set…` methods; a binding reads here and writes there.
+        let focusMinutes: Int
+        let breakMinutes: Int
         let rounds: Int
 
         let remaining: TimeInterval
@@ -69,6 +82,10 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
 
         /// Whether the skip button is live. Breaks only.
         let canSkip: Bool
+
+        /// Whether the start button is live. A zero-minute focus would open a
+        /// run on a break.
+        let canStart: Bool
     }
 
     // MARK: - Storage
@@ -189,11 +206,14 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
                 phase: reading.phase,
                 blockKind: .focus,
                 round: isSetup ? 1 : rounds,
+                focusMinutes: focusMinutes,
+                breakMinutes: breakMinutes,
                 rounds: rounds,
                 remaining: isSetup ? focusDuration : 0,
                 blockDuration: focusDuration,
                 fraction: isSetup ? 0 : 1,
-                canSkip: false
+                canSkip: false,
+                canStart: canStart
             )
         }
 
@@ -203,11 +223,14 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
             phase: reading.phase,
             blockKind: block.kind,
             round: block.round,
+            focusMinutes: focusMinutes,
+            breakMinutes: breakMinutes,
             rounds: rounds,
             remaining: remaining,
             blockDuration: block.duration,
             fraction: block.duration > 0 ? 1 - remaining / block.duration : 1,
-            canSkip: reading.phase == .running && block.kind == .break
+            canSkip: reading.phase == .running && block.kind == .break,
+            canStart: canStart
         )
     }
 
