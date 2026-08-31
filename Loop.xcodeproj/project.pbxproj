@@ -8,6 +8,7 @@
 
 /* Begin PBXFileReference section */
 		76098ACC30456C180060E0C6 /* Loop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Loop.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		76098AE130456C190060E0C6 /* LoopTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LoopTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +17,22 @@
 			path = Loop;
 			sourceTree = "<group>";
 		};
+		76098AE230456C190060E0C6 /* LoopTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LoopTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		76098AC930456C180060E0C6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		76098AE430456C190060E0C6 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +46,7 @@
 			isa = PBXGroup;
 			children = (
 				76098ACE30456C180060E0C6 /* Loop */,
+				76098AE230456C190060E0C6 /* LoopTests */,
 				76098ACD30456C180060E0C6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +55,7 @@
 			isa = PBXGroup;
 			children = (
 				76098ACC30456C180060E0C6 /* Loop.app */,
+				76098AE130456C190060E0C6 /* LoopTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +85,29 @@
 			productReference = 76098ACC30456C180060E0C6 /* Loop.app */;
 			productType = "com.apple.product-type.application";
 		};
+		76098AE030456C190060E0C6 /* LoopTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 76098AE630456C190060E0C6 /* Build configuration list for PBXNativeTarget "LoopTests" */;
+			buildPhases = (
+				76098AE330456C190060E0C6 /* Sources */,
+				76098AE430456C190060E0C6 /* Frameworks */,
+				76098AE530456C190060E0C6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				76098AE930456C190060E0C6 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				76098AE230456C190060E0C6 /* LoopTests */,
+			);
+			name = LoopTests;
+			packageProductDependencies = (
+			);
+			productName = LoopTests;
+			productReference = 76098AE130456C190060E0C6 /* LoopTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +120,10 @@
 				TargetAttributes = {
 					76098ACB30456C180060E0C6 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					76098AE030456C190060E0C6 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 76098ACB30456C180060E0C6;
 					};
 				};
 			};
@@ -100,12 +142,38 @@
 			projectRoot = "";
 			targets = (
 				76098ACB30456C180060E0C6 /* Loop */,
+				76098AE030456C190060E0C6 /* LoopTests */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXContainerItemProxy section */
+		76098AEA30456C190060E0C6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 76098AC430456C180060E0C6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 76098ACB30456C180060E0C6;
+			remoteInfo = Loop;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		76098AE930456C190060E0C6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 76098ACB30456C180060E0C6 /* Loop */;
+			targetProxy = 76098AEA30456C190060E0C6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXResourcesBuildPhase section */
 		76098ACA30456C180060E0C6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		76098AE530456C190060E0C6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -116,6 +184,13 @@
 
 /* Begin PBXSourcesBuildPhase section */
 		76098AC830456C180060E0C6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		76098AE330456C190060E0C6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -310,6 +385,46 @@
 			};
 			name = Release;
 		};
+		76098AE730456C190060E0C6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "apps.levo-studio.LoopTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Loop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Loop";
+			};
+			name = Debug;
+		};
+		76098AE830456C190060E0C6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "apps.levo-studio.LoopTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Loop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Loop";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -327,6 +442,15 @@
 			buildConfigurations = (
 				76098AD830456C190060E0C6 /* Debug */,
 				76098AD930456C190060E0C6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		76098AE630456C190060E0C6 /* Build configuration list for PBXNativeTarget "LoopTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				76098AE730456C190060E0C6 /* Debug */,
+				76098AE830456C190060E0C6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
