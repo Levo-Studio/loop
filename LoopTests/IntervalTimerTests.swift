@@ -175,6 +175,31 @@ struct IntervalTimerTests {
         #expect(timer.currentBlock(at: resumedAt.addingTimeInterval(100))?.kind == .break)
     }
 
+    @Test("A break held for hours resumes into the focus block that follows it")
+    func pauseDuringABreakAcrossTheBoundary() {
+        var timer = running(standard())
+
+        // 60 s into the first break, held for three hours.
+        timer.pause(at: at(1_560))
+        let resumedAt = at(1_560 + 3 * 3_600)
+
+        #expect(timer.phase(at: resumedAt) == .paused)
+        #expect(timer.snapshot(at: resumedAt).blockKind == .break)
+        #expect(timer.remaining(at: resumedAt) == 240)
+
+        timer.resume(at: resumedAt)
+
+        // The remaining 240 s of break run from the resume, and the run then
+        // carries on into round two rather than skipping it.
+        #expect(timer.snapshot(at: resumedAt.addingTimeInterval(239)).blockKind == .break)
+
+        let afterBoundary = timer.snapshot(at: resumedAt.addingTimeInterval(240))
+        #expect(afterBoundary.blockKind == .focus)
+        #expect(afterBoundary.round == 2)
+        #expect(afterBoundary.fraction == 0)
+        #expect(afterBoundary.remaining == 1_500)
+    }
+
     // MARK: - Finish
 
     @Test("A run left going overnight comes back finished")
@@ -187,8 +212,10 @@ struct IntervalTimerTests {
         #expect(timer.fraction(at: morning) == 1)
 
         // The pill still reads "Done · 4 of 4".
-        #expect(timer.displayedBlock(at: morning).round == 4)
-        #expect(timer.displayedBlock(at: morning).kind == .focus)
+        let snapshot = timer.snapshot(at: morning)
+        #expect(snapshot.round == 4)
+        #expect(snapshot.rounds == 4)
+        #expect(snapshot.blockKind == .focus)
     }
 
     @Test("A run left in the background lands on the block its schedule reached")
@@ -234,14 +261,85 @@ struct IntervalTimerTests {
         #expect(timer.fraction(at: at(1_500)) == 0)
     }
 
-    @Test("A zero-minute focus leaves a run of breaks that still ends")
+    @Test("A zero-minute focus cannot be started, so no run opens on a break")
     func zeroLengthFocus() {
-        let timer = running(IntervalTimer(focusMinutes: 0, breakMinutes: 5, rounds: 3))
+        // Otherwise the pill would read "Break · Round 01 / 03" before anything
+        // had been worked on, and the finished screen would report no time
+        // focused at all.
+        var timer = IntervalTimer(focusMinutes: 0, breakMinutes: 5, rounds: 3)
 
-        // Three empty focus blocks and two breaks: 10 minutes of run.
-        #expect(timer.plannedDuration == 600)
-        #expect(timer.currentBlock(at: at(0))?.kind == .break)
-        #expect(timer.phase(at: at(600)) == .finished)
+        #expect(timer.canStart == false)
+        let started = timer.start(at: start)
+        #expect(started == false)
+        #expect(timer.phase(at: start) == .setup)
+    }
+
+    @Test("A timer in setup has no area, and neither has one that was reset")
+    func noAreaBeforeAStart() {
+        // The setup screen is sliders and a stepper. An area rising behind them
+        // would look deliberate, which is why nobody would report it.
+        #expect(standard().fraction(at: start) == 0)
+        #expect(standard().snapshot(at: start).phase == .setup)
+        #expect(standard().snapshot(at: start).round == 1)
+
+        var timer = running(standard())
+        timer.reset()
+        #expect(timer.fraction(at: at(3_000)) == 0)
+    }
+
+    @Test("A snapshot answers the whole frame at one instant")
+    func snapshot() {
+        let timer = running(standard())
+
+        let focus = timer.snapshot(at: at(600))
+        #expect(focus.phase == .running)
+        #expect(focus.blockKind == .focus)
+        #expect(focus.round == 1)
+        #expect(focus.rounds == 4)
+        #expect(focus.remaining == 900)
+        #expect(focus.blockDuration == 1_500)
+        #expect(focus.fraction == 0.4)
+        #expect(focus.canSkip == false)
+
+        // On the boundary every field belongs to the break — the pill and the
+        // fraction cannot disagree, because they come from one reading.
+        let boundary = timer.snapshot(at: at(1_500))
+        #expect(boundary.blockKind == .break)
+        #expect(boundary.round == 1)
+        #expect(boundary.fraction == 0)
+        #expect(boundary.remaining == 300)
+        #expect(boundary.canSkip)
+    }
+
+    @Test("A reading exactly on a boundary instant belongs to the next block")
+    func boundaryInstant() {
+        let timer = running(standard())
+
+        // Every boundary of the run, read at the instant itself.
+        #expect(timer.snapshot(at: at(0)).blockKind == .focus)
+        #expect(timer.snapshot(at: at(1_500)).blockKind == .break)
+        #expect(timer.snapshot(at: at(1_800)).blockKind == .focus)
+        #expect(timer.snapshot(at: at(1_800)).round == 2)
+        #expect(timer.snapshot(at: at(3_300)).blockKind == .break)
+        #expect(timer.snapshot(at: at(5_400)).round == 4)
+        #expect(timer.snapshot(at: at(6_900)).phase == .finished)
+
+        // And each of them starts its block at zero, not at a hair over.
+        #expect(timer.snapshot(at: at(1_500)).fraction == 0)
+        #expect(timer.snapshot(at: at(1_800)).fraction == 0)
+    }
+
+    @Test("A single round has no skippable moment anywhere in it")
+    func singleRoundHasNothingToSkip() {
+        var timer = running(IntervalTimer(focusMinutes: 25, breakMinutes: 5, rounds: 1))
+
+        for second in stride(from: 0, through: 1_500, by: 100) {
+            #expect(timer.canSkip(at: at(TimeInterval(second))) == false)
+        }
+
+        let skipped = timer.skip(at: at(750))
+        #expect(skipped == false)
+        #expect(timer.remaining(at: at(750)) == 750)
     }
 
     @Test("An interval with nothing in it cannot be started")

@@ -17,6 +17,20 @@ nonisolated struct CountUpTimer: Sendable, Codable, Equatable {
         case paused
     }
 
+    // MARK: - Snapshot
+
+    /// Everything one frame of the count-up screen needs, read at a single
+    /// instant — the same shape the other two timers offer, so all three
+    /// screens are written the same way.
+    struct Snapshot: Sendable, Equatable {
+        let phase: Phase
+        let elapsed: TimeInterval
+
+        /// The instant the run began, for the "since 09:29" line. `nil` while
+        /// idle.
+        let startDate: Date?
+    }
+
     // MARK: - Storage
 
     private var tracker: ElapsedTracker
@@ -35,26 +49,46 @@ nonisolated struct CountUpTimer: Sendable, Codable, Equatable {
 
     // MARK: - Reading
 
-    var phase: Phase {
+    func snapshot(at now: Date) -> Snapshot {
+        Snapshot(phase: currentPhase, elapsed: tracker.elapsed(at: now), startDate: startDate)
+    }
+
+    /// Takes an instant it does not need, so a screen reads all three timers
+    /// the same way. The stopwatch has no time-driven transition: it never runs
+    /// out, so nothing about its phase depends on when it is asked.
+    func phase(at now: Date) -> Phase { currentPhase }
+
+    func elapsed(at now: Date) -> TimeInterval { tracker.elapsed(at: now) }
+
+    private var currentPhase: Phase {
         if tracker.isRunning { return .running }
         return startDate == nil ? .idle : .paused
     }
 
-    func elapsed(at now: Date) -> TimeInterval {
-        tracker.elapsed(at: now)
-    }
-
     // MARK: - Writing
 
-    mutating func start(at now: Date) {
-        guard phase != .running else { return }
-        if startDate == nil { startDate = now }
+    /// Begins a run. Resuming a held one is `resume(at:)` — start does not
+    /// quietly do both, so a screen that calls the wrong one finds out.
+    @discardableResult
+    mutating func start(at now: Date) -> Bool {
+        guard currentPhase == .idle else { return false }
+        startDate = now
         tracker.start(at: now)
+        return true
     }
 
-    mutating func pause(at now: Date) {
-        guard phase == .running else { return }
+    @discardableResult
+    mutating func pause(at now: Date) -> Bool {
+        guard currentPhase == .running else { return false }
         tracker.pause(at: now)
+        return true
+    }
+
+    @discardableResult
+    mutating func resume(at now: Date) -> Bool {
+        guard currentPhase == .paused else { return false }
+        tracker.start(at: now)
+        return true
     }
 
     mutating func reset() {

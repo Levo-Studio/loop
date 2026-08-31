@@ -38,6 +38,38 @@ struct CountdownTimerTests {
         #expect(timer.durationMinutes == 10)
     }
 
+    @Test("A timer that has not been started has no area")
+    func noAreaBeforeAStart() {
+        // Including the zero-minute end of the scale, where a fraction worked
+        // out from the duration would divide by nothing and read as full.
+        #expect(CountdownTimer(durationMinutes: 0).fraction(at: start) == 0)
+        #expect(CountdownTimer(durationMinutes: 25).fraction(at: start) == 0)
+
+        var timer = CountdownTimer(durationMinutes: 25)
+        timer.start(at: start)
+        timer.reset()
+        #expect(timer.fraction(at: start.addingTimeInterval(600)) == 0)
+    }
+
+    @Test("A snapshot answers the whole frame at one instant")
+    func snapshot() {
+        var timer = CountdownTimer(durationMinutes: 20)
+        timer.start(at: start)
+
+        let snapshot = timer.snapshot(at: start.addingTimeInterval(300))
+        #expect(snapshot.phase == .running)
+        #expect(snapshot.duration == 1_200)
+        #expect(snapshot.remaining == 900)
+        #expect(snapshot.fraction == 0.25)
+
+        // The finish is one reading, not a phase from before it and a fraction
+        // from after.
+        let finished = timer.snapshot(at: start.addingTimeInterval(1_200))
+        #expect(finished.phase == .finished)
+        #expect(finished.remaining == 0)
+        #expect(finished.fraction == 1)
+    }
+
     @Test("A zero-minute countdown cannot be started")
     func zeroLengthCountdown() {
         var timer = CountdownTimer(durationMinutes: 0)
@@ -90,7 +122,7 @@ struct CountdownTimerTests {
     func finishedStaysPut() {
         var timer = CountdownTimer(durationMinutes: 25)
         timer.start(at: start)
-        timer.settle(at: start.addingTimeInterval(30 * 60))
+        timer.commitTransitions(at: start.addingTimeInterval(30 * 60))
 
         let muchLater = start.addingTimeInterval(6 * 3_600)
         #expect(timer.phase(at: muchLater) == .finished)

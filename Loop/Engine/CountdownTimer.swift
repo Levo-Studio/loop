@@ -19,13 +19,31 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
         case finished
     }
 
+    // MARK: - Snapshot
+
+    /// Everything one frame of the countdown screen needs, read at a single
+    /// instant.
+    ///
+    /// The screen must not ask for the phase, then the time, then the fraction:
+    /// three calls are three different `now` values, and one that lands either
+    /// side of the finish shows a full area under a running pill. One snapshot
+    /// per frame settles the timer once and answers from that.
+    struct Snapshot: Sendable, Equatable {
+        let phase: Phase
+        let duration: TimeInterval
+        let remaining: TimeInterval
+
+        /// Height of the rising area, 0…1.
+        let fraction: Double
+    }
+
     // MARK: - Storage
 
     /// Whole minutes, 0…60, matching the scale on the idle screen.
     private(set) var durationMinutes: Int
 
     /// The phase as last written. `running` here can still mean "finished by
-    /// now" — every read runs it through `settled(at:)` first.
+    /// now" — every read runs it through `resolved(at:)` first.
     private var storedPhase: Phase
 
     private var tracker: ElapsedTracker
@@ -49,40 +67,61 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
     /// engine refuses to start it at all and the button stays disabled.
     var canStart: Bool { durationMinutes > 0 }
 
-    func phase(at now: Date) -> Phase { settled(at: now).storedPhase }
+    /// The whole readable state at one instant. This is what a screen draws
+    /// from; the accessors below are conveniences for a single value.
+    func snapshot(at now: Date) -> Snapshot {
+        let resolved = resolved(at: now)
+        let duration = resolved.duration
+        let remaining = min(max(0, duration - resolved.tracker.elapsed(at: now)), duration)
 
-    func remaining(at now: Date) -> TimeInterval {
-        let settled = settled(at: now)
-        return min(max(0, settled.duration - settled.tracker.elapsed(at: now)), settled.duration)
+        return Snapshot(
+            phase: resolved.storedPhase,
+            duration: duration,
+            remaining: remaining,
+            fraction: Self.fraction(phase: resolved.storedPhase, remaining: remaining, duration: duration)
+        )
     }
+
+    func phase(at now: Date) -> Phase { snapshot(at: now).phase }
+
+    func remaining(at now: Date) -> TimeInterval { snapshot(at: now).remaining }
+
+    func fraction(at now: Date) -> Double { snapshot(at: now).fraction }
 
     /// The height of the rising area: 1 − remaining / duration.
-    func fraction(at now: Date) -> Double {
-        guard duration > 0 else { return 1 }
-        return 1 - remaining(at: now) / duration
+    ///
+    /// A timer that has not been started has no area at all. Reading the empty
+    /// case as "full" is the mistake that puts a filled screen under a stopped
+    /// timer, where it reads as a design choice and nobody reports it.
+    private static func fraction(phase: Phase, remaining: TimeInterval, duration: TimeInterval) -> Double {
+        switch phase {
+        case .idle: 0
+        case .finished: 1
+        case .running, .paused: duration > 0 ? 1 - remaining / duration : 1
+        }
     }
 
-    // MARK: - Settling
+    // MARK: - Resolving
 
     /// The state with the time-driven transition applied.
-    func settled(at now: Date) -> CountdownTimer {
+    func resolved(at now: Date) -> CountdownTimer {
         guard storedPhase == .running, tracker.elapsed(at: now) >= duration else { return self }
 
-        var settled = self
-        settled.storedPhase = .finished
+        var resolved = self
+        resolved.storedPhase = .finished
 
         // Freeze at exactly the duration, so a finished timer that is looked at
         // an hour later still reports 00:00 and a full area rather than drifting
         // on.
-        settled.tracker.set(elapsed: duration, at: now)
-        settled.tracker.pause(at: now)
-        return settled
+        resolved.tracker.set(elapsed: duration, at: now)
+        resolved.tracker.pause(at: now)
+        return resolved
     }
 
-    /// Commits the transition. The screen calls this on its tick so the change
-    /// to `finished` is persisted and can trigger haptics; every read is
-    /// correct without it.
-    mutating func settle(at now: Date) { self = settled(at: now) }
+    /// Writes the transition into the value. The screen calls this on its tick
+    /// so the change to `finished` is persisted and can trigger haptics; every
+    /// read is correct without it.
+    mutating func commitTransitions(at now: Date) { self = resolved(at: now) }
 
     // MARK: - Writing
 
@@ -90,7 +129,7 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
     /// whether the change was taken.
     @discardableResult
     mutating func setDuration(minutes: Int, at now: Date) -> Bool {
-        settle(at: now)
+        commitTransitions(at: now)
         guard storedPhase == .idle else { return false }
         durationMinutes = LoopTimerLimits.clamp(minutes, to: LoopTimerLimits.durationMinutes)
         return true
@@ -99,7 +138,7 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
     /// Starts from idle, or restarts a finished run.
     @discardableResult
     mutating func start(at now: Date) -> Bool {
-        settle(at: now)
+        commitTransitions(at: now)
         guard canStart, storedPhase == .idle || storedPhase == .finished else { return false }
         tracker.reset()
         tracker.start(at: now)
@@ -109,7 +148,7 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
 
     @discardableResult
     mutating func pause(at now: Date) -> Bool {
-        settle(at: now)
+        commitTransitions(at: now)
         guard storedPhase == .running else { return false }
         tracker.pause(at: now)
         storedPhase = .paused
@@ -118,7 +157,7 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
 
     @discardableResult
     mutating func resume(at now: Date) -> Bool {
-        settle(at: now)
+        commitTransitions(at: now)
         guard storedPhase == .paused else { return false }
         tracker.start(at: now)
         storedPhase = .running
@@ -130,5 +169,27 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
     mutating func reset() {
         tracker.reset()
         storedPhase = .idle
+    }
+
+    // MARK: - Decoding
+
+    private enum CodingKeys: String, CodingKey {
+        case durationMinutes
+        case storedPhase
+        case tracker
+    }
+
+    /// Written out rather than synthesised. A synthesised `init(from:)` would
+    /// assign the stored properties straight from the record and skip the
+    /// clamp above, which is the one promise this type makes about a damaged
+    /// or older store.
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        durationMinutes = LoopTimerLimits.clamp(
+            try container.decode(Int.self, forKey: .durationMinutes),
+            to: LoopTimerLimits.durationMinutes
+        )
+        storedPhase = try container.decode(Phase.self, forKey: .storedPhase)
+        tracker = try container.decode(ElapsedTracker.self, forKey: .tracker)
     }
 }

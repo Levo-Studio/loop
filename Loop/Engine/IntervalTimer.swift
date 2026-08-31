@@ -37,6 +37,34 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
         var end: TimeInterval { start + duration }
     }
 
+    // MARK: - Snapshot
+
+    /// Everything one frame of the interval screen needs, read at a single
+    /// instant and off a single build of the schedule.
+    ///
+    /// Asking for the phase, then the block, then the time, then the fraction
+    /// is four different `now` values and four walks of the schedule. Two of
+    /// those instants either side of a block boundary put a "Focus" pill above
+    /// a fraction that belongs to the break, and the flicker gets blamed on the
+    /// view.
+    struct Snapshot: Sendable, Equatable {
+        let phase: Phase
+        let blockKind: BlockKind
+
+        /// 1-based round for the counter, "Round 02 / 04".
+        let round: Int
+        let rounds: Int
+
+        let remaining: TimeInterval
+        let blockDuration: TimeInterval
+
+        /// Height of the rising area, 0…1, for the **current** block.
+        let fraction: Double
+
+        /// Whether the skip button is live. Breaks only.
+        let canSkip: Bool
+    }
+
     // MARK: - Storage
 
     private(set) var focusMinutes: Int
@@ -89,76 +117,117 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
     /// What the finished screen reports as time focused: the focus blocks only.
     var focusedDuration: TimeInterval { TimeInterval(rounds) * focusDuration }
 
-    /// A run with nothing in it cannot be started. With both scales at zero
-    /// every block is empty and the run would finish in the frame it started,
-    /// so the start button stays disabled instead. A single zero scale is fine:
-    /// an empty block is simply passed through, which is what "0 min break"
-    /// should mean.
-    var canStart: Bool { plannedDuration > 0 }
+    /// A run needs something to focus on.
+    ///
+    /// A zero-minute focus would make the run open on a break — "Break · Round
+    /// 01 / 04" before anything has been worked on, and "0:00 hours focused" at
+    /// the end. Someone who drags the focus scale to zero has asked for
+    /// nothing, not for a session of breaks. A zero-minute break is a different
+    /// matter and stays allowed: it means focus blocks back to back.
+    var canStart: Bool { focusDuration > 0 }
 
     // MARK: - Reading
 
-    func phase(at now: Date) -> Phase { settled(at: now).storedPhase }
+    /// The whole readable state at one instant. This is what a screen draws
+    /// from; the accessors below are conveniences for a single value.
+    func snapshot(at now: Date) -> Snapshot {
+        let resolved = resolved(at: now)
 
-    /// The block the run is in, or `nil` once it is over.
-    func currentBlock(at now: Date) -> Block? {
-        let settled = settled(at: now)
-        guard settled.storedPhase == .running || settled.storedPhase == .paused else { return nil }
-        return settled.block(atElapsed: settled.tracker.elapsed(at: now))
+        switch resolved.storedPhase {
+        case .setup:
+            // No block is running, so there is no area — a filled screen under
+            // a timer that has not been started reads as a design choice rather
+            // than as the bug it is.
+            return Snapshot(
+                phase: .setup,
+                blockKind: .focus,
+                round: 1,
+                rounds: rounds,
+                remaining: focusDuration,
+                blockDuration: focusDuration,
+                fraction: 0,
+                canSkip: false
+            )
+
+        case .running, .paused:
+            let elapsed = resolved.tracker.elapsed(at: now)
+
+            // A record whose elapsed already sits past the schedule — a store
+            // written by an older build, or one edited by hand — reads as
+            // finished instead of dropping through to an index that is not
+            // there.
+            guard let block = resolved.block(atElapsed: elapsed) else { return finishedSnapshot() }
+
+            let remaining = min(max(0, block.end - elapsed), block.duration)
+
+            return Snapshot(
+                phase: resolved.storedPhase,
+                blockKind: block.kind,
+                round: block.round,
+                rounds: rounds,
+                remaining: remaining,
+                blockDuration: block.duration,
+                fraction: block.duration > 0 ? 1 - remaining / block.duration : 1,
+                canSkip: resolved.storedPhase == .running && block.kind == .break
+            )
+
+        case .finished:
+            return finishedSnapshot()
+        }
     }
 
-    /// The block for the pill and the round counter. A finished run keeps
-    /// reporting the last focus block, because "Done · 4 of 4" is drawn with the
-    /// round count, not with a blank; a run still in setup reports the block it
-    /// will begin with.
-    func displayedBlock(at now: Date) -> Block {
-        if let block = currentBlock(at: now) { return block }
-        let blocks = schedule
-        return phase(at: now) == .setup ? blocks[0] : blocks[blocks.count - 1]
+    /// The run always ends on the last focus block, which is what the pill
+    /// keeps reading: "Done · 4 of 4".
+    private func finishedSnapshot() -> Snapshot {
+        Snapshot(
+            phase: .finished,
+            blockKind: .focus,
+            round: rounds,
+            rounds: rounds,
+            remaining: 0,
+            blockDuration: focusDuration,
+            fraction: 1,
+            canSkip: false
+        )
     }
 
-    func remaining(at now: Date) -> TimeInterval {
-        guard let block = currentBlock(at: now) else { return 0 }
-        let elapsed = settled(at: now).tracker.elapsed(at: now)
-        return min(max(0, block.end - elapsed), block.duration)
-    }
+    func phase(at now: Date) -> Phase { snapshot(at: now).phase }
 
-    /// 1 − remaining / duration of the **current** block, so it drops back to
-    /// zero the moment the schedule moves on.
-    func fraction(at now: Date) -> Double {
-        guard let block = currentBlock(at: now) else { return 1 }
-        guard block.duration > 0 else { return 1 }
-        return 1 - remaining(at: now) / block.duration
-    }
+    func remaining(at now: Date) -> TimeInterval { snapshot(at: now).remaining }
+
+    func fraction(at now: Date) -> Double { snapshot(at: now).fraction }
 
     /// Skip exists for a break only. During focus the design draws the button
     /// disabled, and the engine refuses the call as well — a screen that got it
     /// wrong must not be able to shorten a focus block.
-    func canSkip(at now: Date) -> Bool {
-        let settled = settled(at: now)
-        guard settled.storedPhase == .running else { return false }
-        return settled.currentBlock(at: now)?.kind == .break
+    func canSkip(at now: Date) -> Bool { snapshot(at: now).canSkip }
+
+    /// The block the run is in, or `nil` once it is over or before it begins.
+    func currentBlock(at now: Date) -> Block? {
+        let resolved = resolved(at: now)
+        guard resolved.storedPhase == .running || resolved.storedPhase == .paused else { return nil }
+        return resolved.block(atElapsed: resolved.tracker.elapsed(at: now))
     }
 
-    // MARK: - Settling
+    // MARK: - Resolving
 
-    func settled(at now: Date) -> IntervalTimer {
+    func resolved(at now: Date) -> IntervalTimer {
         guard storedPhase == .running, tracker.elapsed(at: now) >= plannedDuration else { return self }
 
-        var settled = self
-        settled.storedPhase = .finished
-        settled.tracker.set(elapsed: plannedDuration, at: now)
-        settled.tracker.pause(at: now)
-        return settled
+        var resolved = self
+        resolved.storedPhase = .finished
+        resolved.tracker.set(elapsed: plannedDuration, at: now)
+        resolved.tracker.pause(at: now)
+        return resolved
     }
 
-    mutating func settle(at now: Date) { self = settled(at: now) }
+    mutating func commitTransitions(at now: Date) { self = resolved(at: now) }
 
     // MARK: - Setup
 
     @discardableResult
     mutating func setFocusMinutes(_ minutes: Int, at now: Date) -> Bool {
-        settle(at: now)
+        commitTransitions(at: now)
         guard storedPhase == .setup else { return false }
         focusMinutes = LoopTimerLimits.clamp(minutes, to: LoopTimerLimits.durationMinutes)
         return true
@@ -166,7 +235,7 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
 
     @discardableResult
     mutating func setBreakMinutes(_ minutes: Int, at now: Date) -> Bool {
-        settle(at: now)
+        commitTransitions(at: now)
         guard storedPhase == .setup else { return false }
         breakMinutes = LoopTimerLimits.clamp(minutes, to: LoopTimerLimits.breakMinutes)
         return true
@@ -174,7 +243,7 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
 
     @discardableResult
     mutating func setRounds(_ count: Int, at now: Date) -> Bool {
-        settle(at: now)
+        commitTransitions(at: now)
         guard storedPhase == .setup else { return false }
         rounds = LoopTimerLimits.clamp(count, to: LoopTimerLimits.rounds)
         return true
@@ -184,7 +253,7 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
 
     @discardableResult
     mutating func start(at now: Date) -> Bool {
-        settle(at: now)
+        commitTransitions(at: now)
         guard canStart, storedPhase == .setup || storedPhase == .finished else { return false }
         tracker.reset()
         tracker.start(at: now)
@@ -194,7 +263,7 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
 
     @discardableResult
     mutating func pause(at now: Date) -> Bool {
-        settle(at: now)
+        commitTransitions(at: now)
         guard storedPhase == .running else { return false }
         tracker.pause(at: now)
         storedPhase = .paused
@@ -203,7 +272,7 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
 
     @discardableResult
     mutating func resume(at now: Date) -> Bool {
-        settle(at: now)
+        commitTransitions(at: now)
         guard storedPhase == .paused else { return false }
         tracker.start(at: now)
         storedPhase = .running
@@ -213,8 +282,8 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
     /// Jumps to the next focus block. Legal during a break and nowhere else.
     @discardableResult
     mutating func skip(at now: Date) -> Bool {
-        settle(at: now)
-        guard canSkip(at: now), let block = currentBlock(at: now) else { return false }
+        commitTransitions(at: now)
+        guard snapshot(at: now).canSkip, let block = currentBlock(at: now) else { return false }
 
         // Landing exactly on the boundary puts the run at the start of the next
         // block, which is the focus block that follows every break.
@@ -234,5 +303,38 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
     /// starts, so it is stepped over here instead of being shown for a frame.
     private func block(atElapsed elapsed: TimeInterval) -> Block? {
         schedule.first { $0.end > elapsed }
+    }
+
+    // MARK: - Decoding
+
+    private enum CodingKeys: String, CodingKey {
+        case focusMinutes
+        case breakMinutes
+        case rounds
+        case storedPhase
+        case tracker
+    }
+
+    /// Written out rather than synthesised. A synthesised `init(from:)` skips
+    /// the clamps above, and a stored `rounds` of zero would then reach
+    /// `1...rounds` in `schedule` and trap on the launch path — a corrupted
+    /// store has to stay loadable, which is the whole point of clamping rather
+    /// than trapping.
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        focusMinutes = LoopTimerLimits.clamp(
+            try container.decode(Int.self, forKey: .focusMinutes),
+            to: LoopTimerLimits.durationMinutes
+        )
+        breakMinutes = LoopTimerLimits.clamp(
+            try container.decode(Int.self, forKey: .breakMinutes),
+            to: LoopTimerLimits.breakMinutes
+        )
+        rounds = LoopTimerLimits.clamp(
+            try container.decode(Int.self, forKey: .rounds),
+            to: LoopTimerLimits.rounds
+        )
+        storedPhase = try container.decode(Phase.self, forKey: .storedPhase)
+        tracker = try container.decode(ElapsedTracker.self, forKey: .tracker)
     }
 }
