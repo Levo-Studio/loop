@@ -317,15 +317,15 @@ struct IntervalScreen: View {
             ScaleSlider(
                 label: LoopStrings.focus,
                 minutes: focusMinutes(snapshot.focusMinutes),
-                detents: ScaleDetents(LoopTimerLimits.focus),
-                numberEvery: LoopMetrics.durationNumberInterval,
+                minuteScale: LoopTimerLimits.focus,
+                numberEvery: LoopMetrics.focusNumberInterval,
                 unit: LoopStrings.minutesUnit
             )
 
             ScaleSlider(
                 label: LoopStrings.breakBlock,
                 minutes: breakMinutes(snapshot.breakMinutes),
-                detents: ScaleDetents(LoopTimerLimits.breakLength),
+                minuteScale: LoopTimerLimits.breakLength,
                 numberEvery: LoopMetrics.breakNumberInterval,
                 unit: LoopStrings.minutesUnit
             )
@@ -480,30 +480,6 @@ private struct BreakTimeBlock: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .offset(y: metrics.timeBlockOffset)
-    }
-}
-
-// MARK: - Detents from a scale
-
-private extension ScaleDetents {
-
-    /// The drawing shape of an engine scale.
-    ///
-    /// `LoopMinuteScale` owns which values exist and `ScaleDetents` owns the
-    /// three questions the slider asks; this is only the wire between them, so
-    /// the screen hands over the engine's answer rather than a second opinion
-    /// about where the detents are.
-    ///
-    /// Fileprivate because it is written here first. It belongs next to
-    /// `ScaleDetents` — the countdown needs the same wire the moment its scale
-    /// stops being every-minute — and it is a five-line adapter either way.
-    init(_ scale: LoopMinuteScale) {
-        self.init(
-            range: scale.range,
-            nearest: { scale.nearest(to: $0) },
-            next: { scale.next(after: $0) },
-            previous: { scale.previous(before: $0) }
-        )
     }
 }
 
