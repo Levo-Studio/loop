@@ -200,6 +200,22 @@ struct IntervalTimerTests {
         #expect(afterBoundary.remaining == 1_500)
     }
 
+    @Test("The area freezes while the run is held and carries on from there")
+    func fractionFreezesWhileHeld() {
+        var timer = running(standard())
+        timer.pause(at: at(750))
+
+        // Four hours held. Without the freeze the whole run would be over.
+        let heldFor = at(750 + 4 * 3_600)
+        #expect(timer.fraction(at: at(750)) == 0.5)
+        #expect(timer.fraction(at: heldFor) == 0.5)
+        #expect(timer.snapshot(at: heldFor).fraction == 0.5)
+        #expect(timer.snapshot(at: heldFor).blockKind == .focus)
+
+        timer.resume(at: heldFor)
+        #expect(timer.fraction(at: heldFor.addingTimeInterval(375)) == 0.75)
+    }
+
     // MARK: - Finish
 
     @Test("A run left going overnight comes back finished")
@@ -309,6 +325,45 @@ struct IntervalTimerTests {
         #expect(boundary.fraction == 0)
         #expect(boundary.remaining == 300)
         #expect(boundary.canSkip)
+    }
+
+    @Test("The snapshot carries the three scales and whether start is live")
+    func snapshotCarriesTheControls() {
+        #expect(IntervalTimer(focusMinutes: 0, breakMinutes: 5, rounds: 4).snapshot(at: start).canStart == false)
+        #expect(standard().snapshot(at: start).canStart)
+
+        var timer = standard()
+        let setup = timer.snapshot(at: start)
+        #expect(setup.focusMinutes == 25)
+        #expect(setup.breakMinutes == 5)
+        #expect(setup.rounds == 4)
+
+        // What the scales and the stepper write comes back on the next frame.
+        timer.setFocusMinutes(50, at: start)
+        timer.setBreakMinutes(10, at: start)
+        timer.setRounds(3, at: start)
+
+        let changed = timer.snapshot(at: start)
+        #expect(changed.focusMinutes == 50)
+        #expect(changed.breakMinutes == 10)
+        #expect(changed.rounds == 3)
+
+        // And they stay readable through a run, where the pill needs the round
+        // total and the screen still draws the scales behind it.
+        timer.start(at: start)
+        #expect(timer.snapshot(at: at(60)).focusMinutes == 50)
+        #expect(timer.snapshot(at: at(60)).rounds == 3)
+    }
+
+    @Test("The two totals are the only values a screen reads off the timer")
+    func totalsAreNotOnTheSnapshot() {
+        // Named in the snapshot's documentation so nobody takes them for an
+        // oversight — and so nobody prints blockDuration in their place.
+        let timer = standard()
+
+        #expect(timer.plannedDuration == 6_900)
+        #expect(timer.focusedDuration == 6_000)
+        #expect(timer.snapshot(at: start).blockDuration == 1_500)
     }
 
     @Test("A reading exactly on a boundary instant belongs to the next block")
