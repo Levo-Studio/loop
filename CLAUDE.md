@@ -234,6 +234,30 @@ Every fix ships with a test that fails **without** the fix. The counter-check is
 mandatory: pull the fix, watch it go red, put the fix back, watch it go green. A
 regression test nobody has seen fail is decoration.
 
+## Driving the app for a check
+
+Touch injection does not work on the owner's machine: `CGEventPost` is silently
+dropped (`AXIsProcessTrusted` is false) and `osascript` is refused with `-1743`.
+`simctl` has neither a touch nor a rotate command. Several agents burned time
+rediscovering this.
+
+What does work, cheapest first:
+
+- **State**: launch arguments through the NSUserDefaults argument domain,
+  `simctl launch … -key value`.
+- **A specific screen**: render the real view through `ImageRenderer` from a
+  scratch test, or drive `scrollPosition` programmatically.
+- **Landscape**: a modified `Info.plist` in a scratch copy of the **built**
+  `.app`. On iPad this gives true landscape geometry — the system renders at the
+  real size and downscales into the portrait framebuffer, so every value is
+  present and recoverable.
+- **Real taps**: add a UI-test target in a scratch copy of the project and drive
+  it with XCUITest. It uses the automation channel, so none of the above limits
+  apply. This is the only way anyone has exercised a button on this project.
+
+All of it happens in a copy under `/tmp`. The worktree is never written to for a
+check, and a scratch simulator is created, used and deleted.
+
 Views are not unit-tested. They are checked by hand in the simulator, against
 `design/`, in light and dark, on iPhone and iPad, portrait and landscape.
 
