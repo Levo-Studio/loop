@@ -21,3 +21,6 @@ Packages/
 
 # Worktrees — kept inside the repository, never as sibling directories
 .worktrees/
+
+# Machine-local build settings — the development team lives here, never in the project
+Local.xcconfig

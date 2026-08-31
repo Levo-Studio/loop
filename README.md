@@ -137,6 +137,15 @@ Loop. There are no entitlements, no capabilities and no container hanging off
 someone's App Store access, so nothing has to be signed to run in the simulator.
 `DEVELOPMENT_TEAM` stays out of every diff.
 
+### Building to a device
+
+The repository is public, so no development team is stored in the project at
+all. Nothing above needs one. Running Loop on a physical iPhone or iPad does,
+and Xcode would otherwise write the team you pick straight back into
+`project.pbxproj`. So it lives outside the project instead: copy
+`Local.xcconfig.example` to `Local.xcconfig`, put your own Team ID in, and
+build. `Local.xcconfig` is ignored by git and cannot end up in a commit.
+
 The project uses synchronized folders — new files under `Loop/` and
 `LoopTests/` join the target on their own, and
 `Loop.xcodeproj/project.pbxproj` does not have to be touched for that.
