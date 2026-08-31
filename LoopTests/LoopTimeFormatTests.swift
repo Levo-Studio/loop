@@ -52,6 +52,81 @@ struct LoopTimeFormatTests {
         #expect(LoopTimeFormat.elapsed(59.99) == "00:59")
     }
 
+    // MARK: - When to redraw
+
+    @Test("A whole second waits a whole second")
+    func wakeOnAWholeSecond() {
+        #expect(abs(LoopTimeFormat.untilNextSecond(after: 4) - 1) < 0.001)
+        #expect(abs(LoopTimeFormat.untilNextSecond(after: 0) - 1) < 0.001)
+        #expect(abs(LoopTimeFormat.untilNextSecond(remaining: 1_500) - 1) < 0.001)
+    }
+
+    @Test("A hair over a whole second waits out the rest of it")
+    func wakeAHairOver() {
+        #expect(abs(LoopTimeFormat.untilNextSecond(after: 4.25) - 0.75) < 0.001)
+        #expect(abs(LoopTimeFormat.untilNextSecond(after: 4.000_05) - 1) < 0.001)
+        #expect(abs(LoopTimeFormat.untilNextSecond(remaining: 1_499.75) - 0.75) < 0.001)
+    }
+
+    @Test("A hair under a whole second does not wake to find the same digits")
+    func wakeAHairUnderDoesNotSpin() {
+        // The failure this guards: 4.99995 is already drawn as "00:05", because
+        // elapsed(_:) rounds with the same epsilon. Sleeping the 0.00005 up to
+        // the integer would wake, find "00:05" again, and sleep again — a spin
+        // that costs battery and shows up nowhere on the screen.
+        #expect(LoopTimeFormat.elapsed(4.999_95) == "00:05")
+        #expect(LoopTimeFormat.untilNextSecond(after: 4.999_95) > 0.5)
+
+        #expect(LoopTimeFormat.remaining(1_499.999_95) == "25:00")
+        #expect(LoopTimeFormat.untilNextSecond(remaining: 1_499.999_95) > 0.5)
+    }
+
+    @Test("Waiting the answer always changes the digits, whatever the value")
+    func wakingAlwaysChangesTheDigits() {
+        // The property both functions exist for, stated once: after the wait,
+        // the string the paired formatter draws is a different string. A sweep
+        // rather than three chosen values, because the cases that spin are the
+        // ones nobody thinks to write down.
+        let values: [TimeInterval] = [
+            0, 0.000_05, 0.5, 0.999_9, 0.999_95, 1, 1.000_05, 4.25,
+            59.999_95, 60, 3_599.999_9, 3_600, 1_499.999_95, 1_500,
+        ]
+
+        for value in values {
+            let elapsedWait = LoopTimeFormat.untilNextSecond(after: value)
+            #expect(elapsedWait > 0, "a wait of zero spins at \(value)")
+            #expect(elapsedWait <= 1)
+            #expect(LoopTimeFormat.elapsed(value + elapsedWait) != LoopTimeFormat.elapsed(value))
+
+            let remainingWait = LoopTimeFormat.untilNextSecond(remaining: value)
+            #expect(remainingWait > 0, "a wait of zero spins at \(value)")
+            #expect(remainingWait <= 1)
+
+            // Below 00:00 there is nothing to count down to, so a value already
+            // reading zero has no next digit to wait for. Every other value
+            // does.
+            if LoopTimeFormat.remaining(value) != "00:00" {
+                #expect(LoopTimeFormat.remaining(value - remainingWait) != LoopTimeFormat.remaining(value))
+            }
+        }
+    }
+
+    @Test("A negative value is treated as zero rather than waiting backwards")
+    func wakeOnANegativeValue() {
+        #expect(LoopTimeFormat.untilNextSecond(after: -5) > 0)
+        #expect(LoopTimeFormat.untilNextSecond(remaining: -5) > 0)
+    }
+
+    @Test("A countdown at zero has no next second, and still never returns none")
+    func wakeAtTheCountdownFloor() {
+        // 00:00 is the floor, so there is no digit to wait for. The answer is
+        // still a whole second rather than zero: a screen looping on it while
+        // it forgets to check the phase should idle, not spin.
+        let wait = LoopTimeFormat.untilNextSecond(remaining: 0)
+        #expect(wait > 0.5)
+        #expect(LoopTimeFormat.remaining(0) == "00:00")
+    }
+
     @Test("A total reads as hours and minutes with the hour unpadded")
     func hoursAndMinutes() {
         #expect(LoopTimeFormat.hoursAndMinutes(2 * 3_600) == "2:00")
