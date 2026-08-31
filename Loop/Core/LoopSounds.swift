@@ -83,11 +83,14 @@ enum LoopSounds {
     /// to a figure lives in `LoopTone` so two screens cannot pick two different
     /// tones for the same moment.
     ///
-    /// A block boundary is a single instant: one block ends exactly as the next
-    /// begins. If a screen plays both halves of the pair there, they are heard
-    /// as one two-part figure rather than as a smear — see `play(_:enabled:)`.
-    /// Whether a boundary should say both things or only the more useful one is
-    /// the caller's decision, and this layer does not make it.
+    /// **A boundary plays exactly one of the pair, never both.** A block
+    /// boundary is a single instant — one block ends as the next begins — so
+    /// sounding both halves there gives the ear one smear instead of two
+    /// messages, and the pair's whole value is being told apart. The interval
+    /// plays `.blockEnded` going into a break and `.blockBegan` going into a
+    /// focus block, so the two-note figure means "stop" and the single note
+    /// means "back to work". That is the rule the owner set; `IntervalScreen`
+    /// implements it and this comment is not free to disagree with it.
     ///
     /// `nonisolated`, unlike the layer around it: a cue is a plain value with
     /// no state, and a test that only wants to compare two figures should not
@@ -134,11 +137,21 @@ enum LoopSounds {
 
     /// The instant the cue that is currently sounding will be finished.
     ///
-    /// A block boundary hands this layer two cues at the same instant, and a
-    /// countdown that finishes on a boundary can hand it a third. Played raw
-    /// they overlap into one indistinct noise — exactly the thing the two tones
-    /// exist to avoid. Queueing them costs one stored date and turns a smear
-    /// into a sequence.
+    /// Kept, though the reason it was first written no longer holds. It was
+    /// there to serialise the two halves of the boundary pair; a boundary now
+    /// plays exactly one cue, so that case is gone.
+    ///
+    /// What is left is real and is not about pairs at all: **two screens**.
+    /// Countdown and Interval each run their own timer, both can be running at
+    /// once, and each fires its own single cue from its own view. They are
+    /// adjacent pages in the shell's `LazyHStack`, so during a swipe between
+    /// them both are alive — a countdown reaching zero while an interval
+    /// crosses a boundary lands two cues in one instant from two independent
+    /// call sites. Played raw they overlap into one indistinct noise, which is
+    /// precisely what the distinct tones exist to prevent.
+    ///
+    /// One stored date turns that into a sequence. Nothing here reaches across
+    /// the two screens to coordinate them, and nothing should have to.
     private static var freeAt = Date.distantPast
 
     /// Drops the audio session once the last cue has finished sounding.
