@@ -115,7 +115,7 @@ struct IntervalScreen: View {
     @ViewBuilder private func content(_ snapshot: IntervalTimer.Snapshot) -> some View {
         switch snapshot.phase {
         case .setup:
-            setup
+            setup(snapshot)
 
         case .running:
             TimeDisplay(
@@ -146,11 +146,16 @@ struct IntervalScreen: View {
     /// block is running. It is also centred without the time block's −30 pt
     /// offset — the export draws this state as a column of controls rather
     /// than as a time to be read against the page.
-    private var setup: some View {
+    ///
+    /// The three scales are drawn from the snapshot and written through the
+    /// timer's setters, so there is one read path and one clamping site. The
+    /// sum underneath is the documented exception: it is arithmetic over the
+    /// three scales rather than anything the run moves.
+    private func setup(_ snapshot: IntervalTimer.Snapshot) -> some View {
         VStack(spacing: metrics.intervalSetupSpacing) {
             ScaleSlider(
                 label: LoopStrings.focus,
-                minutes: focusMinutes,
+                minutes: focusMinutes(snapshot.focusMinutes),
                 maximumMinutes: LoopTimerLimits.durationMinutes.upperBound,
                 numberEvery: Self.focusNumberInterval,
                 unit: LoopStrings.minutesUnit
@@ -158,7 +163,7 @@ struct IntervalScreen: View {
 
             ScaleSlider(
                 label: LoopStrings.breakBlock,
-                minutes: breakMinutes,
+                minutes: breakMinutes(snapshot.breakMinutes),
                 maximumMinutes: LoopTimerLimits.breakMinutes.upperBound,
                 numberEvery: Self.breakNumberInterval,
                 unit: LoopStrings.minutesUnit
@@ -168,7 +173,7 @@ struct IntervalScreen: View {
 
             LoopStepper(
                 label: LoopStrings.rounds,
-                value: rounds,
+                value: rounds(snapshot.rounds),
                 range: LoopTimerLimits.rounds,
                 unit: LoopStrings.timesUnit
             )
@@ -187,7 +192,7 @@ struct IntervalScreen: View {
                 // A run needs something to focus on: with the focus scale at
                 // zero the engine refuses to start, so the button says so
                 // rather than being tapped for nothing.
-                primary: .init(LoopStrings.start, isEnabled: timer.canStart) { act { $0.start(at: $1) } },
+                primary: .init(LoopStrings.start, isEnabled: snapshot.canStart) { act { $0.start(at: $1) } },
                 // Nothing has run yet, so there is nothing to return to. The
                 // export draws it dimmed and in place.
                 secondary: .init(LoopStrings.reset, isEnabled: false) {}
@@ -241,18 +246,20 @@ struct IntervalScreen: View {
 
     // MARK: - Setup bindings
 
-    /// The scales and the stepper write through the engine rather than into
-    /// state of their own, so the clamps apply once and in one place.
-    private var focusMinutes: Binding<Int> {
-        Binding(get: { timer.focusMinutes }, set: { value in act { $0.setFocusMinutes(value, at: $1) } })
+    /// Reading is drawing, so it comes off the snapshot the frame was built
+    /// from; writing is a clamped mutation, so it goes through the engine's
+    /// setters. Splitting the two directions keeps one read path and one place
+    /// where a value out of range is dealt with.
+    private func focusMinutes(_ current: Int) -> Binding<Int> {
+        Binding(get: { current }, set: { value in act { $0.setFocusMinutes(value, at: $1) } })
     }
 
-    private var breakMinutes: Binding<Int> {
-        Binding(get: { timer.breakMinutes }, set: { value in act { $0.setBreakMinutes(value, at: $1) } })
+    private func breakMinutes(_ current: Int) -> Binding<Int> {
+        Binding(get: { current }, set: { value in act { $0.setBreakMinutes(value, at: $1) } })
     }
 
-    private var rounds: Binding<Int> {
-        Binding(get: { timer.rounds }, set: { value in act { $0.setRounds(value, at: $1) } })
+    private func rounds(_ current: Int) -> Binding<Int> {
+        Binding(get: { current }, set: { value in act { $0.setRounds(value, at: $1) } })
     }
 
     // MARK: - Scale numbers
