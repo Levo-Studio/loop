@@ -25,6 +25,8 @@ struct LoopActivityTime: View {
         )
         .loopTextStyle(style)
         .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(LoopActivityTypography.timeMinimumScale)
     }
 }
 

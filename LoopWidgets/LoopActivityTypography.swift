@@ -23,6 +23,16 @@ enum LoopActivityTypography {
     /// The time on the lock screen and in the expanded Dynamic Island.
     static let time = LoopTextStyle(weight: .light, size: 34, trackingEm: timeTrackingEm)
 
+    /// How far the time may shrink to fit its own length.
+    ///
+    /// A countdown runs to thirty hours, so the digits are anywhere from five
+    /// characters ("25:00") to eight ("30:00:00"). The app's big time solves
+    /// this by scaling with the character count; a Live Activity card has one
+    /// width the system chose, so the shrink is left to the text itself. The
+    /// floor is the ratio of five characters to eight — the longest string the
+    /// engine can produce, at the size the shortest one is drawn.
+    static let timeMinimumScale: CGFloat = 5.0 / 8.0
+
     /// The time in the compact and minimal Dynamic Island, where the strip
     /// beside the camera is all the room there is.
     static let compactTime = LoopTextStyle(weight: .regular, size: 14, trackingEm: timeTrackingEm)
