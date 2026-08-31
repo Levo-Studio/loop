@@ -52,7 +52,7 @@ struct CountdownScreen: View {
         case .paused:
             // "Countdown · paused": the page keeps its name and the state is a
             // dimmed qualifier after it.
-            StatusPill(label: LoopStrings.countdown, detail: LoopStrings.paused)
+            StatusPill(label: LoopStrings.countdown, detail: LoopStrings.pausedDetail)
         case .finished:
             // No dot and the stronger tone — there is no longer a state to
             // indicate.
@@ -72,7 +72,7 @@ struct CountdownScreen: View {
                 secondary: LoopStrings.ofDuration(LoopTimeFormat.remaining(snapshot.duration))
             )
         case .paused:
-            TimeDisplay(time: LoopTimeFormat.remaining(snapshot.remaining), secondary: LoopStrings.paused)
+            TimeDisplay(time: LoopTimeFormat.remaining(snapshot.remaining), secondary: LoopStrings.onHold)
         case .finished:
             TimeDisplay(
                 time: LoopTimeFormat.remaining(snapshot.remaining),
