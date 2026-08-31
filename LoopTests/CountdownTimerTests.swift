@@ -105,6 +105,22 @@ struct CountdownTimerTests {
         #expect(timer.phase(at: resumedAt.addingTimeInterval(60)) == .running)
     }
 
+    @Test("The area freezes while the timer is held and carries on from there")
+    func fractionFreezesWhileHeld() {
+        var timer = CountdownTimer(durationMinutes: 20)
+        timer.start(at: start)
+        timer.pause(at: start.addingTimeInterval(300))
+
+        // Two hours held: the area is where it was, not where wall time got to.
+        let heldFor = start.addingTimeInterval(300 + 2 * 3_600)
+        #expect(timer.fraction(at: start.addingTimeInterval(300)) == 0.25)
+        #expect(timer.fraction(at: heldFor) == 0.25)
+        #expect(timer.snapshot(at: heldFor).fraction == 0.25)
+
+        timer.resume(at: heldFor)
+        #expect(timer.fraction(at: heldFor.addingTimeInterval(300)) == 0.5)
+    }
+
     @Test("A countdown that ran out in the background comes back finished")
     func finishesWhileAway() {
         var timer = CountdownTimer(durationMinutes: 25)
