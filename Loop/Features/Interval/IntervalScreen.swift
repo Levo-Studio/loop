@@ -237,7 +237,11 @@ struct IntervalScreen: View {
             // "on hold" rather than "paused": the pill above already says
             // "Paused", and the export draws two different words here for
             // exactly that reason.
-            timeBlock(snapshot, time: LoopTimeFormat.remaining(snapshot.remaining), secondary: LoopStrings.onHold)
+            timeBlock(
+                snapshot,
+                time: LoopTimeFormat.remaining(snapshot.remaining),
+                secondary: LoopStrings.onHold
+            )
 
         case .finished:
             // The two totals on this page are different numbers and both are
