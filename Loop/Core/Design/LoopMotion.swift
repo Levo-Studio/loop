@@ -22,18 +22,14 @@ nonisolated enum LoopMotion {
     static let fill = Animation.linear(duration: tickInterval)
 
     /// A change the user made: a slider detent, an accent, a page.
-    static let selection = Animation.easeOut(duration: 0.18)
-
-    /// A scale coasting to rest on a detent after the finger has left it.
     ///
-    /// Longer than `selection`, and it has to be: `selection` covers a change
-    /// that has already happened by the time it is drawn, while this one covers
-    /// a distance the flick asked for — on a scale that runs to thirty hours
-    /// that can be hours of travel, and 0.18 s of it reads as a jump rather
-    /// than as coasting. Eased out rather than sprung, because a scroll that
-    /// overshoots its detent and comes back has picked a value the finger did
-    /// not.
-    static let settle = Animation.easeOut(duration: 0.45)
+    /// A scale snapping to its detent when the finger leaves uses this one too,
+    /// and deliberately so. That snap covers at most half a detent — the scale
+    /// stops where the finger stopped it and does not coast — so it is the same
+    /// kind of movement as any other change the hand just made. Anything longer
+    /// would read as the control still moving on its own, which is the one
+    /// thing it must never do.
+    static let selection = Animation.easeOut(duration: 0.18)
 
     /// The animation to actually use, given the accessibility setting.
     ///
