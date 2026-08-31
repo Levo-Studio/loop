@@ -20,9 +20,12 @@ struct CountdownScreen: View {
     /// answers are needed by code that is not a view at all.
     @Environment(LoopSettings.self) private var settings
 
-    /// The timer itself. A value, not an observable object — the engine holds no
-    /// view and publishes nothing; a new frame comes from `now` moving.
-    @State private var timer = CountdownTimer()
+    /// The countdown, owned by the app rather than by this page. Read above the
+    /// scaffold like the settings, and for one reason more: a run has to
+    /// outlive this view. Held as `@State` it would be gone with the process,
+    /// and a countdown that forgets it was running is the one failure a timer
+    /// cannot have.
+    @Environment(LoopTimers.self) private var timers
 
     /// The instant the current frame is drawn at. Every displayed value is
     /// derived from it, so the phase, the time and the area can never disagree
@@ -43,7 +46,7 @@ struct CountdownScreen: View {
         // time, then the fraction would be three different instants, and one
         // landing either side of the finish shows a full area under a running
         // pill.
-        let snapshot = timer.snapshot(at: now)
+        let snapshot = timers.countdown.snapshot(at: now)
 
         // Asked of `LoopDismissal` rather than read straight off the setting.
         // The interval draws a finished state too and ignores the same switch;
@@ -163,11 +166,7 @@ struct CountdownScreen: View {
     private func durationMinutes(for snapshot: CountdownTimer.Snapshot) -> Binding<Int> {
         Binding(
             get: { snapshot.durationMinutes },
-            set: { minutes in
-                let instant = Date.now
-                timer.setDuration(minutes: minutes, at: instant)
-                now = instant
-            }
+            set: { minutes in act { $0.setDuration(minutes: minutes, at: $1) } }
         )
     }
 
@@ -225,9 +224,7 @@ struct CountdownScreen: View {
     /// engine, so the tap redraws at the time it happened rather than at the
     /// time of the last tick.
     private func start() {
-        let instant = Date.now
-        timer.start(at: instant)
-        now = instant
+        act { $0.start(at: $1) }
         run += 1
     }
 
@@ -242,20 +239,30 @@ struct CountdownScreen: View {
     }
 
     private func pause() {
-        let instant = Date.now
-        timer.pause(at: instant)
-        now = instant
+        act { $0.pause(at: $1) }
     }
 
     private func resume() {
-        let instant = Date.now
-        timer.resume(at: instant)
-        now = instant
+        act { $0.resume(at: $1) }
     }
 
     private func stop() {
-        timer.reset()
-        now = .now
+        act { countdown, _ in countdown.reset() }
+    }
+
+    /// Runs a change against a freshly read instant and draws the page for that
+    /// same instant, so a tap does not land at one time and redraw at another.
+    ///
+    /// It goes through the owner rather than into a local copy: that is what
+    /// puts the new state on disk, and it is the only write path there is.
+    /// The instant is handed back for the tick, which draws the lock screen
+    /// from the same frame it just settled.
+    @discardableResult
+    private func act(_ change: (inout CountdownTimer, Date) -> Void) -> Date {
+        let instant = Date.now
+        timers.update(\.countdown) { change(&$0, instant) }
+        now = instant
+        return instant
     }
 
     // MARK: - Ticking
@@ -284,19 +291,15 @@ struct CountdownScreen: View {
         // Even a page that is not running settles once on arrival. A run can
         // expire while this task is suspended or the page is off-screen, and
         // the phase it comes back with has to be the one the time says.
-        now = .now
-        timer.commitTransitions(at: now)
+        act { $0.commitTransitions(at: $1) }
 
         guard phase == .running else { return }
 
         while !Task.isCancelled {
-            let instant = Date.now
-            now = instant
             // Written back rather than only read, so the finish is persisted in
             // the value and the task ends with the phase it produced.
-            timer.commitTransitions(at: instant)
-
-            let frame = timer.snapshot(at: instant)
+            let instant = act { $0.commitTransitions(at: $1) }
+            let frame = timers.countdown.snapshot(at: instant)
             // The lock screen and the Dynamic Island, off the same snapshot the
             // tick already has. Called every tick rather than on a transition:
             // the controller pushes only when something it shows has moved, and
@@ -375,4 +378,5 @@ private struct CountdownSetup: View {
 #Preview {
     CountdownScreen()
         .environment(LoopSettings(defaults: UserDefaults(suiteName: "preview") ?? .standard))
+        .environment(LoopTimers(store: TimerStateStore(defaults: UserDefaults(suiteName: "preview") ?? .standard)))
 }

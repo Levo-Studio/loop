@@ -11,10 +11,12 @@ import SwiftUI
 /// is legal all arrive together in one `Snapshot`.
 struct IntervalScreen: View {
 
-    /// The run itself. Held here rather than inside a slot of the scaffold —
-    /// those closures are built twice, and two copies of a timer would drift
-    /// apart on the first tick.
-    @State private var timer = IntervalTimer()
+    /// The run itself, owned by the app rather than by this page. Read above
+    /// the scaffold — those closures are built twice and would each read their
+    /// own copy — and held outside the view because a schedule has to survive
+    /// the process: an interval left running is exactly the run nobody is
+    /// watching the screen for.
+    @Environment(LoopTimers.self) private var timers
 
     /// The instant the page is drawn at. Every displayed value is derived from
     /// it, so the screen never counts anything; it re-reads the clock.
@@ -34,7 +36,7 @@ struct IntervalScreen: View {
         // block, then the fraction would be three different `now` values, and
         // two of those either side of a block boundary put a "Focus" pill over
         // an area that belongs to the break.
-        let snapshot = timer.snapshot(at: now)
+        let snapshot = timers.interval.snapshot(at: now)
 
         PageScaffold(fill: fill(snapshot)) {
             pill(snapshot)
@@ -269,8 +271,8 @@ struct IntervalScreen: View {
             // right. Setup sums the whole run, breaks included; this line sums
             // the focus blocks only, which is what "focused" means.
             TimeDisplay(
-                time: LoopTimeFormat.hoursAndMinutes(timer.focusedDuration),
-                secondary: LoopStrings.hoursFocused(timer.focusedDuration)
+                time: LoopTimeFormat.hoursAndMinutes(timers.interval.focusedDuration),
+                secondary: LoopStrings.hoursFocused(timers.interval.focusedDuration)
             )
         }
     }
@@ -338,7 +340,7 @@ struct IntervalScreen: View {
                 unit: LoopStrings.timesUnit
             )
 
-            TotalLine(duration: timer.plannedDuration)
+            TotalLine(duration: timers.interval.plannedDuration)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -414,16 +416,18 @@ struct IntervalScreen: View {
     /// stale instant to the engine would start a run in the past. Reading the
     /// clock once and using the same value for the change and for the next
     /// frame keeps the two in step.
+    /// The change goes through the owner rather than into a local copy: that
+    /// is what puts the new state on disk, and it is the only write path there
+    /// is.
     private func act(_ change: (inout IntervalTimer, Date) -> Void) {
         let instant = Date.now
-        change(&timer, instant)
+        timers.update(\.interval) { change(&$0, instant) }
         now = instant
     }
 
     /// Back to setup with the scales untouched — what Stop and Close both do.
     private func reset() {
-        timer.reset()
-        now = .now
+        act { interval, _ in interval.reset() }
     }
 
     // MARK: - Setup bindings
@@ -535,4 +539,5 @@ private struct TotalLine: View {
 #Preview {
     IntervalScreen()
         .environment(LoopSettings(defaults: UserDefaults(suiteName: "preview") ?? .standard))
+        .environment(LoopTimers(store: TimerStateStore(defaults: UserDefaults(suiteName: "preview") ?? .standard)))
 }
