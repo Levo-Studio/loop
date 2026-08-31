@@ -190,6 +190,37 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     var sliderMarkerWidth: CGFloat { scaled(3) }
     var sliderMarkerHeight: CGFloat { scaled(isLandscape ? 26 : 30) }
 
+    /// How many tick slots the export lays across the width of a scale.
+    ///
+    /// The countdown's duration scale is drawn as 0…60 in sixty-one equal
+    /// `flex:1` slots spanning the content width, so a minute is the width over
+    /// sixty-one. This is the one piece of the scale's geometry that the
+    /// scrolling version cannot read straight off the export: a scale running
+    /// to thirty hours has no "across the width" left to divide by, so the
+    /// density is fixed here at what was drawn and the width decides how much
+    /// of the scale is visible instead.
+    ///
+    /// Deriving the pitch from the width rather than from `scaled(_:)` also
+    /// keeps every layout matching the export by itself — the iPad column is
+    /// `520 × 1.15`, so its ticks come out 1.15 apart without a second rule.
+    static let sliderTickSlotsAcrossWidth = 61
+
+    /// The distance between two adjacent minutes on a scale of a given width.
+    static func sliderMinutePitch(width: CGFloat) -> CGFloat {
+        width / CGFloat(sliderTickSlotsAcrossWidth)
+    }
+
+    // MARK: - Break headline
+
+    /// The gap between the interval break's `BREAK` headline and the time block
+    /// under it.
+    ///
+    /// The headline came after the export, so there is no drawn gap for it.
+    /// It takes `timeBlockSpacing` — the drawn distance from the big time to
+    /// the line beneath it — so the two things flanking the time sit the same
+    /// distance from it, which is what makes the block read as one.
+    var breakHeadlineSpacing: CGFloat { timeBlockSpacing }
+
     // MARK: - Stepper
 
     var stepperDiameter: CGFloat { scaled(29) }
