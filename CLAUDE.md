@@ -69,6 +69,37 @@ Two known facts about the export, so nobody rediscovers them the hard way:
   actually drawn. Concretely: the notes say landscape padding is `32/28/24`, the
   HTML renders landscape at `32/40/24`. Use `32/40/24`.
 
+## Where the export stops
+
+The export covers the five screens as they were first drawn. Everything below
+was decided by the owner **after** it, and for these the owner is the source —
+not `design/`. Do not block on "it is not in the export", and do not implement
+the export's older answer where it disagrees:
+
+- **The scales scroll, the marker does not.** The selector sits fixed at the
+  centre and the scale travels underneath it, so the range is no longer bounded
+  by the screen width. Steps are staged: one minute up to two hours, five
+  minutes beyond that, up to thirty hours. The export draws the inverse — a
+  fixed scale with a travelling marker — and is superseded here.
+- **Sound.** iOS system sounds, no bundled assets. One tone when a block ends
+  and a different one when the next begins, so the two are distinguishable
+  without looking. A tone when a countdown finishes.
+- **The countdown's finished state can require a swipe** to dismiss, like an
+  alarm. It is a setting and it is **on** by default.
+- **The interval never requires a swipe.** Not at a block boundary, not at the
+  end. A boundary plays its tone and the run continues on its own; stopping a
+  focus session to make someone wipe the screen defeats the point of it.
+- **The break screen carries a `BREAK` headline** above the time — 32 pt,
+  weight 500, uppercase, the status pill's letter-spacing. Clearly a headline,
+  clearly subordinate to the 104 pt time. Focus has no headline: the pill is
+  enough, and the headline is what makes a break unmistakable at a glance.
+- **Live Activity** on the lock screen and in the Dynamic Island, for the
+  countdown and the interval.
+
+Everything the export *does* cover still binds exactly as before. When in doubt
+about whether a value is superseded, ask rather than assume — the list above is
+the whole of it.
+
 ## The non-negotiable design idea
 
 There is exactly **one** progress indicator in this app: a solid area that
