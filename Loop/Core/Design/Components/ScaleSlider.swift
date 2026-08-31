@@ -125,6 +125,14 @@ struct ScaleSlider: View {
     /// drag has to be told apart from a continuing one.
     @State private var isDragging = false
 
+    /// Which detent the last tap was for.
+    ///
+    /// Kept here rather than derived from `minutes`, because `minutes` is a
+    /// binding onto the snapshot the frame was built from and cannot answer a
+    /// question about what has happened since. This is the view's own state, so
+    /// it is current for every callback in a pass.
+    @State private var feedback = DetentFeedback()
+
     var body: some View {
         VStack(alignment: .leading, spacing: metrics.sliderSpacing) {
             header
@@ -140,6 +148,11 @@ struct ScaleSlider: View {
             case .decrement: minuteScale.previous(before: minutes)
             @unknown default: minutes
             }
+            // Unlike the drag's, this comparison is a limit and not an
+            // elision: at either end of the scale the step returns the value
+            // it was given, and there is neither a move to write nor a detent
+            // to announce. One adjustment is one gesture, so there is no second
+            // one to be a pass behind.
             guard adjusted != minutes else { return }
             minutes = adjusted
             // Same reason the drag fires it here: this view is built twice
@@ -383,6 +396,12 @@ struct ScaleSlider: View {
                     // from where it visibly is; reading the binding would
                     // start it from the value the settle has not arrived at.
                     gestureOrigin = Double(displayedMinutes)
+                    // From where the scale stands, for the same reason: a
+                    // finger put down mid-settle has landed on the detent
+                    // nearest the drawing, not on the one the binding still
+                    // reads, and putting it down is not a choice to be tapped
+                    // for.
+                    feedback.begin(at: minuteScale.nearest(to: gestureOrigin))
                     isDragging = true
                 }
 
@@ -438,16 +457,28 @@ struct ScaleSlider: View {
     /// Moves the value to a detent, with the one tap of feedback that detent is
     /// owed.
     ///
+    /// The write is unconditional. Comparing against `minutes` first — the
+    /// obvious thing, and what this did — costs a write: the binding's getter
+    /// reads the snapshot the frame was built from, so it is one body pass
+    /// behind everything written during that pass. Two callbacks in a single
+    /// pass and a finger that comes back to the value last drawn, and the
+    /// comparison reports "no change" for the detent the finger really is on,
+    /// so the value the drag ended on is the one that never arrives. The
+    /// setters behind the binding clamp to this same scale and take a value
+    /// they already hold without complaint, so nothing was being saved.
+    ///
+    /// The tap is a different question and is asked separately. It has to be:
+    /// a drag reports many times per detent, and one tap per callback is a buzz
+    /// rather than the sense of counting minutes. `DetentFeedback` answers it
+    /// from this view's own state, which — unlike the binding — is current
+    /// within the pass.
+    ///
     /// Fired from the gesture rather than by watching `minutes`: this view is
     /// built twice inside `FillSurface`, and a modifier that watches the binding
-    /// would fire from both copies. One tick per detent is what makes the drag
-    /// feel like counting minutes rather than sliding a value — and the guard is
-    /// what keeps it to one, including on a flick, where the value crosses
-    /// hundreds of detents and only the one it lands on is a choice.
+    /// would fire from both copies.
     private func settle(on value: Int) {
-        guard value != minutes else { return }
         minutes = value
-        LoopHaptics.detent()
+        if feedback.arrived(at: value) { LoopHaptics.detent() }
     }
 
     /// Holds the scale inside its range.
