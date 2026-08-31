@@ -7,11 +7,11 @@ Copyright (c) 2026 Levo Studio. All rights reserved.
 
 The source code of Loop is open. You may read it, clone it, study it, change it,
 build it yourself and run it on devices you own. What you may not do is pass it
-on: no store, no TestFlight — not even your own —, no sideloading to anyone
+on: no store, no TestFlight — not even your own — no sideloading to anyone
 else, no handing a compiled build to a friend, no selling it, and no presenting
-yourself as the author or provider of Loop under whatever name. Loop is and
-stays a product of Levo Studio. Pull requests are expressly welcome, and every
-contribution is named in the credits.
+yourself as the author or provider of Loop under any name whatsoever. Loop is
+and stays a product of Levo Studio. Pull requests are expressly welcome, and
+every contribution is named in the credits.
 
 This is not an open-source license in the sense of the Open Source Definition,
 because it restricts distribution and commercial use. From here on the sections
@@ -51,7 +51,7 @@ prohibited:
   (a) distributing the software or a version derived from it in any form —
       including publication in the App Store or in any other app store,
       marketplace or distribution channel, distribution via TestFlight
-      including a TestFlight programme of your own, sideloading to third
+      including a TestFlight program of your own, sideloading to third
       parties, and passing a compiled binary to any other person at all,
       regardless of the name used and regardless of whose developer account is
       involved;

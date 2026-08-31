@@ -193,7 +193,7 @@ Source-available, and stricter than it looks. Read the code, clone it, change
 it, build it and run it on devices you own. That is the whole of it.
 
 **No distribution of any kind.** Not the App Store, not any other store, not
-TestFlight — not even your own —, not sideloading to somebody else, not handing
+TestFlight — not even your own — not sideloading to somebody else, not handing
 a compiled build to a friend. No sale and no transfer for money. No presenting
 yourself as the author or provider of Loop, and no use of the name "Loop", the
 Levo Studio mark, the logo, the app icon or the visual design for your own
