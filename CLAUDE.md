@@ -76,6 +76,18 @@ duration of the *current* block. No bars, no rings, no dots, no segments, no
 second opinion. Interval uses the same fill for focus and for break — only the
 status pill and the round counter change.
 
+**The fill is a progress indicator, never a decoration.** It exists only while a
+block is running, and its height is `1 − remaining / blockDuration` for the
+*current* block. Clock, Count-up and every setup, idle and stopped state have no
+total duration to measure against, so they show **no area at all** — not a
+sliver, not a resting height, not a tint. An area on screen while nothing is
+counting is a bug, and it is the kind that reads as a design choice, so nobody
+reports it.
+
+Rounds, focus length and break length belong to **Interval only**. Countdown has
+exactly one control: the duration. That difference is the whole reason the two
+screens exist separately.
+
 Anything crossing the fill edge — the time, labels, buttons, the navigation
 dots — is **two-toned**: ink above the edge, the on-fill tone below it. In the
 prototype this is the same content rendered twice with `clip-path`. In SwiftUI
@@ -286,11 +298,25 @@ specific: `feat/interval-skip-during-break`, not `feat/timer`.
 **No `claude/` prefix** and no other prefix named after the tool being used. The
 branch is named after the work, not after the hammer.
 
-Each feature gets its own worktree:
+Each feature gets its own worktree, and **every worktree lives inside the
+repository**, under `.worktrees/`:
 
 ```bash
-git worktree add ../loop-wt-<feature-slug> feat/<feature-slug>
+git worktree add .worktrees/<feature-slug> -b feat/<feature-slug>
 ```
+
+Never create a worktree as a sibling directory next to the repository. Nothing
+belonging to this project is allowed to sit outside its folder — not a
+worktree, not a scratch checkout, not a build directory. `.worktrees/` is in
+`.gitignore`, so it never reaches a commit. Clean up with
+`git worktree remove .worktrees/<feature-slug>` once the branch is merged, and
+`git worktree list` should show only `main` when nothing is in flight.
+
+Scratch files that are not a checkout go to `/tmp`, never into the repository.
+
+**Push after every commit.** A branch that exists only on this machine is a
+branch nobody can look at. The remote is the state of the work, not a place
+things get uploaded to at the end.
 
 ## How Claude is used here
 
