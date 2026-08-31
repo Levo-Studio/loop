@@ -65,7 +65,7 @@ struct CountdownScreen: View {
     @ViewBuilder private func content(for snapshot: CountdownTimer.Snapshot) -> some View {
         switch snapshot.phase {
         case .idle:
-            CountdownSetup(time: LoopTimeFormat.remaining(snapshot.duration), minutes: durationMinutes)
+            CountdownSetup(time: LoopTimeFormat.remaining(snapshot.duration), minutes: durationMinutes(for: snapshot))
         case .running:
             TimeDisplay(
                 time: LoopTimeFormat.remaining(snapshot.remaining),
@@ -85,14 +85,14 @@ struct CountdownScreen: View {
     /// twice inside the fill surface, and two copies of the same number would
     /// drift apart the moment one of them was dragged.
     ///
-    /// One of the two reads that go to the timer rather than to the frame's
-    /// snapshot — `canStart` below is the other. Both are pure functions of
-    /// `durationMinutes`, which no time-driven transition touches, so they
-    /// carry no instant to disagree about. Everything that does depend on the
-    /// time still comes from the snapshot, and anything added here should too.
-    private var durationMinutes: Binding<Int> {
+    /// The two directions are not the same operation. Reading is drawing — the
+    /// "25 min" beside the scale, every frame — so it comes off the snapshot
+    /// like everything else on the page. Writing is a clamped mutation, so it
+    /// goes through the engine's setter and the clamp stays in the one place
+    /// that owns it.
+    private func durationMinutes(for snapshot: CountdownTimer.Snapshot) -> Binding<Int> {
         Binding(
-            get: { timer.durationMinutes },
+            get: { snapshot.durationMinutes },
             set: { minutes in
                 let instant = Date.now
                 timer.setDuration(minutes: minutes, at: instant)
@@ -107,10 +107,7 @@ struct CountdownScreen: View {
         switch snapshot.phase {
         case .idle:
             ControlRow(
-                // `canStart` off the timer rather than off the snapshot, for
-                // the reason given on `durationMinutes` above: it asks whether
-                // the scale is above zero, which no instant can change.
-                primary: .init(LoopStrings.start, isEnabled: timer.canStart) { start() },
+                primary: .init(LoopStrings.start, isEnabled: snapshot.canStart) { start() },
                 // Dead but present, exactly as the export draws it: there is
                 // nothing to reset before a run, and hiding the button would
                 // move the row the moment one started.
