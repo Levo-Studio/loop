@@ -194,6 +194,13 @@ visible string sits as a literal in a view.
 - `// MARK: -` in any file with more than one type or more than a handful of
   functions.
 - **No numeric or colour literals in feature files.** See above.
+- **One exception, and only one: a tick cadence.** How often a screen wakes to
+  re-read `Date.now` is not a design value. It is not in the export because a
+  still image cannot contain one, and it belongs to the screen that does the
+  waking. Keep it as a named `private static let` with the reasoning in a
+  comment — never an inline literal, and never two names for the same number.
+  Everything else with a number in it is a design value until the owner says
+  otherwise.
 - **Nothing enforces style** — no SwiftLint, no SwiftFormat. So match the file
   you are editing.
 - Never change formatting in the same commit as logic. If an indentation bothers
