@@ -58,7 +58,51 @@ private struct SettingsColumn: View {
     @Environment(\.loopInk) private var ink
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// The column, and a scrolling copy of it for the heights it does not fit.
+    ///
+    /// **Why it scrolls at all.** Settings is the one page whose height grows:
+    /// every setting the app gains is another row against a page that stays the
+    /// same size, and a landscape iPhone has 346 pt of box for it. The three
+    /// switches, the divider, the accent list and the footer already come to
+    /// 383 pt there. The alternative was to close the landscape gaps further —
+    /// `LoopMetrics` already takes them to 0.54 of portrait — but fitting this
+    /// column would need roughly 0.22, which is not a tighter design, it is a
+    /// squeeze, and the next setting would break it again. The export never
+    /// drew a landscape settings state, so nothing here is being contradicted.
+    ///
+    /// **Why `ViewThatFits` and not a plain `ScrollView`.** A scroll view that
+    /// is always there is always scrollable: it bounces, it flashes an
+    /// indicator, and it changes how the column is placed in the space it is
+    /// given. Portrait — and any landscape with room — has to look exactly as
+    /// it did before this was added, and the only way to be sure of that is for
+    /// there to be no scroll view in the tree at all. So the plain column is
+    /// offered first and taken whenever it fits; the scrolling copy is what is
+    /// left when it does not.
+    ///
+    /// The navigation dots and the page padding are `PageScaffold`'s and are
+    /// outside this view, so they stay put while the column moves under them.
+    /// The dots are the app's only navigation and must never scroll away.
+    ///
+    /// - Note: `FillSurface` builds this twice, and a scroll view carries an
+    ///   offset of its own that the two copies do not share. It does not show
+    ///   here because this page has no duration and so passes `.none`, which
+    ///   masks the second copy to a zero-height rectangle — it draws nothing to
+    ///   drift. A settings page that ever gained a fill would have to lift the
+    ///   scroll position above the scaffold and pass it in, the way `RootShell`
+    ///   does with the current page.
     var body: some View {
+        ViewThatFits(in: .vertical) {
+            column
+
+            ScrollView(.vertical) {
+                column
+            }
+        }
+        .foregroundStyle(ink.base)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var column: some View {
         VStack(alignment: .leading, spacing: metrics.settingsSectionSpacing) {
             Text(LoopStrings.settings)
                 .loopTextStyle(typography.sectionHeading)
@@ -66,7 +110,6 @@ private struct SettingsColumn: View {
             switchSection
             accentSection
         }
-        .foregroundStyle(ink.base)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
