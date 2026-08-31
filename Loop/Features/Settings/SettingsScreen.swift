@@ -83,6 +83,18 @@ private struct SettingsColumn: View {
     /// outside this view, so they stay put while the column moves under them.
     /// The dots are the app's only navigation and must never scroll away.
     ///
+    /// **The two branches do not align alike, and that was accepted rather
+    /// than overlooked.** The plain column is centred in the space the scaffold
+    /// gives it, which is how the export draws the page. A scroll view cannot
+    /// centre content taller than its viewport, so the scrolling branch
+    /// top-aligns instead: the first paint puts the heading flush under the top
+    /// padding and cuts the accent list off mid-row, with no indicator at rest
+    /// to say the rest is below. That reads as a clipped layout rather than a
+    /// scrollable one, and it is a genuine cost, not a detail. It is taken
+    /// knowingly — the alignment is inherent to scrolling, it happens only in a
+    /// state the export never drew, and the alternative is squeezing the gaps
+    /// to a factor the next setting would break again.
+    ///
     /// - Note: `FillSurface` builds this twice, and a scroll view carries an
     ///   offset of its own that the two copies do not share. It does not show
     ///   here because this page has no duration and so passes `.none`, which
