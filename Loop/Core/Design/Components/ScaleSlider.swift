@@ -19,8 +19,12 @@ struct ScaleSlider: View {
     /// meaningful bottom end.
     let maximumMinutes: Int
 
-    /// How often a number is printed: every 15 minutes on the hour-long scales,
-    /// every 10 on the half-hour break scale.
+    /// How often a number is printed under the scale, in minutes.
+    ///
+    /// Comes from `LoopMetrics.durationNumberInterval` or
+    /// `LoopMetrics.breakNumberInterval`. Deliberately has no default: a
+    /// wrong-but-plausible density is the kind of thing that survives review,
+    /// so each scale has to say which of the two it is.
     let numberEvery: Int
 
     /// The unit after the value in the header.

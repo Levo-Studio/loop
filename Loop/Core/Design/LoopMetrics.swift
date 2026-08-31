@@ -169,6 +169,21 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// A taller tick every five minutes.
     static let sliderMajorTickInterval = 5
 
+    /// How often a number is printed under the scale, in minutes.
+    ///
+    /// Two values, because the two scale lengths need different densities: the
+    /// hour-long scales — the countdown's duration and the interval's focus
+    /// block — print 0/15/30/45/60, and the half-hour break scale prints
+    /// 0/10/20/30. Both are drawn identically in all four layouts, so unlike
+    /// nearly everything else here they take neither the idiom factor nor a
+    /// landscape variant: they count minutes, and a minute is not a length.
+    ///
+    /// The **ranges** these subdivide belong to the engine, in
+    /// `LoopTimerLimits`. How far a scale runs is a rule about the timer; how
+    /// often it is labelled is a rule about the drawing.
+    static let durationNumberInterval = 15
+    static let breakNumberInterval = 10
+
     var sliderNumberRowHeight: CGFloat { scaled(15) }
     var sliderNumberRowTopPadding: CGFloat { scaled(3) }
 
