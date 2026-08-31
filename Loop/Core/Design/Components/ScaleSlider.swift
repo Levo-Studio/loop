@@ -118,6 +118,13 @@ struct ScaleSlider: View {
     /// thinks it started.
     @State private var gestureOrigin: Double = 0
 
+    /// Whether a finger is on the scale.
+    ///
+    /// `scrollMinutes` cannot answer this: it stays set through the settle
+    /// after the finger has gone, which is exactly the window in which a new
+    /// drag has to be told apart from a continuing one.
+    @State private var isDragging = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: metrics.sliderSpacing) {
             header
@@ -247,8 +254,13 @@ struct ScaleSlider: View {
                 Text(verbatim: Self.numberLabel(minutes: value))
                     .loopTextStyle(typography.scaleNumber)
                     .fixedSize()
-                    .frame(width: Self.numberSlotWidth)
-                    .offset(x: origin + CGFloat(value) * pitch - Self.numberSlotWidth / 2)
+                    // A zero-width frame carries no width of its own, so the
+                    // label overflows it evenly on both sides and the frame's
+                    // edge *is* its centre. Offsetting that to the tick centres
+                    // the label on it — the export's `translateX(-50%)` —
+                    // without a slot width to invent or to outgrow.
+                    .frame(width: 0)
+                    .offset(x: origin + CGFloat(value) * pitch)
             }
         }
         .frame(height: metrics.sliderNumberRowHeight)
@@ -365,7 +377,14 @@ struct ScaleSlider: View {
         DragGesture(minimumDistance: 0)
             .onChanged { gesture in
                 guard pitch > 0 else { return }
-                if scrollMinutes == nil { gestureOrigin = Double(minutes) }
+                if !isDragging {
+                    // From where the scale is standing, not from `minutes`.
+                    // A finger put down during a settle takes the scale over
+                    // from where it visibly is; reading the binding would
+                    // start it from the value the settle has not arrived at.
+                    gestureOrigin = Double(displayedMinutes)
+                    isDragging = true
+                }
 
                 // Dragging left moves the scale left, which brings larger
                 // values under the marker — the same direction a physical dial
@@ -388,18 +407,29 @@ struct ScaleSlider: View {
                 // its own is exactly the kind of unrequested travel the setting
                 // asks to be spared, so there the scale stops where the finger
                 // left it.
+                isDragging = false
+
                 let travel = reduceMotion ? gesture.translation.width : gesture.predictedEndTranslation.width
                 let projected = gestureOrigin - Double(travel / pitch)
                 let target = minuteScale.nearest(to: projected)
-                settle(on: target)
 
-                // Rest exactly on the detent, then hand the drawing back to the
-                // binding. Holding a fractional position after the gesture
-                // would leave the scale standing on a stale number the next
-                // time the value is set from anywhere else.
+                // The value changes when the scale arrives, not when the finger
+                // leaves. Writing it here instead would put the landing number
+                // in the header while the marker was still half a second and
+                // possibly several hours away from it — the header and the
+                // scale are two readings of one value and must never disagree.
+                //
+                // Resting exactly on the detent and then handing the drawing
+                // back to the binding: holding a fractional position after the
+                // gesture would leave the scale standing on a stale number the
+                // next time the value is set from anywhere else.
                 withAnimation(LoopMotion.resolve(LoopMotion.settle, reduceMotion: reduceMotion)) {
                     scrollMinutes = Double(target)
                 } completion: {
+                    // A finger back on the scale owns it; this settle is over
+                    // and its landing value is no longer the answer.
+                    guard !isDragging else { return }
+                    settle(on: target)
                     scrollMinutes = nil
                 }
             }
@@ -429,11 +459,6 @@ struct ScaleSlider: View {
     private func bounded(_ value: Double) -> Double {
         min(Double(minuteScale.range.upperBound), max(Double(minuteScale.range.lowerBound), value))
     }
-
-    /// A slot wide enough for any number on the scale, so the label can be
-    /// centred on its tick by offsetting rather than by `position`, which would
-    /// also centre it vertically in the row.
-    private static let numberSlotWidth: CGFloat = 100
 
     /// The export prints a leading zero — "05 min", not "5 min" — so the value
     /// keeps its width as it crosses ten. Sub-hour values only; see
