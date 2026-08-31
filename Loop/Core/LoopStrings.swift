@@ -285,6 +285,19 @@ nonisolated enum LoopStrings {
         comment: "Unit after a duration value; the leading space separates it from the number"
     )
 
+    /// The unit after a duration written as `h:mm`, so a scale reading past an
+    /// hour says "2:05 h" rather than "125 min".
+    ///
+    /// The same " h" the interval's total carries. It is a second key rather
+    /// than a fragment lifted out of `total(_:)`: that line is one run in the
+    /// export and stays one key, because a translator has to be able to reorder
+    /// the label, the number and the unit inside it.
+    static let hoursUnit = LocalizedStringResource(
+        "unit.hours",
+        defaultValue: " h",
+        comment: "Unit after a duration value written as h:mm; the leading space separates it from the number"
+    )
+
     static let timesUnit = LocalizedStringResource(
         "unit.times",
         defaultValue: " ×",

@@ -25,8 +25,9 @@ nonisolated enum LoopTimerLimits {
     /// every value people actually pick, up to and including a two-hour block,
     /// exactly reachable.
     ///
-    /// Shared by all three minute scales. The break never reaches the second
-    /// stage (see below), which is deliberate rather than an oversight: a break
+    /// Shared by all three minute scales. The break ends exactly at the stage
+    /// boundary (see below), which is deliberate rather than an oversight:
+    /// every value below its upper bound is on the one-minute stage, so a break
     /// is adjustable to the minute over its whole length.
     static let stages: [LoopMinuteScale.Stage] = [
         .init(start: 0, step: 1),

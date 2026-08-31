@@ -33,9 +33,10 @@ nonisolated struct LoopMinuteScale: Sendable, Equatable {
 
     // MARK: - Shape
 
-    /// The ends of the scale. Both ends are meant to be selectable values —
-    /// an upper bound that is not on a detent could never be reached, and the
-    /// end of a scale is the one value a user is most likely to drag for.
+    /// The ends of the scale. Both ends are selectable values, and the `init`
+    /// insists on it — an upper bound that is not on a detent could never be
+    /// reached, and the end of a scale is the one value a user is most likely
+    /// to drag for.
     let range: ClosedRange<Int>
 
     /// Ordered by `start`, coarsest last.
@@ -46,12 +47,22 @@ nonisolated struct LoopMinuteScale: Sendable, Equatable {
     /// or a zero step would divide by zero on the first question asked, so
     /// failing here fails on the first launch of a wrong build rather than in
     /// someone's hands.
+    ///
+    /// The ends are checked for the opposite reason: a bound that is off the
+    /// detents fails *silently*. `next(after:)` and `nearest(to:)` both
+    /// saturate at the bound, so they would keep answering a value that
+    /// `isSelectable` calls false, and a picker would rest somewhere it says
+    /// it cannot. Since adding a stage is meant to be a one-line change, the
+    /// line that makes a bound unreachable has to say so.
     init(range: ClosedRange<Int>, stages: [Stage]) {
         precondition(!stages.isEmpty, "A minute scale needs at least one stage.")
         precondition(stages.allSatisfy { $0.step > 0 }, "A stage without a positive step has no detents.")
 
         self.range = range
         self.stages = stages.sorted { $0.start < $1.start }
+
+        precondition(isSelectable(range.lowerBound), "The bottom of a scale has to be a selectable value.")
+        precondition(isSelectable(range.upperBound), "The top of a scale has to be a selectable value.")
     }
 
     // MARK: - Asking

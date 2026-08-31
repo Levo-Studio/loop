@@ -2,11 +2,11 @@ import SwiftUI
 
 // MARK: - Settings
 
-/// The seconds toggle and the accent list, over a footer. No status pill and no
+/// The switches and the accent list, over a footer. No status pill and no
 /// rising area — this page is the only one that is not a timer, so there is no
 /// duration to measure and nothing to show progress against.
 ///
-/// Both settings are written straight into `LoopSettings`, which the shell reads
+/// Every setting is written straight into `LoopSettings`, which the shell reads
 /// to build the palette. That is why the accent list needs no callback and no
 /// local copy of the choice: tapping a row changes the one value the whole app
 /// resolves its colours from, and every page recolours with it.
@@ -24,7 +24,12 @@ struct SettingsScreen: View {
         return PageScaffold {
             EmptyView()
         } content: {
-            SettingsColumn(showSeconds: $settings.showSeconds, accent: $settings.accent)
+            SettingsColumn(
+                showSeconds: $settings.showSeconds,
+                sound: $settings.sound,
+                swipeToDismiss: $settings.swipeToDismiss,
+                accent: $settings.accent
+            )
         } controls: {
             SettingsFooter()
         }
@@ -33,7 +38,7 @@ struct SettingsScreen: View {
 
 // MARK: - Column
 
-/// The heading, the seconds row and the accent list.
+/// The heading, the switch block and the accent list.
 ///
 /// A view of its own rather than a `@ViewBuilder` on the screen, because the ink
 /// has to be read from inside `PageScaffold`. `FillSurface` puts the tone for
@@ -44,6 +49,8 @@ struct SettingsScreen: View {
 private struct SettingsColumn: View {
 
     @Binding var showSeconds: Bool
+    @Binding var sound: Bool
+    @Binding var swipeToDismiss: Bool
     @Binding var accent: LoopAccent
 
     @Environment(\.loopMetrics) private var metrics
@@ -51,49 +58,103 @@ private struct SettingsColumn: View {
     @Environment(\.loopInk) private var ink
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// The column, and a scrolling copy of it for the heights it does not fit.
+    ///
+    /// **Why it scrolls at all.** Settings is the one page whose height grows:
+    /// every setting the app gains is another row against a page that stays the
+    /// same size, and a landscape iPhone has 346 pt of box for it. The three
+    /// switches, the divider, the accent list and the footer already come to
+    /// 383 pt there. The alternative was to close the landscape gaps further —
+    /// `LoopMetrics` already takes them to 0.54 of portrait — but fitting this
+    /// column would need roughly 0.22, which is not a tighter design, it is a
+    /// squeeze, and the next setting would break it again. The export never
+    /// drew a landscape settings state, so nothing here is being contradicted.
+    ///
+    /// **Why `ViewThatFits` and not a plain `ScrollView`.** A scroll view that
+    /// is always there is always scrollable: it bounces, it flashes an
+    /// indicator, and it changes how the column is placed in the space it is
+    /// given. Portrait — and any landscape with room — has to look exactly as
+    /// it did before this was added, and the only way to be sure of that is for
+    /// there to be no scroll view in the tree at all. So the plain column is
+    /// offered first and taken whenever it fits; the scrolling copy is what is
+    /// left when it does not.
+    ///
+    /// The navigation dots and the page padding are `PageScaffold`'s and are
+    /// outside this view, so they stay put while the column moves under them.
+    /// The dots are the app's only navigation and must never scroll away.
+    ///
+    /// **The two branches do not align alike, and that was accepted rather
+    /// than overlooked.** The plain column is centred in the space the scaffold
+    /// gives it, which is how the export draws the page. A scroll view cannot
+    /// centre content taller than its viewport, so the scrolling branch
+    /// top-aligns instead: the first paint puts the heading flush under the top
+    /// padding and cuts the accent list off mid-row, with no indicator at rest
+    /// to say the rest is below. That reads as a clipped layout rather than a
+    /// scrollable one, and it is a genuine cost, not a detail. It is taken
+    /// knowingly — the alignment is inherent to scrolling, it happens only in a
+    /// state the export never drew, and the alternative is squeezing the gaps
+    /// to a factor the next setting would break again.
+    ///
+    /// - Note: `FillSurface` builds this twice, and a scroll view carries an
+    ///   offset of its own that the two copies do not share. It does not show
+    ///   here because this page has no duration and so passes `.none`, which
+    ///   masks the second copy to a zero-height rectangle — it draws nothing to
+    ///   drift. A settings page that ever gained a fill would have to lift the
+    ///   scroll position above the scaffold and pass it in, the way `RootShell`
+    ///   does with the current page.
     var body: some View {
+        ViewThatFits(in: .vertical) {
+            column
+
+            ScrollView(.vertical) {
+                column
+            }
+        }
+        .foregroundStyle(ink.base)
+    }
+
+    /// The column itself, offered to `ViewThatFits` twice.
+    ///
+    /// The width frame belongs here rather than outside the candidates: each
+    /// one has to fill the page on its own, and inside a scroll view there is
+    /// nothing further out to widen it.
+    private var column: some View {
         VStack(alignment: .leading, spacing: metrics.settingsSectionSpacing) {
             Text(LoopStrings.settings)
                 .loopTextStyle(typography.sectionHeading)
 
-            secondsSection
+            switchSection
             accentSection
         }
-        .foregroundStyle(ink.base)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Seconds
+    // MARK: - Switches
 
-    /// The seconds row and the divider under it. The divider belongs to this
-    /// section rather than sitting between the two, because the export ties it
-    /// to the row with the tighter of the two gaps.
-    private var secondsSection: some View {
+    /// The three switches and the divider under them.
+    ///
+    /// **One block, not one section per switch.** The screen already
+    /// establishes the pattern: an unheaded block of rows directly under the
+    /// page heading, then a headed section for the accent list. All three
+    /// switches are the same kind of thing — a label and a track, on or off —
+    /// so they belong to that block, and a heading over each would invent a
+    /// taxonomy for three rows. It also keeps the column as short as it can
+    /// be, which is the constraint that actually bites in landscape.
+    ///
+    /// The order is by reach. Sound is heard on the countdown *and* the
+    /// interval and is the switch a user is most likely to go looking for, so
+    /// it leads. Seconds change one page, and swipe-to-dismiss changes one
+    /// state on one page, so it trails.
+    ///
+    /// The divider belongs to this section rather than sitting between the
+    /// two, because the export ties it to the rows with the tighter of the two
+    /// gaps. It closes the block, so it stays last no matter how many rows sit
+    /// above it.
+    private var switchSection: some View {
         VStack(spacing: metrics.settingsRowSpacing) {
-            Button {
-                withAnimation(LoopMotion.resolve(LoopMotion.selection, reduceMotion: reduceMotion)) {
-                    showSeconds.toggle()
-                }
-            } label: {
-                HStack(spacing: 0) {
-                    Text(LoopStrings.secondsInTheClock)
-                        .loopTextStyle(typography.settingsRow)
-
-                    Spacer(minLength: 0)
-
-                    SecondsToggle(isOn: showSeconds)
-                }
-                // The whole row takes the tap, not just the pill. The row is as
-                // tall as the track the design draws, so this does not buy the
-                // 44 pt a finger wants — it widens the target rather than
-                // heightening it, and a settings row that reacts to a tap
-                // anywhere along it is what the platform does everywhere else.
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityRepresentation {
-                Toggle(isOn: $showSeconds) { Text(LoopStrings.secondsInTheClock) }
-            }
+            SettingsToggleRow(label: LoopStrings.sound, isOn: $sound)
+            SettingsToggleRow(label: LoopStrings.secondsInTheClock, isOn: $showSeconds)
+            SettingsToggleRow(label: LoopStrings.swipeToDismiss, isOn: $swipeToDismiss)
 
             Rectangle()
                 .fill(ink.hair)
@@ -138,7 +199,52 @@ private struct SettingsFooter: View {
     }
 }
 
-// MARK: - Seconds toggle
+// MARK: - Switch row
+
+/// One row of the switch block: a label on the leading edge and a track on the
+/// trailing one.
+///
+/// A type of its own rather than three copies of the same `HStack`. Three rows
+/// that look alike by accident drift the moment one of them is touched, and the
+/// export draws exactly one row style here — so there is one row, called three
+/// times, and no way for the second one to end up 2 pt taller than the first.
+private struct SettingsToggleRow: View {
+
+    let label: LocalizedStringResource
+    @Binding var isOn: Bool
+
+    @Environment(\.loopTypography) private var typography
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Button {
+            withAnimation(LoopMotion.resolve(LoopMotion.selection, reduceMotion: reduceMotion)) {
+                isOn.toggle()
+            }
+        } label: {
+            HStack(spacing: 0) {
+                Text(label)
+                    .loopTextStyle(typography.settingsRow)
+
+                Spacer(minLength: 0)
+
+                SettingsToggle(isOn: isOn)
+            }
+            // The whole row takes the tap, not just the pill. The row is as
+            // tall as the track the design draws, so this does not buy the
+            // 44 pt a finger wants — it widens the target rather than
+            // heightening it, and a settings row that reacts to a tap
+            // anywhere along it is what the platform does everywhere else.
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityRepresentation {
+            Toggle(isOn: $isOn) { Text(label) }
+        }
+    }
+}
+
+// MARK: - Toggle
 
 /// The 50 × 29 pt track with its 23 pt knob.
 ///
@@ -152,7 +258,7 @@ private struct SettingsFooter: View {
 ///   an inactive *object* — the stepper circles, the secondary button — rather
 ///   than `hair`, which belongs to 1 pt lines. A 50 × 29 pt capsule at 15 %
 ///   sits at 1.19 : 1 against the background and all but vanishes.
-private struct SecondsToggle: View {
+private struct SettingsToggle: View {
 
     let isOn: Bool
 
