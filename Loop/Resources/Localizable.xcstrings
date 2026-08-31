@@ -481,6 +481,18 @@
         }
       }
     },
+    "unit.hours": {
+      "comment": "Unit after a duration value written as h:mm; the leading space separates it from the number",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " h"
+          }
+        }
+      }
+    },
     "unit.minutes": {
       "comment": "Unit after a duration value; the leading space separates it from the number",
       "extractionState": "manual",

@@ -42,7 +42,14 @@ struct ScaleSlider: View {
     /// so each scale has to say which of the two it is.
     let numberEvery: Int
 
-    /// The unit after the value in the header.
+    /// The unit after the header's value **while it is under an hour** — " min"
+    /// on every scale in the app.
+    ///
+    /// Only half the answer, because only half of it is the caller's to choose.
+    /// The header switches to `h:mm` at an hour, and the unit that goes with
+    /// that format goes with the format rather than with the screen: a call
+    /// site that could pair "2:05" with " min" is a call site that eventually
+    /// does.
     let unit: LocalizedStringResource
 
     init(
@@ -145,11 +152,11 @@ struct ScaleSlider: View {
             Spacer(minLength: 0)
 
             HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text(verbatim: String(format: Self.valueFormat, minutes))
+                Text(verbatim: headerValue)
                     .loopTextStyle(typography.sliderValue)
                     .monospacedDigit()
 
-                Text(unit)
+                Text(minutes < Self.minutesInAnHour ? unit : LoopStrings.hoursUnit)
                     .loopTextStyle(typography.valueUnit)
             }
         }
@@ -317,10 +324,30 @@ struct ScaleSlider: View {
     /// because it is about reading a duration, not about how far apart the
     /// detents are.
     private static func numberLabel(minutes: Int) -> String {
-        minutes < 60
+        minutes < minutesInAnHour
             ? String(minutes)
             : LoopTimeFormat.hoursAndMinutes(TimeInterval(minutes) * 60)
     }
+
+    /// The number beside the label, on the same rule as the row.
+    ///
+    /// The header and the scale are two readings of one value, and a header
+    /// saying "1800 min" over a row of `h:mm` would be two answers to the same
+    /// question. Under an hour it keeps the export's leading zero — "05 min",
+    /// not "5 min" — so the value does not change width as it crosses ten;
+    /// `h:mm` has its own padding and needs none added.
+    private var headerValue: String {
+        minutes < Self.minutesInAnHour
+            ? String(format: Self.valueFormat, minutes)
+            : LoopTimeFormat.hoursAndMinutes(TimeInterval(minutes) * 60)
+    }
+
+    /// Where both readings switch from minutes to `h:mm`.
+    ///
+    /// Not a design value and not a limit: it is the point at which a duration
+    /// stops being said in minutes in ordinary speech, which is why the header
+    /// and the row share it rather than each carrying a literal.
+    private static let minutesInAnHour = 60
 
     /// What VoiceOver reads for the current value.
     ///
@@ -409,6 +436,7 @@ struct ScaleSlider: View {
     private static let numberSlotWidth: CGFloat = 100
 
     /// The export prints a leading zero — "05 min", not "5 min" — so the value
-    /// keeps its width as it crosses ten.
+    /// keeps its width as it crosses ten. Sub-hour values only; see
+    /// `headerValue`.
     private static let valueFormat = "%02d"
 }
