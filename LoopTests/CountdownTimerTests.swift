@@ -38,6 +38,27 @@ struct CountdownTimerTests {
         #expect(timer.durationMinutes == 10)
     }
 
+    @Test("The snapshot carries the scale and whether start is live")
+    func snapshotCarriesTheControls() {
+        // A screen reading canStart off the timer instead is right until the
+        // day the condition depends on the instant, and wrong silently from
+        // then on.
+        #expect(CountdownTimer(durationMinutes: 0).snapshot(at: start).canStart == false)
+        #expect(CountdownTimer(durationMinutes: 25).snapshot(at: start).canStart)
+
+        var timer = CountdownTimer(durationMinutes: 25)
+        #expect(timer.snapshot(at: start).durationMinutes == 25)
+
+        // What the scale writes comes back on the next frame's snapshot.
+        timer.setDuration(minutes: 40, at: start)
+        #expect(timer.snapshot(at: start).durationMinutes == 40)
+        #expect(timer.snapshot(at: start).remaining == 40 * 60)
+
+        // And it stays readable through a run, not only in idle.
+        timer.start(at: start)
+        #expect(timer.snapshot(at: start.addingTimeInterval(60)).durationMinutes == 40)
+    }
+
     @Test("A timer that has not been started has no area")
     func noAreaBeforeAStart() {
         // Including the zero-minute end of the scale, where a fraction worked
@@ -103,6 +124,22 @@ struct CountdownTimerTests {
         timer.resume(at: resumedAt)
         #expect(timer.remaining(at: resumedAt.addingTimeInterval(60)) == 840)
         #expect(timer.phase(at: resumedAt.addingTimeInterval(60)) == .running)
+    }
+
+    @Test("The area freezes while the timer is held and carries on from there")
+    func fractionFreezesWhileHeld() {
+        var timer = CountdownTimer(durationMinutes: 20)
+        timer.start(at: start)
+        timer.pause(at: start.addingTimeInterval(300))
+
+        // Two hours held: the area is where it was, not where wall time got to.
+        let heldFor = start.addingTimeInterval(300 + 2 * 3_600)
+        #expect(timer.fraction(at: start.addingTimeInterval(300)) == 0.25)
+        #expect(timer.fraction(at: heldFor) == 0.25)
+        #expect(timer.snapshot(at: heldFor).fraction == 0.25)
+
+        timer.resume(at: heldFor)
+        #expect(timer.fraction(at: heldFor.addingTimeInterval(300)) == 0.5)
     }
 
     @Test("A countdown that ran out in the background comes back finished")

@@ -19,9 +19,14 @@ nonisolated struct CountUpTimer: Sendable, Codable, Equatable {
 
     // MARK: - Snapshot
 
-    /// Everything one frame of the count-up screen needs, read at a single
-    /// instant — the same shape the other two timers offer, so all three
-    /// screens are written the same way.
+    /// Everything the count-up screen draws, read at a single instant — the
+    /// same shape the other two timers offer, so all three screens are written
+    /// the same way.
+    ///
+    /// Nothing is deliberately left off here. The page has no scale, no total
+    /// and no round counter; its three states differ only in the phase, and
+    /// which of Start, Pause, Resume and Reset is live follows from that alone,
+    /// so there is no `canStart` to carry.
     struct Snapshot: Sendable, Equatable {
         let phase: Phase
         let elapsed: TimeInterval
@@ -94,5 +99,35 @@ nonisolated struct CountUpTimer: Sendable, Codable, Equatable {
     mutating func reset() {
         tracker.reset()
         startDate = nil
+    }
+
+    // MARK: - Decoding
+
+    private enum CodingKeys: String, CodingKey {
+        case tracker
+        case startDate
+    }
+
+    /// There are no bounds to clamp here, unlike the other two timers, but
+    /// there is a combination the type cannot describe: a tracker that is
+    /// running or holds time while `startDate` is `nil`. The phase would read
+    /// as running with nothing for the "since 09:29" line to name.
+    ///
+    /// A run is defined by the instant it began. If the tracker still has that
+    /// instant, it is the run's; if nothing anywhere has one, there is no run
+    /// to describe and the page starts at zero rather than showing time it
+    /// cannot account for.
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        tracker = try container.decode(ElapsedTracker.self, forKey: .tracker)
+        startDate = try container.decodeIfPresent(Date.self, forKey: .startDate)
+
+        guard startDate == nil else { return }
+
+        if let startedAt = tracker.startedAt {
+            startDate = startedAt
+        } else {
+            tracker.reset()
+        }
     }
 }
