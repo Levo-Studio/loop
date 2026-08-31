@@ -104,9 +104,10 @@ curves. No `.padding(17)` and no `Color(red:...)` in a feature file. *Reduce
 Motion* is handled centrally in `LoopMotion` — spread over a hundred call sites
 it would be forgotten at ninety of them.
 
-**The fill is one component, used four times.** Countdown and Interval do not
-each grow their own copy of the rising area and the two-tone text. There is one
-implementation and the screens hand it a fraction.
+**The fill is one component.** Countdown and Interval are the two screens with a
+total duration and therefore the only two with a progress to show, and they do
+not each grow their own copy of the rising area and the two-tone text. There is
+one implementation and the screens hand it a fraction.
 
 Loop has no dependencies, and that is a feature.
 
