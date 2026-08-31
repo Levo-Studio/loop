@@ -137,9 +137,9 @@ Loop. There are no entitlements, no capabilities and no container hanging off
 someone's App Store access, so nothing has to be signed to run in the simulator.
 `DEVELOPMENT_TEAM` stays out of every diff.
 
-The project uses synchronized folders — new files under `Loop/` join the target
-on their own, and `Loop.xcodeproj/project.pbxproj` does not have to be touched
-for that.
+The project uses synchronized folders — new files under `Loop/` and
+`LoopTests/` join the target on their own, and
+`Loop.xcodeproj/project.pbxproj` does not have to be touched for that.
 
 ## Contributing
 
