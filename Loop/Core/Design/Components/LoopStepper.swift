@@ -43,8 +43,9 @@ struct LoopStepper: View {
                             .loopTextStyle(typography.valueUnit)
                     }
                 }
-                // A fixed width, so the row does not jump when the count
-                // crosses ten.
+                // A floor under the width, not a fixed width — it is what the
+                // export sets, and it is enough to keep the row still as the
+                // count crosses ten.
                 .frame(minWidth: metrics.stepperValueWidth)
 
                 circle(Self.plusGlyph, step: 1)
