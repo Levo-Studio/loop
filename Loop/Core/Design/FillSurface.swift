@@ -16,6 +16,10 @@ import SwiftUI
 ///
 /// ## What the content closure may contain
 ///
+/// Screens meet these rules through `PageScaffold`, where they are repeated on
+/// the slots themselves. They are restated here because this is the type that
+/// causes them.
+///
 /// Twice-built content is the price of the edge, and it comes with two rules
 /// that are not obvious from a call site:
 ///
