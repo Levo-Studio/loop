@@ -118,13 +118,14 @@ struct ScaleSlider: View {
             Color.clear
 
             ForEach(numberValues, id: \.self) { value in
+                // Centred horizontally on the value — the export's
+                // `translateX(-50%)` — but sitting on the top edge of the row,
+                // which is where a span with no `top` lands.
                 Text(verbatim: String(value))
                     .loopTextStyle(typography.scaleNumber)
                     .fixedSize()
-                    .position(
-                        x: width * CGFloat(value) / CGFloat(maximumMinutes),
-                        y: metrics.sliderNumberRowHeight / 2
-                    )
+                    .frame(width: Self.numberSlotWidth)
+                    .offset(x: width * CGFloat(value) / CGFloat(maximumMinutes) - Self.numberSlotWidth / 2)
             }
         }
         .frame(height: metrics.sliderNumberRowHeight)
@@ -167,6 +168,11 @@ struct ScaleSlider: View {
                 }
             }
     }
+
+    /// A slot wide enough for any number on either scale, so the label can be
+    /// centred on its tick by offsetting rather than by `position`, which would
+    /// also centre it vertically in the row.
+    private static let numberSlotWidth: CGFloat = 100
 
     /// The export prints a leading zero — "05 min", not "5 min" — so the value
     /// keeps its width as it crosses ten.
