@@ -46,9 +46,9 @@ final class LoopSettings {
     /// one behaviour: the app makes a noise when something changes. Nobody
     /// wants the tone for a block ending but not the one for the next
     /// beginning — that is precisely the pair whose whole value is being told
-    /// apart, and half of it is worse than neither. Three rows would also
-    /// double a settings page that has two, to sell a combination nobody asks
-    /// for.
+    /// apart, and half of it is worse than neither. Three rows would also spend
+    /// most of the settings page's switch block on tones alone, to sell a
+    /// combination nobody asks for.
     var sound: Bool {
         didSet { defaults.set(sound, forKey: Key.sound) }
     }
