@@ -284,7 +284,7 @@ struct IntervalTimerTests {
         // focused at all.
         var timer = IntervalTimer(focusMinutes: 0, breakMinutes: 5, rounds: 3)
 
-        #expect(timer.canStart == false)
+        #expect(timer.snapshot(at: start).canStart == false)
         let started = timer.start(at: start)
         #expect(started == false)
         #expect(timer.phase(at: start) == .setup)
@@ -401,7 +401,7 @@ struct IntervalTimerTests {
     func zeroLengthEverything() {
         var timer = IntervalTimer(focusMinutes: 0, breakMinutes: 0, rounds: 4)
 
-        #expect(timer.canStart == false)
+        #expect(timer.snapshot(at: start).canStart == false)
         let started = timer.start(at: start)
         #expect(started == false)
         #expect(timer.phase(at: start) == .setup)
