@@ -15,9 +15,11 @@ struct LoopAppIconTests {
     private static let iconName = "loop-icon"
 
     /// `actool` writes one of these per idiom, and the target builds for both
-    /// (`TARGETED_DEVICE_FAMILY = "1,2"`). `Bundle.main` only ever exposes the
-    /// one matching the device the tests happen to run on, so the raw plist is
-    /// read instead — otherwise half the guard would be dead on every run.
+    /// (`TARGETED_DEVICE_FAMILY = "1,2"`). `Bundle.main` resolves the suffix for
+    /// the device the tests run on and drops the other idiom's key, so asking it
+    /// for `CFBundleIcons~ipad` on an iPhone finds nothing even when the iPad
+    /// icon shipped correctly — the guard would fail on a sound build. The raw
+    /// plist is read instead, which is the same on either device.
     private static let iconKeys = ["CFBundleIcons", "CFBundleIcons~ipad"]
 
     /// The Info.plist as it sits on disk, with the `~ipad` variants intact.
