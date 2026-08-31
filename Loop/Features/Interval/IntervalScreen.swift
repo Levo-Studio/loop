@@ -55,6 +55,15 @@ struct IntervalScreen: View {
         .onChange(of: Boundary(snapshot)) { previous, current in
             announce(from: previous, to: current)
         }
+        // Once per tick with the frame's own snapshot, so the lock screen is
+        // fed the same values the page is drawn from. The controller decides
+        // when that is worth an update — a block, a round, the accent, a pause
+        // or a moved end — and does nothing on the ticks in between, which is
+        // why this can sit on the draw path rather than in a second observer
+        // that would have to work out the same transitions again.
+        .onChange(of: ActivityInput(now: now, accent: settings.accent), initial: true) {
+            LoopActivityController.shared.update(interval: snapshot, accent: settings.accent, at: now)
+        }
     }
 
     // MARK: - The rising area
@@ -127,6 +136,19 @@ struct IntervalScreen: View {
             try? await Task.sleep(until: deadline, clock: .continuous)
             now = .now
         }
+    }
+
+    // MARK: - Live Activity
+
+    /// What the lock screen has to be told about.
+    ///
+    /// The instant carries every move of the run — a tick, a pause, a resume, a
+    /// skip — because all four write `now`. The accent does not, and a colour
+    /// changed on the settings page while a run is paused would otherwise sit
+    /// on the lock screen until the next tick, which may never come.
+    private struct ActivityInput: Equatable {
+        let now: Date
+        let accent: LoopAccent
     }
 
     // MARK: - Sound
