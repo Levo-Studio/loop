@@ -328,8 +328,8 @@ private struct CountdownSetup: View {
             ScaleSlider(
                 label: LoopStrings.duration,
                 minutes: $minutes,
-                detents: Self.detents,
-                numberEvery: LoopMetrics.durationNumberInterval,
+                minuteScale: LoopTimerLimits.duration,
+                numberEvery: LoopMetrics.countdownNumberInterval,
                 unit: LoopStrings.minutesUnit
             )
         }
@@ -338,22 +338,6 @@ private struct CountdownSetup: View {
         // its own layout, with the preview and the scale sharing the middle.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-    /// Which values the scale may come to rest on, and how far it runs.
-    ///
-    /// Handed over from the engine rather than described here. How long a
-    /// countdown may be, and whether a given minute is selectable, is a rule
-    /// about the timer — staged one-minute detents below two hours and
-    /// five-minute ones above, up to thirty hours — and it lives in
-    /// `LoopTimerLimits` where a test reaches it without a simulator.
-    /// `ScaleDetents` is only the shape the drawing needs, so neither this
-    /// screen nor the design layer keeps a second opinion about the range.
-    private static let detents = ScaleDetents(
-        range: LoopTimerLimits.duration.range,
-        nearest: { LoopTimerLimits.duration.nearest(to: $0) },
-        next: { LoopTimerLimits.duration.next(after: $0) },
-        previous: { LoopTimerLimits.duration.previous(before: $0) }
-    )
 }
 
 // MARK: - Preview
