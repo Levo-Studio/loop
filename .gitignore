@@ -19,5 +19,5 @@ DerivedData/
 .build/
 Packages/
 
-# Worktrees
-loop-wt-*/
+# Worktrees — kept inside the repository, never as sibling directories
+.worktrees/
