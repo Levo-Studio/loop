@@ -21,6 +21,13 @@ struct IntervalScreen: View {
     @State private var now = Date.now
 
     @Environment(\.loopMetrics) private var metrics
+    @Environment(\.loopTypography) private var typography
+
+    /// Read on the screen rather than inside a slot: the sound switch decides
+    /// whether a boundary is audible, and the place that notices the boundary
+    /// is this one. A slot is built twice for the two-tone layers, and an
+    /// observation installed there would fire — and play — twice.
+    @Environment(LoopSettings.self) private var settings
 
     var body: some View {
         // One snapshot per frame, taken from a single instant and a single
@@ -41,6 +48,12 @@ struct IntervalScreen: View {
         // on both layers of the fill surface and tick twice.
         .task(id: snapshot.phase) {
             await follow(snapshot.phase)
+        }
+        // Outside the slots for the same reason as the tick, and for a louder
+        // one: a boundary noticed on both layers of the fill surface is a tone
+        // played twice.
+        .onChange(of: Boundary(snapshot)) { previous, current in
+            announce(from: previous, to: current)
         }
     }
 
@@ -116,6 +129,57 @@ struct IntervalScreen: View {
         }
     }
 
+    // MARK: - Sound
+
+    /// Where the run stands, reduced to the three things a boundary changes.
+    ///
+    /// Not the snapshot itself: the snapshot carries the remaining time, so it
+    /// differs on every tick and would announce a boundary a second. Kind and
+    /// round together identify the block — focus 2 and break 2 are different
+    /// blocks — and the phase carries the end of the run, which is a change of
+    /// phase with no block after it.
+    private struct Boundary: Equatable {
+        let phase: IntervalTimer.Phase
+        let kind: IntervalTimer.BlockKind
+        let round: Int
+
+        init(_ snapshot: IntervalTimer.Snapshot) {
+            phase = snapshot.phase
+            kind = snapshot.blockKind
+            round = snapshot.round
+        }
+    }
+
+    /// Plays the tone that belongs to a change of block, if there is one.
+    ///
+    /// **One tone per boundary, not both halves of the pair.** A boundary is a
+    /// single instant — one block ends exactly as the next begins — so playing
+    /// the ending and the beginning there gives the ear one smear rather than
+    /// two messages. Which of the two is played is what carries the meaning:
+    ///
+    /// - into a break, the rising two-note figure, "the work is over";
+    /// - into a focus block, the single note, "back to it".
+    ///
+    /// That is the only reading in which two tones buy anything with the phone
+    /// face down, which is the situation the whole feature is for.
+    ///
+    /// Starting a run and resuming from a pause are deliberately silent: the
+    /// finger that did it was on the screen, and a tone for something the user
+    /// just tapped is noise. Skip is not — it lands on the next focus block and
+    /// is announced like any other arrival there, so a run that is being
+    /// skipped through sounds the same as one that is being waited out.
+    private func announce(from previous: Boundary, to current: Boundary) {
+        if current.phase == .finished, previous.phase == .running {
+            LoopSounds.play(.timerFinished, enabled: settings.sound)
+            return
+        }
+
+        guard current.phase == .running, previous.phase == .running else { return }
+        guard current.kind != previous.kind || current.round != previous.round else { return }
+
+        LoopSounds.play(current.kind == .break ? .blockEnded : .blockBegan, enabled: settings.sound)
+    }
+
     // MARK: - Status pill
 
     @ViewBuilder private func pill(_ snapshot: IntervalTimer.Snapshot) -> some View {
@@ -163,7 +227,8 @@ struct IntervalScreen: View {
             setup(snapshot)
 
         case .running:
-            TimeDisplay(
+            timeBlock(
+                snapshot,
                 time: LoopTimeFormat.remaining(snapshot.remaining),
                 secondary: LoopStrings.ofDuration(LoopTimeFormat.clock(seconds: Int(snapshot.blockDuration)))
             )
@@ -172,7 +237,7 @@ struct IntervalScreen: View {
             // "on hold" rather than "paused": the pill above already says
             // "Paused", and the export draws two different words here for
             // exactly that reason.
-            TimeDisplay(time: LoopTimeFormat.remaining(snapshot.remaining), secondary: LoopStrings.onHold)
+            timeBlock(snapshot, time: LoopTimeFormat.remaining(snapshot.remaining), secondary: LoopStrings.onHold)
 
         case .finished:
             // The two totals on this page are different numbers and both are
@@ -182,6 +247,31 @@ struct IntervalScreen: View {
                 time: LoopTimeFormat.hoursAndMinutes(timer.focusedDuration),
                 secondary: LoopStrings.hoursFocused(timer.focusedDuration)
             )
+        }
+    }
+
+    /// The time, with the `BREAK` headline over it on a break and nothing over
+    /// it on a focus block.
+    ///
+    /// **The asymmetry is deliberate, not an omission.** The pill already names
+    /// the block, so a headline on both would say the same thing twice and stop
+    /// distinguishing anything; the headline earns its 32 pt precisely because
+    /// it appears on one of the two states. Break is the one that has to be
+    /// unmistakable from across a desk — a focus block missed for a glance
+    /// costs nothing, a break missed costs the break.
+    ///
+    /// A paused break keeps it. The pill above says "Paused" and the block is
+    /// still a break; taking the headline away on hold would make the one state
+    /// where someone looks up to check hardest to read.
+    @ViewBuilder private func timeBlock(
+        _ snapshot: IntervalTimer.Snapshot,
+        time: String,
+        secondary: LocalizedStringResource
+    ) -> some View {
+        if snapshot.blockKind == .break {
+            BreakTimeBlock(time: time, secondary: secondary)
+        } else {
+            TimeDisplay(time: time, secondary: secondary)
         }
     }
 
@@ -201,16 +291,16 @@ struct IntervalScreen: View {
             ScaleSlider(
                 label: LoopStrings.focus,
                 minutes: focusMinutes(snapshot.focusMinutes),
-                maximumMinutes: LoopTimerLimits.durationMinutes.upperBound,
-                numberEvery: Self.focusNumberInterval,
+                detents: ScaleDetents(LoopTimerLimits.focus),
+                numberEvery: LoopMetrics.durationNumberInterval,
                 unit: LoopStrings.minutesUnit
             )
 
             ScaleSlider(
                 label: LoopStrings.breakBlock,
                 minutes: breakMinutes(snapshot.breakMinutes),
-                maximumMinutes: LoopTimerLimits.breakMinutes.upperBound,
-                numberEvery: Self.breakNumberInterval,
+                detents: ScaleDetents(LoopTimerLimits.breakLength),
+                numberEvery: LoopMetrics.breakNumberInterval,
                 unit: LoopStrings.minutesUnit
             )
 
@@ -263,9 +353,24 @@ struct IntervalScreen: View {
         case .finished:
             ControlRow(
                 primary: .init(LoopStrings.restart) { act { $0.start(at: $1) } },
-                secondary: .init(LoopStrings.close) { reset() }
+                // Close is a tap, and the rule is asked rather than assumed.
+                // `LoopDismissal` answers `false` for the interval whatever the
+                // setting says — the countdown is the alarm, this is not — and
+                // one function answering for both screens is why the two cannot
+                // quietly drift apart.
+                secondary: .init(LoopStrings.close, isEnabled: !requiresSwipe) { reset() }
             )
         }
+    }
+
+    /// Whether the finished state waits for a gesture before it lets go.
+    ///
+    /// Always `false` here: the interval never requires a swipe, not at a block
+    /// boundary and not at the end. A boundary plays its tone and the run
+    /// carries on by itself, because a timer that stops a session to be wiped
+    /// at has interrupted the thing it exists to protect.
+    private var requiresSwipe: Bool {
+        LoopDismissal.requiresSwipe(.interval, swipeToDismissEnabled: settings.swipeToDismiss)
     }
 
     // MARK: - Acting on the timer
@@ -307,15 +412,73 @@ struct IntervalScreen: View {
         Binding(get: { current }, set: { value in act { $0.setRounds(value, at: $1) } })
     }
 
-    // MARK: - Scale numbers
+}
 
-    // How often each scale prints a number. Both are the export's values — a
-    // number every 15 minutes on the hour-long focus scale, every 10 on the
-    // half-hour break scale — and they belong in `LoopMetrics` beside the tick
-    // interval rather than here. They sit in the feature only until the design
-    // layer has somewhere to put them.
-    private static let focusNumberInterval = 15
-    private static let breakNumberInterval = 10
+// MARK: - Break time block
+
+/// The `BREAK` headline and the time under it, as one centred block.
+///
+/// Its own view rather than a `VStack` in the screen, because `\.loopInk` is
+/// injected by `FillSurface` from *inside* the scaffold: read on the screen it
+/// would be the environment's default, and the headline would keep the
+/// background tone where it crosses the fill.
+///
+/// Full-opacity ink, unlike every other uppercase label on the page. The pill,
+/// the secondary line and the field labels are all dimmed to 62 % because they
+/// annotate something; this one is the statement.
+private struct BreakTimeBlock: View {
+
+    let time: String
+    let secondary: LocalizedStringResource
+
+    @Environment(\.loopMetrics) private var metrics
+    @Environment(\.loopTypography) private var typography
+    @Environment(\.loopInk) private var ink
+
+    var body: some View {
+        VStack(spacing: metrics.breakHeadlineSpacing) {
+            Text(LoopStrings.breakBlock)
+                .loopTextStyle(typography.breakHeadline)
+                .foregroundStyle(ink.base)
+
+            TimeDisplay(time: time, secondary: secondary)
+                // Held to its own height and put back where it started, so the
+                // gap above the time is the metric rather than whatever slack
+                // was left over: a `TimeDisplay` left to fill the page centres
+                // itself in what remains under the headline, and its own −30 pt
+                // offset would then close that gap on top of that. The offset
+                // belongs to the block as a whole, so it is taken off here and
+                // applied once below.
+                .fixedSize(horizontal: false, vertical: true)
+                .offset(y: -metrics.timeBlockOffset)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .offset(y: metrics.timeBlockOffset)
+    }
+}
+
+// MARK: - Detents from a scale
+
+private extension ScaleDetents {
+
+    /// The drawing shape of an engine scale.
+    ///
+    /// `LoopMinuteScale` owns which values exist and `ScaleDetents` owns the
+    /// three questions the slider asks; this is only the wire between them, so
+    /// the screen hands over the engine's answer rather than a second opinion
+    /// about where the detents are.
+    ///
+    /// Fileprivate because it is written here first. It belongs next to
+    /// `ScaleDetents` — the countdown needs the same wire the moment its scale
+    /// stops being every-minute — and it is a five-line adapter either way.
+    init(_ scale: LoopMinuteScale) {
+        self.init(
+            range: scale.range,
+            nearest: { scale.nearest(to: $0) },
+            next: { scale.next(after: $0) },
+            previous: { scale.previous(before: $0) }
+        )
+    }
 }
 
 // MARK: - Divider
@@ -364,4 +527,5 @@ private struct TotalLine: View {
 
 #Preview {
     IntervalScreen()
+        .environment(LoopSettings(defaults: UserDefaults(suiteName: "preview") ?? .standard))
 }
