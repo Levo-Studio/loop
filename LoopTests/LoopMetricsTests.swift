@@ -81,63 +81,125 @@ struct LoopMetricsTests {
         #expect(abs(LoopMetrics(isPad: true, isLandscape: true).countdownIdleSpacing - 16.1) < 0.001)
     }
 
-    @Test("The settings column fits a landscape iPhone")
-    func settingsColumnFitsLandscape() {
-        // The one landscape variant with no drawn ground truth behind it, so
-        // the thing worth testing is the constraint it exists to satisfy
-        // rather than the numbers themselves.
+    @Test("The landscape settings gaps close up on the countdown's ratio")
+    func settingsLandscapeGapsCloseUp() {
+        // What replaced "The settings column fits a landscape iPhone", which
+        // was green and wrong. It carried its own inventory of the settings
+        // column — one toggle row, four accent rows, a footer — and asserted
+        // that the total fit. The screen has since grown rows and a scrolling
+        // column; the test kept passing only because its inventory had not
+        // grown with it, so it was asserting a fit for a page that no longer
+        // exists. A metrics test cannot own a screen's content and stay true.
         //
-        // Everything in the column that is not gap, from the export: the
-        // heading, the toggle row, the divider, the accent heading, four
-        // 45 pt accent rows, the footer and the dots.
-        let heading: CGFloat = 14.3
-        let secondsRow: CGFloat = 29
-        let divider: CGFloat = 1
-        let accentHeading: CGFloat = 14.3
-        let accentRows: CGFloat = 4 * 45
-        let footer: CGFloat = 13
-        let dots: CGFloat = 7 + 16
-        let fixedContent = heading + secondsRow + divider + accentHeading + accentRows + footer + dots
-
-        let metrics = LoopMetrics(isPad: false, isLandscape: true)
-        let gaps = gapTotal(metrics)
-
-        // A 402 pt landscape iPhone, less the drawn page padding.
-        let box = 402 - metrics.pagePadding.top - metrics.pagePadding.bottom
-        #expect(fixedContent + gaps <= box)
-
-        // And the portrait values genuinely do not fit, which is why this
-        // variant exists at all — if they ever did, it should be deleted.
+        // What is actually this file's to promise is the rule the landscape
+        // values were derived by: every settings gap closes on the countdown
+        // idle state's portrait→landscape ratio, the tighter of the export's
+        // two precedents. That is checkable here, and it stays checkable
+        // whatever the settings screen grows next.
         let portrait = LoopMetrics(isPad: false, isLandscape: false)
-        #expect(fixedContent + gapTotal(portrait) > box)
-    }
+        let landscape = LoopMetrics(isPad: false, isLandscape: true)
 
-    /// Every gap down the settings column, counted as often as it occurs.
-    private func gapTotal(_ metrics: LoopMetrics) -> CGFloat {
-        let sections: CGFloat = 2 * metrics.settingsSectionSpacing
-        let row: CGFloat = metrics.settingsRowSpacing
-        let accentSection: CGFloat = metrics.accentSectionSpacing
-        let list: CGFloat = 3 * metrics.accentListSpacing
-        return sections + row + accentSection + list
+        // The precedent itself, drawn: the countdown's idle spacing closes
+        // 26 → 14.
+        let tightest = landscape.countdownIdleSpacing / portrait.countdownIdleSpacing
+
+        // The looser precedent, which was tried and was not enough: the
+        // interval setup closes 24 → 16, a third off.
+        let looser = landscape.intervalSetupSpacing / portrait.intervalSetupSpacing
+
+        let gaps: [(CGFloat, CGFloat)] = [
+            (landscape.settingsSectionSpacing, portrait.settingsSectionSpacing),
+            (landscape.settingsRowSpacing, portrait.settingsRowSpacing),
+            (landscape.accentSectionSpacing, portrait.accentSectionSpacing),
+            (landscape.accentListSpacing, portrait.accentListSpacing)
+        ]
+
+        for (short, tall) in gaps {
+            #expect(short < tall)
+            // Rounded to whole points, so each lands a little either side of
+            // the exact ratio — but never as loose as the precedent that was
+            // deliberately not followed.
+            #expect(short / tall <= tightest + 0.05)
+            #expect(short / tall < looser)
+        }
     }
 
     @Test("The scale number intervals are counts, not lengths")
     func sliderNumberIntervals() {
-        // 0/15/30/45/60 on the hour-long scales, 0/10/20/30 on the break
-        // scale, drawn identically in all four layouts.
-        #expect(LoopMetrics.durationNumberInterval == 15)
+        // A number every 15 minutes on the countdown and focus scales, every
+        // 10 on the break scale, drawn identically in all four layouts. The
+        // two hours-long scales are separate constants over a shared base, so
+        // they are asserted separately: one drifting off the other is exactly
+        // what the names are there to make visible.
+        #expect(LoopMetrics.countdownNumberInterval == 15)
+        #expect(LoopMetrics.focusNumberInterval == 15)
         #expect(LoopMetrics.breakNumberInterval == 10)
 
-        // The sequences `ScaleSlider` will actually print, against the labels
-        // in the export. Both divide their scale exactly, so the right-hand
-        // end always carries a number — an unlabelled end reads as a
-        // rendering fault rather than as a choice. The maxima themselves are
-        // the engine's `LoopTimerLimits`, not a design value.
-        let duration = Array(stride(from: 0, through: 60, by: LoopMetrics.durationNumberInterval))
-        #expect(duration == [0, 15, 30, 45, 60])
+        // The sequences `ScaleSlider` actually prints, taken from the engine's
+        // scales rather than from a literal — the scales scroll now, so the
+        // number row runs to the end of the range and not to the end of the
+        // screen. Only the first hour is asserted in full: past sixty minutes
+        // the row switches to `h:mm`, and what matters here is the stride, not
+        // the wording.
+        let duration = Array(stride(
+            from: 0,
+            through: LoopTimerLimits.duration.range.upperBound,
+            by: LoopMetrics.countdownNumberInterval
+        ))
+        #expect(duration.prefix(5) == [0, 15, 30, 45, 60])
+        #expect(duration.last == 1_800)
 
-        let breakScale = Array(stride(from: 0, through: 30, by: LoopMetrics.breakNumberInterval))
-        #expect(breakScale == [0, 10, 20, 30])
+        let breakScale = Array(stride(
+            from: 0,
+            through: LoopTimerLimits.breakLength.range.upperBound,
+            by: LoopMetrics.breakNumberInterval
+        ))
+        #expect(breakScale.prefix(4) == [0, 10, 20, 30])
+        // Both strides divide their scale exactly, so the right-hand end always
+        // carries a number — an unlabelled end reads as a rendering fault
+        // rather than as a choice.
+        #expect(breakScale.last == 120)
+    }
+
+    @Test("A minute is the scale's width over the export's 61 slots")
+    func sliderMinutePitch() {
+        // The export draws the tick row as 61 equal `flex:1` slots — 13 majors
+        // and 48 minors — across whatever width the scale is given.
+        #expect(LoopMetrics.sliderTickSlotsAcrossWidth == 61)
+
+        // iPhone portrait has no content column, so the scale is the page width
+        // less its side padding; iPad has the 598 pt column. Asserted together
+        // because the two pitches are what a `scaled(_:)` constant could not
+        // have produced: their ratio is 1.89, not the idiom's 1.15.
+        let phone = LoopMetrics(isPad: false, isLandscape: false)
+        let phoneWidth = 402 - 2 * phone.pagePadding.leading
+        let phonePitch = LoopMetrics.sliderMinutePitch(width: phoneWidth)
+        #expect(abs(phonePitch - phoneWidth / 61) < 0.0001)
+
+        let padWidth = LoopMetrics(isPad: true, isLandscape: false).contentColumnWidth ?? 0
+        let padPitch = LoopMetrics.sliderMinutePitch(width: padWidth)
+        #expect(abs(padWidth - 598) < 0.0001)
+        #expect(abs(padPitch - padWidth / 61) < 0.0001)
+        #expect(padPitch / phonePitch > 1.5)
+
+        // A zero width cannot divide into a usable pitch, and the slider guards
+        // on the result rather than on the geometry.
+        #expect(LoopMetrics.sliderMinutePitch(width: 0) == 0)
+    }
+
+    @Test("The break headline sits the same distance from the time as the line under it")
+    func breakHeadlineSpacing() {
+        // The headline came after the export, so it takes the drawn gap on the
+        // other side of the time rather than a number of its own. A change to
+        // one that did not move the other would break the symmetry that makes
+        // the three lines read as one block.
+        for metrics in [
+            LoopMetrics(isPad: false, isLandscape: false),
+            LoopMetrics(isPad: false, isLandscape: true),
+            LoopMetrics(isPad: true, isLandscape: false)
+        ] {
+            #expect(metrics.breakHeadlineSpacing == metrics.timeBlockSpacing)
+        }
     }
 
     @Test("The time block is offset upwards, not downwards")

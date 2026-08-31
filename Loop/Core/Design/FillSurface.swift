@@ -88,6 +88,13 @@ struct FillSurface<Content: View>: View {
                 // near the fill edge could land on either, which is a coin
                 // toss over which one owns the gesture.
                 .allowsHitTesting(false)
+                // And it is not a second control either. `allowsHitTesting`
+                // answers touches, not the accessibility tree — without this
+                // VoiceOver walks every button, every scale and every label on
+                // the page twice, and the second copy is the one that cannot be
+                // activated. The tone is the only difference between the two
+                // layers, and a tone is not something to read out.
+                .accessibilityHidden(true)
         }
         .ignoresSafeArea()
         .onChange(of: progress, initial: true) { previous, current in
