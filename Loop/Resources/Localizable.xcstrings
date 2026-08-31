@@ -193,6 +193,66 @@
         }
       }
     },
+    "line.completed": {
+      "comment": "Line under a finished countdown naming the duration that was run",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ completed"
+          }
+        }
+      }
+    },
+    "line.hourFocused": {
+      "comment": "Line under a finished interval when the total is exactly one hour",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hour focused"
+          }
+        }
+      }
+    },
+    "line.hoursFocused": {
+      "comment": "Line under a finished interval, under the total drawn as the large time",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hours focused"
+          }
+        }
+      }
+    },
+    "line.of": {
+      "comment": "Line under a counting timer naming the full length of the current block",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "of %@"
+          }
+        }
+      }
+    },
+    "line.since": {
+      "comment": "Line under the stopwatch naming the wall-clock time a run started",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "since %@"
+          }
+        }
+      }
+    },
     "page.clock": {
       "comment": "Status pill and page name of the clock page",
       "extractionState": "manual",
@@ -253,6 +313,42 @@
         }
       }
     },
+    "pill.blockAndRound": {
+      "comment": "Status pill detail while an interval is held, as \"Focus · 02 / 04\"",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        }
+      }
+    },
+    "pill.doneRounds": {
+      "comment": "Whole status pill of a finished interval, as \"Done · 4 of 4\"",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done · %lld of %lld"
+          }
+        }
+      }
+    },
+    "pill.round": {
+      "comment": "Status pill detail naming the round an interval is in, as \"Round 02 / 04\"",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Round %@"
+          }
+        }
+      }
+    },
     "settings.accentColour": {
       "comment": "Heading of the accent list",
       "extractionState": "manual",
@@ -301,6 +397,18 @@
         }
       }
     },
+    "setup.total": {
+      "comment": "Sum of an interval's blocks under the round stepper, as \"Total 2:00 h\"",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total %@ h"
+          }
+        }
+      }
+    },
     "state.done": {
       "comment": "Status pill label once a run has finished",
       "extractionState": "manual",
@@ -313,8 +421,20 @@
         }
       }
     },
-    "state.paused": {
-      "comment": "Line under the time while a timer is held",
+    "state.onHold": {
+      "comment": "Line under the time while a timer is held, on all three timer pages",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "on hold"
+          }
+        }
+      }
+    },
+    "state.pausedDetail": {
+      "comment": "Status pill detail on a held count-up or countdown, beside the page name",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -326,7 +446,7 @@
       }
     },
     "state.pausedStatus": {
-      "comment": "Status pill label while a timer is held",
+      "comment": "Status pill label while an interval is held",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -345,6 +465,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "ready"
+          }
+        }
+      }
+    },
+    "state.running": {
+      "comment": "Status pill detail while the stopwatch is counting",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "running"
           }
         }
       }
