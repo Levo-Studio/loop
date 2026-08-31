@@ -171,16 +171,23 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
 
     /// How often a number is printed under the scale, in minutes.
     ///
-    /// Two values, because the two scale lengths need different densities: the
-    /// hour-long scales — the countdown's duration and the interval's focus
-    /// block — print 0/15/30/45/60, and the half-hour break scale prints
-    /// 0/10/20/30. Both are drawn identically in all four layouts, so unlike
-    /// nearly everything else here they take neither the idiom factor nor a
-    /// landscape variant: they count minutes, and a minute is not a length.
+    /// Two values, because the long scales and the short one need different
+    /// densities. The countdown's duration runs to thirty hours and the
+    /// interval's focus block to eight, so both are numbered every fifteen
+    /// minutes — 0/15/30/45 through the first hour, `h:mm` from there. The
+    /// break runs to two hours and is numbered every ten, which is the density
+    /// a value usually set between three and fifteen minutes wants.
+    ///
+    /// Both are drawn identically in all four layouts, so unlike nearly
+    /// everything else here they take neither the idiom factor nor a landscape
+    /// variant: they count minutes, and a minute is not a length. The pitch
+    /// between two minutes is the thing that scales, and that is
+    /// `sliderMinutePitch(width:)`.
     ///
     /// The **ranges** these subdivide belong to the engine, in
-    /// `LoopTimerLimits`. How far a scale runs is a rule about the timer; how
-    /// often it is labelled is a rule about the drawing.
+    /// `LoopTimerLimits`, and so does which values on them can be picked. How
+    /// far a scale runs and where it stops are rules about the timer; how often
+    /// it is labelled is a rule about the drawing.
     static let durationNumberInterval = 15
     static let breakNumberInterval = 10
 
