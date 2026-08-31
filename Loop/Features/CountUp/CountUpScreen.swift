@@ -7,7 +7,10 @@ import SwiftUI
 ///
 /// Three states, and the whole page follows from the phase: `00:00` and "ready"
 /// before a run, the elapsed time and "since 09:29" during it, the frozen time
-/// and "paused" while it is held.
+/// and "on hold" while it is held. The pill says "paused" in that last state
+/// rather than "on hold" — the export uses two different words there, one for
+/// the state the timer is in and one for what has happened to the time, and
+/// collapsing them would draw the same word twice on one screen.
 struct CountUpScreen: View {
 
     /// The timer itself. It lives here rather than in a slot of the scaffold —
@@ -88,7 +91,7 @@ struct CountUpScreen: View {
         switch phase {
         case .idle: return nil
         case .running: return LoopStrings.running
-        case .paused: return LoopStrings.pausedStatus
+        case .paused: return LoopStrings.pausedDetail
         }
     }
 
@@ -103,7 +106,7 @@ struct CountUpScreen: View {
             // to a line of text.
             frame.startDate.map { LoopStrings.since(startTime(of: $0)) } ?? LoopStrings.ready
         case .paused:
-            LoopStrings.paused
+            LoopStrings.onHold
         }
     }
 
