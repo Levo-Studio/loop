@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		76098AED30456C190060E0C6 /* loop-icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 76098AEC30456C190060E0C6 /* loop-icon.icon */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		76098AEA30456C190060E0C6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -19,6 +23,7 @@
 /* Begin PBXFileReference section */
 		76098ACC30456C180060E0C6 /* Loop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Loop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		76098AE130456C190060E0C6 /* LoopTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LoopTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		76098AEC30456C190060E0C6 /* loop-icon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "loop-icon.icon"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -70,6 +75,7 @@
 			children = (
 				76098ACE30456C180060E0C6 /* Loop */,
 				76098AE230456C190060E0C6 /* LoopTests */,
+				76098AEC30456C190060E0C6 /* loop-icon.icon */,
 				76098ACD30456C180060E0C6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -175,6 +181,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				76098AED30456C190060E0C6 /* loop-icon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -337,7 +344,7 @@
 		76098AD830456C190060E0C6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "loop-icon";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -370,7 +377,7 @@
 		76098AD930456C190060E0C6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "loop-icon";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
