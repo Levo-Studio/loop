@@ -154,8 +154,8 @@ struct LoopMinuteScaleTests {
 
         // And the longest total the interval scales can add up to: 99 focus
         // blocks of eight hours with 98 two-hour breaks between them.
-        let longest = TimeInterval(99 * 8 * 3_600 + 98 * 2 * 3_600)
-        #expect(LoopTimeFormat.hoursAndMinutes(longest) == "988:00")
-        #expect(LoopTimeFormat.clock(seconds: Int(longest)) == "988:00:00")
+        let longestSeconds: Int = 99 * 8 * 3_600 + 98 * 2 * 3_600
+        #expect(LoopTimeFormat.hoursAndMinutes(TimeInterval(longestSeconds)) == "988:00")
+        #expect(LoopTimeFormat.clock(seconds: longestSeconds) == "988:00:00")
     }
 }

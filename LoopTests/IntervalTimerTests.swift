@@ -467,8 +467,10 @@ struct IntervalTimerTests {
         let timer = IntervalTimer(focusMinutes: 8 * 60, breakMinutes: 2 * 60, rounds: 99)
 
         // 99 focus blocks and 98 breaks — the last round has no break.
-        #expect(timer.plannedDuration == TimeInterval(99 * 8 * 3_600 + 98 * 2 * 3_600))
-        #expect(timer.focusedDuration == TimeInterval(99 * 8 * 3_600))
+        let plannedSeconds: Int = 99 * 8 * 3_600 + 98 * 2 * 3_600
+        let focusedSeconds: Int = 99 * 8 * 3_600
+        #expect(timer.plannedDuration == TimeInterval(plannedSeconds))
+        #expect(timer.focusedDuration == TimeInterval(focusedSeconds))
 
         // Hours, never wrapped through a day.
         #expect(LoopTimeFormat.hoursAndMinutes(timer.plannedDuration) == "988:00")
