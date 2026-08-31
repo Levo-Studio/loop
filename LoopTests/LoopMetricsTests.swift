@@ -124,8 +124,12 @@ struct LoopMetricsTests {
     @Test("The scale number intervals are counts, not lengths")
     func sliderNumberIntervals() {
         // A number every 15 minutes on the countdown and focus scales, every
-        // 10 on the break scale, drawn identically in all four layouts.
-        #expect(LoopMetrics.durationNumberInterval == 15)
+        // 10 on the break scale, drawn identically in all four layouts. The
+        // two hours-long scales are separate constants over a shared base, so
+        // they are asserted separately: one drifting off the other is exactly
+        // what the names are there to make visible.
+        #expect(LoopMetrics.countdownNumberInterval == 15)
+        #expect(LoopMetrics.focusNumberInterval == 15)
         #expect(LoopMetrics.breakNumberInterval == 10)
 
         // The sequences `ScaleSlider` actually prints, taken from the engine's
@@ -137,7 +141,7 @@ struct LoopMetricsTests {
         let duration = Array(stride(
             from: 0,
             through: LoopTimerLimits.duration.range.upperBound,
-            by: LoopMetrics.durationNumberInterval
+            by: LoopMetrics.countdownNumberInterval
         ))
         #expect(duration.prefix(5) == [0, 15, 30, 45, 60])
         #expect(duration.last == 1_800)

@@ -36,10 +36,10 @@ struct ScaleSlider: View {
 
     /// How often a number is printed under the scale, in minutes.
     ///
-    /// Comes from `LoopMetrics.durationNumberInterval` or
-    /// `LoopMetrics.breakNumberInterval`. Deliberately has no default: a
-    /// wrong-but-plausible density is the kind of thing that survives review,
-    /// so each scale has to say which of the two it is.
+    /// Comes from `LoopMetrics.countdownNumberInterval`,
+    /// `.focusNumberInterval` or `.breakNumberInterval`. Deliberately has no
+    /// default: a wrong-but-plausible density is the kind of thing that
+    /// survives review, so each scale has to say which of the three it is.
     let numberEvery: Int
 
     /// The unit after the header's value **while it is under an hour** — " min"
