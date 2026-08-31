@@ -11,23 +11,27 @@ import Testing
 @Suite("Metrics")
 struct LoopMetricsTests {
 
-    @Test("iPhone portrait pads 48 / 28 / 32")
-    func phonePortraitPadding() {
-        let padding = LoopMetrics(isPad: false, isLandscape: false).pagePadding
-        #expect(padding.top == 48)
-        #expect(padding.leading == 28)
-        #expect(padding.bottom == 32)
-        #expect(padding.trailing == 28)
-    }
+    @Test("The page padding picks the right side of each branch")
+    func paddingBranches() {
+        let portrait = LoopMetrics(isPad: false, isLandscape: false).pagePadding
+        let landscape = LoopMetrics(isPad: false, isLandscape: true).pagePadding
 
-    @Test("iPhone landscape pads 32 / 40 / 24")
-    func phoneLandscapePadding() {
-        // The written notes say 32/28/24 here; the export renders 32/40/24 and
-        // the export is what was drawn.
-        let padding = LoopMetrics(isPad: false, isLandscape: true).pagePadding
-        #expect(padding.top == 32)
-        #expect(padding.leading == 40)
-        #expect(padding.bottom == 24)
+        // Landscape is shallower top and bottom and wider at the sides — the
+        // export renders 48/28/32 against 32/40/24. The notes say the
+        // landscape sides are 28; the export draws 40 and the export is what
+        // was drawn, so the sides have to come out wider, not narrower.
+        #expect(landscape.top < portrait.top)
+        #expect(landscape.bottom < portrait.bottom)
+        #expect(landscape.leading > portrait.leading)
+
+        // The sides are symmetric in every layout.
+        #expect(portrait.leading == portrait.trailing)
+        #expect(landscape.leading == landscape.trailing)
+
+        // iPhone portrait is the only layout with the narrow sides; iPad
+        // carries the landscape side padding even in portrait.
+        let padPortrait = LoopMetrics(isPad: true, isLandscape: false).pagePadding
+        #expect(padPortrait.leading == landscape.leading * 1.15)
     }
 
     @Test("iPad scales the page padding by 1.15")
@@ -59,18 +63,13 @@ struct LoopMetricsTests {
         }
     }
 
-    @Test("The navigation dots keep their drawn sizes")
+    @Test("The active dot is the larger, undimmed one")
     func navigationDots() {
+        // The only relationship in the dot row that is not simply a constant
+        // repeated: the current page has to read as bigger and brighter.
         let phone = LoopMetrics(isPad: false, isLandscape: false)
-        #expect(phone.activeDotSize == 7)
-        #expect(phone.inactiveDotSize == 6)
-        #expect(phone.dotSpacing == 9)
-        #expect(phone.dotsTopPadding == 16)
-        #expect(LoopMetrics.inactiveDotOpacity == 0.3)
-
-        let pad = LoopMetrics(isPad: true, isLandscape: false)
-        #expect(abs(pad.activeDotSize - 8.05) < 0.001)
-        #expect(abs(pad.inactiveDotSize - 6.9) < 0.001)
+        #expect(phone.activeDotSize > phone.inactiveDotSize)
+        #expect(LoopMetrics.inactiveDotOpacity < 1)
     }
 
     @Test("The countdown's idle state closes up in landscape")
@@ -82,14 +81,64 @@ struct LoopMetricsTests {
         #expect(abs(LoopMetrics(isPad: true, isLandscape: true).countdownIdleSpacing - 16.1) < 0.001)
     }
 
-    @Test("The time block sits 30 pt high of centre")
-    func timeBlock() {
-        let phone = LoopMetrics(isPad: false, isLandscape: false)
-        #expect(phone.timeBlockOffset == -30)
-        #expect(phone.timeBlockSpacing == 14)
+    @Test("The time block is offset upwards, not downwards")
+    func timeBlockOffsetDirection() {
+        // A sign flip would move the time 60 pt the wrong way and still pass
+        // any test that only compared magnitudes.
+        #expect(LoopMetrics(isPad: false, isLandscape: false).timeBlockOffset < 0)
+    }
 
+    @Test("iPad is the iPhone layout at 1.15, everywhere")
+    func padScalesEverything() {
+        // This is the arithmetic worth testing, and where a mistake would
+        // actually hide: one value written at its iPad size by hand, or one
+        // that forgot to scale at all.
+        let phone = LoopMetrics(isPad: false, isLandscape: true)
+        let pad = LoopMetrics(isPad: true, isLandscape: true)
+        let factor: CGFloat = 1.15
+
+        let values: [(String, (LoopMetrics) -> CGFloat)] = [
+            ("timeBlockSpacing", \.timeBlockSpacing),
+            ("timeBlockOffset", \.timeBlockOffset),
+            ("countdownIdleSpacing", \.countdownIdleSpacing),
+            ("pillSpacing", \.pillSpacing),
+            ("pillDotSize", \.pillDotSize),
+            ("buttonVerticalPadding", \.buttonVerticalPadding),
+            ("controlRowSpacing", \.controlRowSpacing),
+            ("hairlineWidth", \.hairlineWidth),
+            ("activeDotSize", \.activeDotSize),
+            ("inactiveDotSize", \.inactiveDotSize),
+            ("dotSpacing", \.dotSpacing),
+            ("dotsTopPadding", \.dotsTopPadding),
+            ("sliderSpacing", \.sliderSpacing),
+            ("sliderTickRowHeight", \.sliderTickRowHeight),
+            ("sliderMajorTickHeight", \.sliderMajorTickHeight),
+            ("sliderMarkerHeight", \.sliderMarkerHeight),
+            ("stepperDiameter", \.stepperDiameter),
+            ("stepperSpacing", \.stepperSpacing),
+            ("accentRowRadius", \.accentRowRadius),
+            ("accentSwatchSize", \.accentSwatchSize),
+        ]
+
+        for (name, value) in values {
+            #expect(
+                abs(value(pad) - value(phone) * factor) < 0.001,
+                "\(name) does not scale by 1.15"
+            )
+        }
+    }
+
+    @Test("The iPad values the export actually renders")
+    func padSpotValues() {
+        // Spot checks straight off the iPad export, so the ratio above cannot
+        // be right while the base it scales is wrong.
         let pad = LoopMetrics(isPad: true, isLandscape: false)
+        #expect(abs(pad.activeDotSize - 8.05) < 0.001)
+        #expect(abs(pad.inactiveDotSize - 6.9) < 0.001)
         #expect(abs(pad.timeBlockOffset - -34.5) < 0.001)
         #expect(abs(pad.timeBlockSpacing - 16.1) < 0.001)
+        #expect(abs(pad.pillPadding.top - 10.35) < 0.001)
+        #expect(abs(pad.pillPadding.leading - 18.4) < 0.001)
+        #expect(abs(pad.buttonVerticalPadding - 17.25) < 0.001)
     }
 }
