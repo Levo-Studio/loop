@@ -22,7 +22,8 @@ struct LoopActivityStateTests {
             rounds: 1,
             window: LoopActivityController.window(remaining: remaining, duration: duration, at: now),
             pausedAt: paused ? now : nil,
-            accentID: LoopAccent.petrol.rawValue
+            accentID: LoopAccent.petrol.rawValue,
+            upcoming: []
         )
     }
 
@@ -45,18 +46,10 @@ struct LoopActivityStateTests {
 
     // MARK: - Pausing
 
-    @Test("A held run reports the fraction it was held at")
-    func pausedFractionMatchesTheElapsedShare() {
-        // Twenty of twenty-five minutes gone.
-        let held = state(remaining: 300, duration: 1_500, paused: true)
-
-        #expect(abs(held.pausedFraction - 0.8) < 0.000_1)
-        #expect(held.isPaused)
-    }
-
-    @Test("A running run has no held fraction to draw")
-    func runningHasNoPausedFraction() {
-        #expect(state(remaining: 300, duration: 1_500).pausedFraction == 0)
+    @Test("A held run is marked held")
+    func aHeldRunIsMarkedHeld() {
+        #expect(state(remaining: 300, duration: 1_500, paused: true).isPaused)
+        #expect(!state(remaining: 300, duration: 1_500).isPaused)
     }
 
     // MARK: - When an update is worth sending
@@ -74,7 +67,8 @@ struct LoopActivityStateTests {
                 at: now.addingTimeInterval(1)
             ),
             pausedAt: nil,
-            accentID: LoopAccent.petrol.rawValue
+            accentID: LoopAccent.petrol.rawValue,
+            upcoming: []
         )
 
         #expect(!LoopActivityController.hasMoved(from: first, to: second))
@@ -93,7 +87,8 @@ struct LoopActivityStateTests {
                 at: now.addingTimeInterval(3_600)
             ),
             pausedAt: now.addingTimeInterval(3_600),
-            accentID: LoopAccent.petrol.rawValue
+            accentID: LoopAccent.petrol.rawValue,
+            upcoming: []
         )
 
         #expect(!LoopActivityController.hasMoved(from: first, to: later))
@@ -114,6 +109,37 @@ struct LoopActivityStateTests {
         let rest = state(block: .rest, remaining: 300, duration: 300)
 
         #expect(LoopActivityController.hasMoved(from: focus, to: rest))
+    }
+
+    // MARK: - The budget
+
+    @Test("A fully loaded state stays inside ActivityKit's four kilobytes")
+    func aFullStateFitsTheBudget() throws {
+        // The worst case the controller can produce: the longest scales, the
+        // most blocks it will carry, and every field at its widest.
+        var timer = IntervalTimer(focusMinutes: 60, breakMinutes: 30, rounds: 99)
+        timer.start(at: now)
+
+        let snapshot = timer.snapshot(at: now.addingTimeInterval(1))
+        let window = LoopActivityController.window(
+            remaining: snapshot.remaining,
+            duration: snapshot.blockDuration,
+            at: now
+        )
+        let full = LoopActivityAttributes.ContentState(
+            block: .focus,
+            round: snapshot.round,
+            rounds: snapshot.rounds,
+            window: window,
+            pausedAt: nil,
+            accentID: LoopAccent.graphite.rawValue,
+            upcoming: LoopActivityController.upcoming(after: snapshot, endingAt: window.upperBound)
+        )
+
+        #expect(full.upcoming.count == LoopActivityController.maxUpcomingBlocks)
+
+        let encoded = try JSONEncoder().encode(full)
+        #expect(encoded.count < 4_096, "content state is \(encoded.count) bytes")
     }
 
     // MARK: - Hours

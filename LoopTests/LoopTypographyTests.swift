@@ -69,6 +69,35 @@ struct LoopTypographyTests {
         #expect(abs(padLandscape.countdownPreview.size - 59.8) < 0.001)
     }
 
+    @Test("The break headline is a headline, not a label")
+    func breakHeadline() {
+        let phone = LoopTypography(scale: 1, isLandscape: false)
+        let headline = phone.breakHeadline
+
+        // 32 pt, uppercase, at the status pill's letter-spacing — the owner's
+        // values, decided after the export.
+        #expect(headline.size == 32)
+        #expect(headline.isUppercased)
+        #expect(abs(headline.tracking - 32 * 0.14) < 0.001)
+
+        // Full opacity is the point of it. Every other uppercase role in the
+        // app is dimmed to 62 %, and a headline dimmed to match would read as
+        // one more label rather than as the thing that makes a break
+        // unmistakable at a glance.
+        #expect(headline.opacity == 1)
+        #expect(phone.fieldLabel.opacity < 1)
+
+        // Subordinate to the time it sits above, in both orientations.
+        #expect(headline.size < phone.bigTime(characterCount: 5).size)
+
+        let landscape = LoopTypography(scale: 1, isLandscape: true)
+        #expect(landscape.breakHeadline.size == 26)
+        #expect(landscape.breakHeadline.size < landscape.bigTime(characterCount: 5).size)
+
+        // And it takes the idiom factor like everything else.
+        #expect(LoopTypography(scale: 1.15, isLandscape: false).breakHeadline.size == 32 * 1.15)
+    }
+
     @Test("Roles carry their own opacity and casing")
     func rolesCarryTheirOwnTreatment() {
         #expect(phone.secondaryLine.opacity == 0.62)

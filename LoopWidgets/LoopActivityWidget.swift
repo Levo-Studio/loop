@@ -7,16 +7,16 @@ import WidgetKit
 /// Loop on the lock screen and in the Dynamic Island.
 ///
 /// One configuration for both timers. The countdown and the interval draw the
-/// same three things — a pill, a remaining time and a rising progress — and the
-/// only difference is that the interval's pill carries a round counter. Two
-/// activity types would be two copies of the layout for one line of difference.
+/// same two things — a pill and a remaining time — and the only difference is
+/// that the interval's pill carries a round counter. Two activity types would be
+/// two copies of the layout for one line of difference.
 struct LoopActivityWidget: Widget {
 
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: LoopActivityAttributes.self) { context in
-            LoopActivityLockScreen(state: context.state)
+            LoopActivityLockScreen(state: context.shownState)
         } dynamicIsland: { context in
-            let state = context.state
+            let state = context.shownState
 
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -91,5 +91,34 @@ private struct LockScreenBody: View {
         .padding(LoopActivityMetrics.cardPadding)
         .activityBackgroundTint(palette.background)
         .activitySystemActionForegroundColor(palette.inkOnBackground.base)
+    }
+}
+
+
+// MARK: - Rolling over a boundary
+
+extension ActivityViewContext where Attributes == LoopActivityAttributes {
+
+    /// The state to draw, after one or more block boundaries the app slept
+    /// through.
+    ///
+    /// `Text(timerInterval:)` counts inside one window and stops at its end; it
+    /// does not roll into the next block on its own. So an interval whose focus
+    /// block ended while the app was suspended would sit at `00:00` under a
+    /// stale "Focus · Round 02 / 04" until the app was opened — confidently
+    /// wrong, and the failure the boundary matters most for.
+    ///
+    /// The app cannot push at that instant, but it can send the rest of the
+    /// schedule with the current block, and the system re-renders the activity
+    /// at or after the `staleDate` the app set. Apple guarantees no precision
+    /// there — a re-render can be late under low power or thermal pressure —
+    /// which is the other reason the block is picked from `Date.now` rather than
+    /// from the fact of being stale: a late re-render still lands on the right
+    /// block instead of one behind.
+    ///
+    /// It covers as many boundaries as the state carries blocks; see
+    /// `LoopActivityController.maxUpcomingBlocks`.
+    var shownState: LoopActivityAttributes.ContentState {
+        state.rolledOver(at: .now) ?? state
     }
 }
