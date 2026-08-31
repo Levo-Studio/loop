@@ -14,7 +14,28 @@ struct RootShell: View {
     @Environment(LoopSettings.self) private var settings
     @Environment(\.colorScheme) private var colorScheme
 
-    @State private var page: LoopPage? = .clock
+    /// The page the user chose, and the only thing that decides where the strip
+    /// stands after the geometry moves.
+    ///
+    /// Deliberately not the scroll view's own position. A rotation resizes every
+    /// page, and the `LazyHStack` reports the new content width one page at a
+    /// time as it re-measures; in between, the strip is narrower than five pages
+    /// and `UIScrollView` clamps the offset into what is left. Measured on an
+    /// iPhone 17 Pro from the interval page: portrait offset 1206 of 2010,
+    /// landscape content briefly 2884 rather than 4370, offset clamped to 874 —
+    /// the count-up page. The clamp is not a scroll, so nothing puts the strip
+    /// back afterwards, and the user rotates the phone onto a screen they never
+    /// asked for.
+    ///
+    /// Keeping the intent separate is what makes it recoverable: only a settled
+    /// gesture writes this, and a change of size re-asserts it.
+    @State private var page: LoopPage = .clock
+
+    /// The scroll view's position. Imperative on purpose — re-asserting the
+    /// page after a resize means scrolling to an id the binding already holds,
+    /// which a plain `scrollPosition(id:)` binding cannot express because
+    /// writing the same value to it is not a change.
+    @State private var position = ScrollPosition(id: LoopPage.clock)
 
     var body: some View {
         GeometryReader { proxy in
@@ -30,6 +51,11 @@ struct RootShell: View {
             let metrics = LoopMetrics(isPad: isPad, isLandscape: size.width > size.height)
 
             pages(size: size)
+                // A resize is the one moment the strip can end up somewhere
+                // nobody asked for, so it is also the moment the chosen page is
+                // put back. Same page, new geometry: the scroll is a jump and
+                // there is nothing to animate.
+                .onChange(of: size) { position.scrollTo(id: page) }
                 .environment(\.loopMetrics, metrics)
                 .environment(\.loopSafeAreaInsets, insets)
                 .environment(\.loopTypography, LoopTypography(scale: metrics.scale, isLandscape: metrics.isLandscape))
@@ -43,9 +69,19 @@ struct RootShell: View {
     /// A horizontal scroll view with paging behaviour rather than a `TabView`:
     /// it pages without an index overlay to switch off, and its content keeps
     /// the size it is given instead of being inset by a style.
+    ///
+    /// **`HStack`, not `LazyHStack`, and the reason is the rotation above.** A
+    /// lazy stack re-measures its children one at a time after a resize and
+    /// reports an estimate until it is done; measured on an iPhone 17 Pro the
+    /// landscape strip stood at 2884 pt where five pages are 4370, and it stayed
+    /// there — long enough for the paging offset to settle between two pages,
+    /// with one screen's controls in view beside another's. Building all five
+    /// costs nothing that was being saved: lazy only ever governed the first
+    /// build, and one pass through the strip realises every page for the rest of
+    /// the run.
     private func pages(size: CGSize) -> some View {
         ScrollView(.horizontal) {
-            LazyHStack(spacing: 0) {
+            HStack(spacing: 0) {
                 ForEach(LoopPage.allCases) { page in
                     screen(for: page)
                         .environment(\.loopPage, page)
@@ -57,7 +93,14 @@ struct RootShell: View {
         }
         .scrollTargetBehavior(.paging)
         .scrollIndicators(.hidden)
-        .scrollPosition(id: $page)
+        .scrollPosition($position)
+        // Only a gesture that has come to rest counts as a choice. A clamp
+        // during a resize moves the strip without ever going through a scroll
+        // phase, which is exactly the difference this is here to keep.
+        .onScrollPhaseChange { _, phase in
+            guard phase == .idle, let landed = position.viewID(type: LoopPage.self) else { return }
+            page = landed
+        }
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
         // Only the scroll view goes edge to edge. The reader above it stays
         // inside the safe area, which is the one place the insets can still be
