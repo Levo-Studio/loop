@@ -286,6 +286,12 @@ What does work, cheapest first:
   it with XCUITest. It uses the automation channel, so none of the above limits
   apply. This is the only way anyone has exercised a button on this project.
 
+**A warning about scratch copies.** `cp -R` of a worktree carries its `.git`
+*pointer file*, which still points at the shared index in the real repository —
+so a `git checkout` inside the copy writes back into the worktree you were
+trying not to touch. Use `git archive` or `git worktree add` for a scratch
+checkout, not `cp -R`.
+
 All of it happens in a copy under `/tmp`. The worktree is never written to for a
 check, and a scratch simulator is created, used and deleted.
 
