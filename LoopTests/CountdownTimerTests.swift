@@ -95,7 +95,7 @@ struct CountdownTimerTests {
     func zeroLengthCountdown() {
         var timer = CountdownTimer(durationMinutes: 0)
 
-        #expect(timer.canStart == false)
+        #expect(timer.snapshot(at: start).canStart == false)
         let started = timer.start(at: start)
         #expect(started == false)
         #expect(timer.phase(at: start) == .idle)

@@ -60,7 +60,10 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
     /// `focusedDuration`. Both are arithmetic over the three scales rather than
     /// anything the run moves, and neither is `blockDuration` — reaching for
     /// the snapshot there would print one focus block, 25:00, where the total,
-    /// 1:40, belongs.
+    /// 1:40, belongs.    ///
+    /// A snapshot is one frame, frozen. It is safe as a binding's getter only
+    /// because `body` rebuilds it on every pass; hoisted into a stored property
+    /// it would go stale silently, showing a value the timer no longer holds.
     struct Snapshot: Sendable, Equatable {
         let phase: Phase
         let blockKind: BlockKind
@@ -147,7 +150,10 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
     /// the end. Someone who drags the focus scale to zero has asked for
     /// nothing, not for a session of breaks. A zero-minute break is a different
     /// matter and stays allowed: it means focus blocks back to back.
-    var canStart: Bool { focusDuration > 0 }
+    ///
+    /// Private, and reachable only as `snapshot(at:).canStart`, so that no
+    /// screen can hold the copy this was moved to prevent.
+    private var canStart: Bool { focusDuration > 0 }
 
     // MARK: - Reading
 

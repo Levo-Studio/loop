@@ -33,7 +33,10 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
     /// button, it is the obvious thing to copy off the timer, and the day
     /// someone gives it a time-dependent condition the copy is wrong without a
     /// word of warning. The rule a screen can rely on: if it is drawn, it is on
-    /// the snapshot.
+    /// the snapshot.    ///
+    /// A snapshot is one frame, frozen. It is safe as a binding's getter only
+    /// because `body` rebuilds it on every pass; hoisted into a stored property
+    /// it would go stale silently, showing a value the timer no longer holds.
     struct Snapshot: Sendable, Equatable {
         let phase: Phase
 
@@ -80,7 +83,14 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
     /// A zero-minute duration is reachable on the scale, and it has nothing to
     /// count. Rather than starting a timer that finishes in the same frame, the
     /// engine refuses to start it at all and the button stays disabled.
-    var canStart: Bool { durationMinutes > 0 }
+    ///
+    /// Private, and reachable only as `snapshot(at:).canStart`. Leaving a
+    /// second way in would leave the copy this was moved to prevent: the day
+    /// the condition depends on the instant, a screen still reading it here
+    /// would be wrong with nothing to warn it. There is no such risk in the
+    /// scales — a binding legitimately writes through those — so they stay
+    /// readable.
+    private var canStart: Bool { durationMinutes > 0 }
 
     /// The whole readable state at one instant. This is what a screen draws
     /// from; the accessors below are conveniences for a single value.
