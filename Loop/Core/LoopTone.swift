@@ -108,11 +108,23 @@ nonisolated struct LoopTone: Sendable, Equatable {
     /// The cue rendered as mono samples at `sampleRate`.
     ///
     /// Notes are summed rather than concatenated, so a figure whose notes are
-    /// written to overlap still renders correctly even though none of the three
-    /// currently does.
+    /// written to overlap renders as a chord rather than clipping one against
+    /// the other. That has a ceiling, and it is worth knowing before someone
+    /// writes a fourth cue: at this amplitude **three simultaneous notes are
+    /// the most that stay inside full scale**, and a fourth peaks at 1.28 and
+    /// clips. All three cues today are strictly sequential, so none is near it.
+    ///
+    /// The guard comes before the conversion rather than after it because
+    /// `Int(_:)` traps on a non-finite `Double` — an infinite or NaN sample
+    /// rate would take the process down one line before a check placed
+    /// underneath it could refuse the input.
     func samples(sampleRate: Double) -> [Float] {
+        guard sampleRate > 0, sampleRate.isFinite, duration > 0, duration.isFinite else {
+            return []
+        }
+
         let count = Int((duration * sampleRate).rounded(.up))
-        guard count > 0, sampleRate > 0 else { return [] }
+        guard count > 0 else { return [] }
 
         var samples = [Float](repeating: 0, count: count)
 
@@ -121,8 +133,10 @@ nonisolated struct LoopTone: Sendable, Equatable {
             let last = min(Int(note.end * sampleRate), count)
             guard last > first else { continue }
 
-            // Phase is accumulated per note from its own start, so every note
-            // begins at zero crossing and the envelope has nothing to fight.
+            // Phase is computed per note from its own start rather than
+            // accumulated across the buffer, so every note begins at a zero
+            // crossing and the envelope has nothing to fight. Computing also
+            // cannot drift the way a running sum of a rounded increment does.
             let step = 2 * Double.pi * note.frequency / sampleRate
 
             for index in first..<last {
