@@ -53,11 +53,8 @@ struct ClockScreen: View {
     /// either way, so the slower cadence flips the minute on time instead of up
     /// to fifty-nine seconds late.
     private var cadence: TimeInterval {
-        settings.showSeconds ? Self.secondCadence : Self.minuteCadence
+        settings.showSeconds ? WallClockSchedule.second : WallClockSchedule.minute
     }
-
-    private static let secondCadence: TimeInterval = 1
-    private static let minuteCadence: TimeInterval = 60
 }
 
 // MARK: - Time block
@@ -115,15 +112,32 @@ private struct ClockTimeBlock: View {
 /// Aligning to the boundary is the whole reason this type exists.
 private struct WallClockSchedule: TimelineSchedule {
 
+    // MARK: - Cadences
+
+    // The two cadences the clock has, and the only numeric literals in this
+    // file. A tick cadence is not a design value — it is not in the export
+    // because a still image cannot contain one — so it is named here, once, and
+    // every use reads one of these two names. `minute` is both the cadence for
+    // a page without seconds and the floor the low-frequency clamp drops to;
+    // writing that 60 a second time would let the two drift apart.
+
+    /// One tick a second, for a page that is showing seconds.
+    static let second: TimeInterval = 1
+
+    /// One tick a minute — the coarsest this page ever runs at, and still
+    /// enough to show the right time.
+    static let minute: TimeInterval = 60
+
+    // MARK: - Schedule
+
     /// The gap between boundaries, in seconds.
     let period: TimeInterval
 
     func entries(from startDate: Date, mode: Mode) -> AnyIterator<Date> {
         // `.lowFrequency` is the system asking for fewer updates — a dimmed
         // always-on screen, where a second hand is neither readable nor worth
-        // the wake. It drops to the minute, which is the coarsest cadence this
-        // page has and still shows the right time.
-        let period = mode == .lowFrequency ? max(self.period, Self.lowFrequencyPeriod) : self.period
+        // the wake.
+        let period = mode == .lowFrequency ? max(self.period, Self.minute) : self.period
 
         // The first entry is the moment asked for, so the page draws
         // immediately rather than waiting out the first boundary.
@@ -149,9 +163,6 @@ private struct WallClockSchedule: TimelineSchedule {
         let elapsed = date.timeIntervalSinceReferenceDate
         return Date(timeIntervalSinceReferenceDate: (elapsed / period).rounded(.down) * period + period)
     }
-
-    /// The slowest the clock is allowed to run, in seconds.
-    private static let lowFrequencyPeriod: TimeInterval = 60
 }
 
 // MARK: - Preview
