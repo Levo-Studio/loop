@@ -19,10 +19,11 @@ import Foundation
 ///
 /// **What governs whether anything is heard**
 ///
-/// - A system sound is an *alert*, not media. It is played at the ring volume
-///   and is silenced by the Ring/Silent switch — with the switch on silent,
-///   nothing is heard, and there is no way around that short of claiming an
-///   `AVAudioSession` with `.playback`, which would make Loop's tones media
+/// - A system sound is an *alert*, not media. It is played at the "Ringer and
+///   Alerts" volume, not the media volume, and it is silenced by the
+///   Ring/Silent switch — with the switch on silent nothing is heard, and on
+///   iPad the same holds for silent mode in Control Centre. There is no way
+///   around that short of claiming an `AVAudioSession` with `.playback`, which would make Loop's tones media
 ///   audio and let them interrupt or duck whatever the user is listening to
 ///   while they work. That trade is not worth a boundary beep, so Loop claims
 ///   no audio session at all and accepts the silent switch.
@@ -59,7 +60,10 @@ enum LoopSounds {
     /// as one two-part figure rather than as a smear — see `play(_:enabled:)`.
     /// Whether a boundary should say both things or only the more useful one is
     /// the caller's decision, and this layer does not make it.
-    enum Cue: Sendable, CaseIterable {
+    /// `nonisolated`, unlike the layer around it: a cue is a plain value with
+    /// no state, and a test that only wants to see three different identifiers
+    /// should not have to be on the main actor for it.
+    nonisolated enum Cue: Sendable, CaseIterable {
 
         /// An interval focus or break block has finished.
         case blockEnded
