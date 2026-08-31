@@ -267,6 +267,13 @@ struct CountdownScreen: View {
             timer.commitTransitions(at: instant)
 
             let frame = timer.snapshot(at: instant)
+            // The lock screen and the Dynamic Island, off the same snapshot the
+            // tick already has. Called every tick rather than on a transition:
+            // the controller pushes only when something it shows has moved, and
+            // a second opinion about that here would be the copy that is wrong.
+            // It sees the finished frame too, which is what ends the Activity.
+            LoopActivityController.shared.update(countdown: frame, accent: settings.accent, at: instant)
+
             guard frame.phase == .running else {
                 // The one place the finish is observed. Everything inside a
                 // scaffold slot is built twice and would play the tone twice,
