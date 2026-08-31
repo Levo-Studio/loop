@@ -20,12 +20,40 @@ struct CountdownTimerTests {
 
     @Test("A duration outside the scale is clamped to it")
     func durationBounds() {
-        #expect(CountdownTimer(durationMinutes: 120).durationMinutes == 60)
+        #expect(CountdownTimer(durationMinutes: 30 * 60).durationMinutes == 30 * 60)
+        #expect(CountdownTimer(durationMinutes: 30 * 60 + 1).durationMinutes == 30 * 60)
         #expect(CountdownTimer(durationMinutes: -5).durationMinutes == 0)
 
         var timer = CountdownTimer(durationMinutes: 10)
-        timer.setDuration(minutes: 99, at: start)
-        #expect(timer.durationMinutes == 60)
+        timer.setDuration(minutes: 9_000, at: start)
+        #expect(timer.durationMinutes == 30 * 60)
+    }
+
+    @Test("A duration between two detents settles on one of them")
+    func durationSnapsToTheScale() {
+        // The scale scrolls under a fixed marker, so it can be released
+        // anywhere. Past two hours only every fifth minute exists, and a value
+        // that lands between two of them has to resolve rather than stand.
+        #expect(CountdownTimer(durationMinutes: 123).durationMinutes == 125)
+
+        var timer = CountdownTimer(durationMinutes: 10)
+        timer.setDuration(minutes: 122, at: start)
+        #expect(timer.durationMinutes == 120)
+
+        // Below two hours every minute is still a value in its own right.
+        timer.setDuration(minutes: 119, at: start)
+        #expect(timer.durationMinutes == 119)
+    }
+
+    @Test("The longest countdown counts down as hours, minutes and seconds")
+    func longestDuration() {
+        var timer = CountdownTimer(durationMinutes: 30 * 60)
+        #expect(timer.remaining(at: start) == 30 * 3_600)
+        #expect(LoopTimeFormat.remaining(timer.remaining(at: start)) == "30:00:00")
+
+        timer.start(at: start)
+        #expect(timer.phase(at: start.addingTimeInterval(30 * 3_600 - 1)) == .running)
+        #expect(timer.phase(at: start.addingTimeInterval(30 * 3_600)) == .finished)
     }
 
     @Test("The scale is the idle screen, so a running timer ignores it")

@@ -422,11 +422,57 @@ struct IntervalTimerTests {
         #expect(timer.rounds == 1)
     }
 
-    @Test("The scales stay inside the ranges the design draws")
+    @Test("The focus and break scales stay inside their own ranges")
     func minuteBounds() {
-        let timer = IntervalTimer(focusMinutes: 90, breakMinutes: 45, rounds: 4)
-        #expect(timer.focusMinutes == 60)
-        #expect(timer.breakMinutes == 30)
+        // Neither is the countdown's thirty hours: a focus block is multiplied
+        // by the rounds, and a break longer than the block it follows is the
+        // end of the session rather than a break.
+        let inRange = IntervalTimer(focusMinutes: 90, breakMinutes: 45, rounds: 4)
+        #expect(inRange.focusMinutes == 90)
+        #expect(inRange.breakMinutes == 45)
+
+        let ends = IntervalTimer(focusMinutes: 8 * 60, breakMinutes: 2 * 60, rounds: 4)
+        #expect(ends.focusMinutes == 8 * 60)
+        #expect(ends.breakMinutes == 2 * 60)
+
+        let over = IntervalTimer(focusMinutes: 30 * 60, breakMinutes: 30 * 60, rounds: 4)
+        #expect(over.focusMinutes == 8 * 60)
+        #expect(over.breakMinutes == 2 * 60)
+
+        var timer = standard()
+        timer.setFocusMinutes(-1, at: start)
+        timer.setBreakMinutes(-1, at: start)
+        #expect(timer.focusMinutes == 0)
+        #expect(timer.breakMinutes == 0)
+    }
+
+    @Test("A focus value between two detents settles on one of them")
+    func minutesSnapToTheScale() {
+        var timer = standard()
+
+        timer.setFocusMinutes(123, at: start)
+        #expect(timer.focusMinutes == 125)
+
+        timer.setFocusMinutes(119, at: start)
+        #expect(timer.focusMinutes == 119)
+
+        // The break never reaches the five-minute stage, so every minute of it
+        // stays selectable right up to its end.
+        timer.setBreakMinutes(119, at: start)
+        #expect(timer.breakMinutes == 119)
+    }
+
+    @Test("The longest run the scales can express still adds up")
+    func longestPlannedRun() {
+        let timer = IntervalTimer(focusMinutes: 8 * 60, breakMinutes: 2 * 60, rounds: 99)
+
+        // 99 focus blocks and 98 breaks — the last round has no break.
+        #expect(timer.plannedDuration == TimeInterval(99 * 8 * 3_600 + 98 * 2 * 3_600))
+        #expect(timer.focusedDuration == TimeInterval(99 * 8 * 3_600))
+
+        // Hours, never wrapped through a day.
+        #expect(LoopTimeFormat.hoursAndMinutes(timer.plannedDuration) == "988:00")
+        #expect(LoopTimeFormat.hoursAndMinutes(timer.focusedDuration) == "792:00")
     }
 
     @Test("The setup values are the setup screen's, so a running interval ignores them")
