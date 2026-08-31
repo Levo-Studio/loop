@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- NSExtension has no INFOPLIST_KEY_ counterpart, so it sits in the file
+	     rather than in the build settings, exactly as Xcode's own widget
+	     extension template writes it. UIAppFonts is here for the same reason,
+	     and because an extension is a separate bundle: it does not inherit the
+	     fonts the host app registers, so IBM Plex Mono has to be declared
+	     again. A synchronized resource folder flattens into the bundle root, so
+	     the entries carry no directory. -->
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.widgetkit-extension</string>
+	</dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>IBMPlexMono-Light.ttf</string>
+		<string>IBMPlexMono-Regular.ttf</string>
+		<string>IBMPlexMono-Medium.ttf</string>
+	</array>
+</dict>
+</plist>
