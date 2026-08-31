@@ -13,10 +13,14 @@ import SwiftUI
 /// collapsing them would draw the same word twice on one screen.
 struct CountUpScreen: View {
 
-    /// The timer itself. It lives here rather than in a slot of the scaffold —
-    /// the slots are built twice, and two stopwatches pretending to be one
-    /// would drift apart the moment either was touched.
-    @State private var timer = CountUpTimer()
+    /// The stopwatch, owned by the app rather than by this page.
+    ///
+    /// Read here, above the scaffold, for two reasons. The slots are built
+    /// twice and would each read their own copy, and a run has to outlive this
+    /// view: held as `@State` it would be lost the moment the process was, and
+    /// a stopwatch that forgets it was running is a stopwatch nobody can leave
+    /// on the desk.
+    @Environment(LoopTimers.self) private var timers
 
     /// The instant the page is currently drawn for.
     ///
@@ -31,7 +35,7 @@ struct CountUpScreen: View {
         // its elapsed time and its start date separately would ask three
         // times, each with its own idea of "now", and the three answers could
         // disagree at a second boundary.
-        let frame = timer.snapshot(at: now)
+        let frame = timers.countUp.snapshot(at: now)
 
         return PageScaffold {
             StatusPill(label: LoopStrings.countUp, detail: detail(for: frame.phase))
@@ -47,7 +51,7 @@ struct CountUpScreen: View {
                 // begun, exactly as the export has it — a button that vanished
                 // would move the row the first time the stopwatch was started.
                 secondary: .init(LoopStrings.reset, isEnabled: frame.phase != .idle) {
-                    timer.reset()
+                    act { stopwatch, _ in stopwatch.reset() }
                 }
             )
         }
@@ -80,7 +84,7 @@ struct CountUpScreen: View {
     /// string and goes straight back to sleep.
     private func tick() async {
         while !Task.isCancelled {
-            let frame = timer.snapshot(at: now)
+            let frame = timers.countUp.snapshot(at: now)
             guard frame.phase == .running else { return }
 
             // The frame just drawn is what the sleep is measured from, so the
@@ -137,23 +141,27 @@ struct CountUpScreen: View {
     private func primary(for phase: CountUpTimer.Phase) -> ControlRow.Item {
         switch phase {
         case .idle:
-            .init(LoopStrings.start) { withCurrentInstant { timer.start(at: $0) } }
+            .init(LoopStrings.start) { act { $0.start(at: $1) } }
         case .running:
-            .init(LoopStrings.pause) { withCurrentInstant { timer.pause(at: $0) } }
+            .init(LoopStrings.pause) { act { $0.pause(at: $1) } }
         case .paused:
-            .init(LoopStrings.resume) { withCurrentInstant { timer.resume(at: $0) } }
+            .init(LoopStrings.resume) { act { $0.resume(at: $1) } }
         }
     }
 
     /// Runs a change against a single instant and draws the page for that same
     /// instant, so the tap does not land at one time and redraw at another.
-    private func withCurrentInstant(_ change: (Date) -> Void) {
+    ///
+    /// The change goes through the owner rather than into a local copy: that is
+    /// what puts the new state on disk, and it is the only write path there is.
+    private func act(_ change: (inout CountUpTimer, Date) -> Void) {
         let instant = Date.now
-        change(instant)
+        timers.update(\.countUp) { change(&$0, instant) }
         now = instant
     }
 }
 
 #Preview {
     CountUpScreen()
+        .environment(LoopTimers(store: TimerStateStore(defaults: UserDefaults(suiteName: "preview") ?? .standard)))
 }
