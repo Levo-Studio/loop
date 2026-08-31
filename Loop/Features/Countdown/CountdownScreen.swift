@@ -172,6 +172,15 @@ struct CountdownScreen: View {
     /// staircase. Driving it at display rate would redraw sixty times for the
     /// same second of digits and buy nothing the animation does not already give.
     ///
+    /// It sleeps to the next whole second of *remaining* time rather than for a
+    /// flat second, and that is what keeps the promise above. The displayed
+    /// value is `ceil(remaining)`, so a whole second is the instant the digits
+    /// change; sleeping a fixed interval instead lets scheduling slop pile up
+    /// until a tick spans nearly two seconds, and the area then animates a
+    /// double-height step over a one-second curve — a visible lurch about once
+    /// a minute. Deriving the wait from the remaining time absorbs the slop on
+    /// every tick instead of accumulating it.
+    ///
     /// The value is read from `Date.now` on every tick and never counted: a
     /// device that slept through a minute of ticks comes back a minute further
     /// on, not a minute behind.
@@ -185,13 +194,19 @@ struct CountdownScreen: View {
         guard phase == .running else { return }
 
         while !Task.isCancelled {
-            try? await Task.sleep(for: .seconds(LoopMotion.tickInterval))
-            guard !Task.isCancelled else { return }
-
-            now = .now
+            let instant = Date.now
+            now = instant
             // Written back rather than only read, so the finish is persisted in
             // the value and the task ends with the phase it produced.
-            timer.commitTransitions(at: now)
+            timer.commitTransitions(at: instant)
+
+            let frame = timer.snapshot(at: instant)
+            guard frame.phase == .running else { return }
+
+            // A remaining time that has just landed on a whole second waits a
+            // full one for the next, rather than spinning on a zero sleep.
+            let untilNextSecond = frame.remaining.truncatingRemainder(dividingBy: LoopMotion.tickInterval)
+            try? await Task.sleep(for: .seconds(untilNextSecond > 0 ? untilNextSecond : LoopMotion.tickInterval))
         }
     }
 }
