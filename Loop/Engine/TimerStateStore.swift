@@ -34,8 +34,8 @@ nonisolated struct LoopTimerState: Sendable, Codable, Equatable {
     func restored(at now: Date) -> LoopTimerState {
         LoopTimerState(
             countUp: countUp,
-            countdown: countdown.settled(at: now),
-            interval: interval.settled(at: now)
+            countdown: countdown.resolved(at: now),
+            interval: interval.resolved(at: now)
         )
     }
 }

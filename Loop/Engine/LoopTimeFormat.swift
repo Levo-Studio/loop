@@ -52,18 +52,25 @@ nonisolated enum LoopTimeFormat {
 
     // MARK: - Wall clock
 
-    /// The clock page's time, always 24-hour.
+    /// The clock page's time, in the device's own 12- or 24-hour setting.
     ///
-    /// Not the user's 12-hour setting: the whole type scale of that screen is
-    /// built around a maximum of eight characters (`09:41:07`), and `9:41:07 AM`
-    /// does not fit the drawing at any size the export gives.
-    static func wallClock(_ date: Date, showSeconds: Bool, calendar: Calendar = .current) -> String {
-        let parts = calendar.dateComponents([.hour, .minute, .second], from: date)
-        let hour = parts.hour ?? 0
-        let minute = parts.minute ?? 0
-
-        guard showSeconds else { return String(format: "%02d:%02d", hour, minute) }
-        return String(format: "%02d:%02d:%02d", hour, minute, parts.second ?? 0)
+    /// Built by the system rather than from a fixed pattern: a US device shows
+    /// `9:41:07 AM` and a German one `09:41:07`, and the type scale copes
+    /// either way — it shrinks the time by `min(1, 5 / characterCount)`, which
+    /// takes ten characters as readily as eight. Forcing 24-hour would also sit
+    /// oddly under a weekday line that is localised.
+    static func wallClock(
+        _ date: Date,
+        showSeconds: Bool,
+        locale: Locale = .autoupdatingCurrent,
+        timeZone: TimeZone = .autoupdatingCurrent
+    ) -> String {
+        var style = showSeconds
+            ? Date.FormatStyle.dateTime.hour().minute().second()
+            : Date.FormatStyle.dateTime.hour().minute()
+        style.locale = locale
+        style.timeZone = timeZone
+        return date.formatted(style)
     }
 
     /// Weekday and date under the clock. Built by the system rather than from a

@@ -23,7 +23,7 @@ struct TimerStateStoreTests {
 
         #expect(state.countdown.phase(at: start) == .idle)
         #expect(state.interval.phase(at: start) == .setup)
-        #expect(state.countUp.phase == .idle)
+        #expect(state.countUp.phase(at: start) == .idle)
     }
 
     @Test("A running countdown keeps counting across a restart")
@@ -128,6 +128,42 @@ struct TimerStateStoreTests {
 
         let store = TimerStateStore(defaults: defaults, key: key)
         #expect(store.load(at: start).countdown.phase(at: start) == .idle)
+    }
+
+    @Test("Values outside the ranges are clamped on the way back in")
+    func corruptRecordIsClamped() {
+        // A record written by an older build, or by a bug. Decoding bypasses
+        // the initialisers, so this is the only path that would let rounds = 0
+        // reach the schedule — where 1...0 traps, on the launch path.
+        let record = """
+        {
+          "countUp": { "tracker": { "accumulated": -5 } },
+          "countdown": { "durationMinutes": 900, "storedPhase": "idle", "tracker": { "accumulated": 0 } },
+          "interval": {
+            "focusMinutes": 900, "breakMinutes": -4, "rounds": 0,
+            "storedPhase": "running", "tracker": { "accumulated": -10 }
+          }
+        }
+        """
+
+        let suiteName = "loop.tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+        let key = "loop.timers.state"
+        defaults.set(Data(record.utf8), forKey: key)
+
+        let state = TimerStateStore(defaults: defaults, key: key).load(at: start)
+
+        #expect(state.interval.rounds == 1)
+        #expect(state.interval.focusMinutes == 60)
+        #expect(state.interval.breakMinutes == 0)
+        #expect(state.countdown.durationMinutes == 60)
+        #expect(state.countUp.elapsed(at: start) == 0)
+
+        // And the schedule the clamped record produces is readable rather than
+        // fatal.
+        #expect(state.interval.schedule.count == 1)
+        #expect(state.interval.snapshot(at: start).round == 1)
+        #expect(state.interval.snapshot(at: start).blockKind == .focus)
     }
 
     @Test("Clearing the record puts the pages back to their setup state")

@@ -71,4 +71,21 @@ nonisolated struct ElapsedTracker: Sendable, Codable, Equatable {
         accumulated = 0
         startedAt = nil
     }
+
+    // MARK: - Decoding
+
+    private enum CodingKeys: String, CodingKey {
+        case accumulated
+        case startedAt
+    }
+
+    /// Written out rather than synthesised, because a synthesised
+    /// `init(from:)` assigns the stored properties directly and would let a
+    /// negative span in from a damaged record — the one path into this type
+    /// that does not go through the initialiser above.
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        accumulated = max(0, try container.decode(TimeInterval.self, forKey: .accumulated))
+        startedAt = try container.decodeIfPresent(Date.self, forKey: .startedAt)
+    }
 }
