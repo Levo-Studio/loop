@@ -72,14 +72,20 @@ struct CountUpScreen: View {
     /// from it and the display would flip late by a growing margin.
     private func tick() async {
         while !Task.isCancelled {
-            let instant = Date.now
-            let frame = timer.snapshot(at: instant)
+            let frame = timer.snapshot(at: now)
             guard frame.phase == .running else { return }
 
-            now = instant
-
+            // The frame just drawn is what the sleep is measured from, so the
+            // first pass waits rather than reassigning an instant the page is
+            // already drawn for. Whoever started the run set `now` to the same
+            // instant it began at.
             let untilNextSecond = 1 - frame.elapsed.truncatingRemainder(dividingBy: 1)
             try? await Task.sleep(for: .seconds(untilNextSecond))
+
+            // `Task.sleep` returns at once when the task is cancelled, and a
+            // cancelled ticker must not leave a last instant behind it.
+            guard !Task.isCancelled else { return }
+            now = .now
         }
     }
 
