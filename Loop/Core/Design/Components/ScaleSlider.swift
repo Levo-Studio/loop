@@ -26,8 +26,13 @@ struct ScaleSlider: View {
 
     @Binding var minutes: Int
 
-    /// The values the scale may stop on, and the range it draws.
-    let detents: ScaleDetents
+    /// How far the scale runs and which values on it can be stopped on.
+    ///
+    /// Handed in by the screen rather than decided here. Which durations are
+    /// selectable is a rule about the timer — one-minute steps to two hours,
+    /// five-minute steps beyond — and rules about the timer live in
+    /// `Loop/Engine/`, where a test can reach them without a simulator.
+    let minuteScale: LoopMinuteScale
 
     /// How often a number is printed under the scale, in minutes.
     ///
@@ -43,20 +48,21 @@ struct ScaleSlider: View {
     init(
         label: LocalizedStringResource,
         minutes: Binding<Int>,
-        detents: ScaleDetents,
+        minuteScale: LoopMinuteScale,
         numberEvery: Int,
         unit: LocalizedStringResource
     ) {
         self.label = label
         self._minutes = minutes
-        self.detents = detents
+        self.minuteScale = minuteScale
         self.numberEvery = numberEvery
         self.unit = unit
     }
 
     /// A scale with a detent on every minute up to `maximumMinutes`.
     ///
-    /// The plain arithmetic case, for a screen whose range is not staged.
+    /// The plain unstaged case, for a screen that has not moved to one of the
+    /// engine's scales yet.
     init(
         label: LocalizedStringResource,
         minutes: Binding<Int>,
@@ -67,7 +73,10 @@ struct ScaleSlider: View {
         self.init(
             label: label,
             minutes: minutes,
-            detents: .everyMinute(through: maximumMinutes),
+            minuteScale: LoopMinuteScale(
+                range: 0...max(0, maximumMinutes),
+                stages: [.init(start: 0, step: 1)]
+            ),
             numberEvery: numberEvery,
             unit: unit
         )
@@ -113,8 +122,8 @@ struct ScaleSlider: View {
         .accessibilityValue(Text(accessibilityValue))
         .accessibilityAdjustableAction { direction in
             let adjusted = switch direction {
-            case .increment: detents.next(after: minutes)
-            case .decrement: detents.previous(before: minutes)
+            case .increment: minuteScale.next(after: minutes)
+            case .decrement: minuteScale.previous(before: minutes)
             @unknown default: minutes
             }
             guard adjusted != minutes else { return }
@@ -264,15 +273,15 @@ struct ScaleSlider: View {
     private func visibleDetents(origin: CGFloat, pitch: CGFloat, width: CGFloat) -> [Int] {
         guard pitch > 0 else { return [] }
 
-        let first = max(detents.range.lowerBound, Int(floor((-origin) / pitch)))
-        let last = min(detents.range.upperBound, Int(ceil((width - origin) / pitch)))
+        let first = max(minuteScale.range.lowerBound, Int(floor((-origin) / pitch)))
+        let last = min(minuteScale.range.upperBound, Int(ceil((width - origin) / pitch)))
         guard first <= last else { return [] }
 
         var values: [Int] = []
-        var value = detents.nearest(to: Double(first))
+        var value = minuteScale.nearest(to: Double(first))
         while value <= last {
             if value >= first { values.append(value) }
-            let following = detents.next(after: value)
+            let following = minuteScale.next(after: value)
             // A detent rule that does not advance would spin here forever, and
             // the top of the range answers itself by design.
             guard following > value else { break }
@@ -289,8 +298,8 @@ struct ScaleSlider: View {
     private func visibleNumbers(origin: CGFloat, pitch: CGFloat, width: CGFloat) -> [Int] {
         guard pitch > 0, numberEvery > 0 else { return [] }
 
-        let first = max(detents.range.lowerBound, Int(floor((-origin) / pitch)))
-        let last = min(detents.range.upperBound, Int(ceil((width - origin) / pitch)))
+        let first = max(minuteScale.range.lowerBound, Int(floor((-origin) / pitch)))
+        let last = min(minuteScale.range.upperBound, Int(ceil((width - origin) / pitch)))
         guard first <= last else { return [] }
 
         let start = ((first + numberEvery - 1) / numberEvery) * numberEvery
@@ -336,7 +345,7 @@ struct ScaleSlider: View {
                 // under a fingertip would turn.
                 let moved = gestureOrigin - Double(gesture.translation.width / pitch)
                 scrollMinutes = bounded(moved)
-                settle(on: detents.nearest(to: moved))
+                settle(on: minuteScale.nearest(to: moved))
             }
             .onEnded { gesture in
                 guard pitch > 0 else { return }
@@ -354,7 +363,7 @@ struct ScaleSlider: View {
                 // left it.
                 let travel = reduceMotion ? gesture.translation.width : gesture.predictedEndTranslation.width
                 let projected = gestureOrigin - Double(travel / pitch)
-                let target = detents.nearest(to: projected)
+                let target = minuteScale.nearest(to: projected)
                 settle(on: target)
 
                 // Rest exactly on the detent, then hand the drawing back to the
@@ -391,7 +400,7 @@ struct ScaleSlider: View {
     /// stops under the marker with half a screen of nothing beyond it, which is
     /// what a fixed centre needs at the edges.
     private func bounded(_ value: Double) -> Double {
-        min(Double(detents.range.upperBound), max(Double(detents.range.lowerBound), value))
+        min(Double(minuteScale.range.upperBound), max(Double(minuteScale.range.lowerBound), value))
     }
 
     /// A slot wide enough for any number on the scale, so the label can be

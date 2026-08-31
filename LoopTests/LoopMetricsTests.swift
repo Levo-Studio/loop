@@ -123,21 +123,35 @@ struct LoopMetricsTests {
 
     @Test("The scale number intervals are counts, not lengths")
     func sliderNumberIntervals() {
-        // 0/15/30/45/60 on the hour-long scales, 0/10/20/30 on the break
-        // scale, drawn identically in all four layouts.
+        // A number every 15 minutes on the countdown and focus scales, every
+        // 10 on the break scale, drawn identically in all four layouts.
         #expect(LoopMetrics.durationNumberInterval == 15)
         #expect(LoopMetrics.breakNumberInterval == 10)
 
-        // The sequences `ScaleSlider` will actually print, against the labels
-        // in the export. Both divide their scale exactly, so the right-hand
-        // end always carries a number — an unlabelled end reads as a
-        // rendering fault rather than as a choice. The maxima themselves are
-        // the engine's `LoopTimerLimits`, not a design value.
-        let duration = Array(stride(from: 0, through: 60, by: LoopMetrics.durationNumberInterval))
-        #expect(duration == [0, 15, 30, 45, 60])
+        // The sequences `ScaleSlider` actually prints, taken from the engine's
+        // scales rather than from a literal — the scales scroll now, so the
+        // number row runs to the end of the range and not to the end of the
+        // screen. Only the first hour is asserted in full: past sixty minutes
+        // the row switches to `h:mm`, and what matters here is the stride, not
+        // the wording.
+        let duration = Array(stride(
+            from: 0,
+            through: LoopTimerLimits.duration.range.upperBound,
+            by: LoopMetrics.durationNumberInterval
+        ))
+        #expect(duration.prefix(5) == [0, 15, 30, 45, 60])
+        #expect(duration.last == 1_800)
 
-        let breakScale = Array(stride(from: 0, through: 30, by: LoopMetrics.breakNumberInterval))
-        #expect(breakScale == [0, 10, 20, 30])
+        let breakScale = Array(stride(
+            from: 0,
+            through: LoopTimerLimits.breakLength.range.upperBound,
+            by: LoopMetrics.breakNumberInterval
+        ))
+        #expect(breakScale.prefix(4) == [0, 10, 20, 30])
+        // Both strides divide their scale exactly, so the right-hand end always
+        // carries a number — an unlabelled end reads as a rendering fault
+        // rather than as a choice.
+        #expect(breakScale.last == 120)
     }
 
     @Test("The time block is offset upwards, not downwards")
