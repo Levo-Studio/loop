@@ -22,9 +22,11 @@ struct LoopAppIconTests {
     /// plist is read instead, which is the same on either device.
     private static let iconKeys = ["CFBundleIcons", "CFBundleIcons~ipad"]
 
-    /// The Info.plist as it sits on disk, with the `~ipad` variants intact.
-    /// `Bundle.main.infoDictionary` has already collapsed those into the keys
-    /// for the current idiom, which is exactly the information this needs.
+    /// The Info.plist as it sits on disk, where both idioms' keys are still
+    /// present. `Bundle.main.infoDictionary` is the wrong source for this test:
+    /// it has already collapsed the `~ipad` variants down to the idiom of the
+    /// running device and discarded the other one. The discarded key is exactly
+    /// the one the test has to check, so the file is parsed directly instead.
     private func rawInfoPlist() throws -> [String: Any] {
         let url = Bundle.main.bundleURL.appendingPathComponent("Info.plist")
         let data = try Data(contentsOf: url)
