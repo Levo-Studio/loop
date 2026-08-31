@@ -81,6 +81,65 @@ struct LoopMetricsTests {
         #expect(abs(LoopMetrics(isPad: true, isLandscape: true).countdownIdleSpacing - 16.1) < 0.001)
     }
 
+    @Test("The settings column fits a landscape iPhone")
+    func settingsColumnFitsLandscape() {
+        // The one landscape variant with no drawn ground truth behind it, so
+        // the thing worth testing is the constraint it exists to satisfy
+        // rather than the numbers themselves.
+        //
+        // Everything in the column that is not gap, from the export: the
+        // heading, the toggle row, the divider, the accent heading, four
+        // 45 pt accent rows, the footer and the dots.
+        let heading: CGFloat = 14.3
+        let secondsRow: CGFloat = 29
+        let divider: CGFloat = 1
+        let accentHeading: CGFloat = 14.3
+        let accentRows: CGFloat = 4 * 45
+        let footer: CGFloat = 13
+        let dots: CGFloat = 7 + 16
+        let fixedContent = heading + secondsRow + divider + accentHeading + accentRows + footer + dots
+
+        let metrics = LoopMetrics(isPad: false, isLandscape: true)
+        let gaps = gapTotal(metrics)
+
+        // A 402 pt landscape iPhone, less the drawn page padding.
+        let box = 402 - metrics.pagePadding.top - metrics.pagePadding.bottom
+        #expect(fixedContent + gaps <= box)
+
+        // And the portrait values genuinely do not fit, which is why this
+        // variant exists at all — if they ever did, it should be deleted.
+        let portrait = LoopMetrics(isPad: false, isLandscape: false)
+        #expect(fixedContent + gapTotal(portrait) > box)
+    }
+
+    /// Every gap down the settings column, counted as often as it occurs.
+    private func gapTotal(_ metrics: LoopMetrics) -> CGFloat {
+        let sections: CGFloat = 2 * metrics.settingsSectionSpacing
+        let row: CGFloat = metrics.settingsRowSpacing
+        let accentSection: CGFloat = metrics.accentSectionSpacing
+        let list: CGFloat = 3 * metrics.accentListSpacing
+        return sections + row + accentSection + list
+    }
+
+    @Test("The scale number intervals are counts, not lengths")
+    func sliderNumberIntervals() {
+        // 0/15/30/45/60 on the hour-long scales, 0/10/20/30 on the break
+        // scale, drawn identically in all four layouts.
+        #expect(LoopMetrics.durationNumberInterval == 15)
+        #expect(LoopMetrics.breakNumberInterval == 10)
+
+        // The sequences `ScaleSlider` will actually print, against the labels
+        // in the export. Both divide their scale exactly, so the right-hand
+        // end always carries a number — an unlabelled end reads as a
+        // rendering fault rather than as a choice. The maxima themselves are
+        // the engine's `LoopTimerLimits`, not a design value.
+        let duration = Array(stride(from: 0, through: 60, by: LoopMetrics.durationNumberInterval))
+        #expect(duration == [0, 15, 30, 45, 60])
+
+        let breakScale = Array(stride(from: 0, through: 30, by: LoopMetrics.breakNumberInterval))
+        #expect(breakScale == [0, 10, 20, 30])
+    }
+
     @Test("The time block is offset upwards, not downwards")
     func timeBlockOffsetDirection() {
         // A sign flip would move the time 60 pt the wrong way and still pass
@@ -145,6 +204,10 @@ struct LoopMetricsTests {
         "sliderMinuteTickHeight": (8, 7),
         "sliderMajorTickHeight": (17, 14),
         "sliderMarkerHeight": (30, 26),
+        "settingsSectionSpacing": (28, 15),
+        "settingsRowSpacing": (14, 8),
+        "accentSectionSpacing": (13, 7),
+        "accentListSpacing": (11, 6),
     ]
 
     /// The values the export draws at the same size on both idioms.

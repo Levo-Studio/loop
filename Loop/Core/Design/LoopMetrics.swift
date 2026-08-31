@@ -169,6 +169,21 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// A taller tick every five minutes.
     static let sliderMajorTickInterval = 5
 
+    /// How often a number is printed under the scale, in minutes.
+    ///
+    /// Two values, because the two scale lengths need different densities: the
+    /// hour-long scales — the countdown's duration and the interval's focus
+    /// block — print 0/15/30/45/60, and the half-hour break scale prints
+    /// 0/10/20/30. Both are drawn identically in all four layouts, so unlike
+    /// nearly everything else here they take neither the idiom factor nor a
+    /// landscape variant: they count minutes, and a minute is not a length.
+    ///
+    /// The **ranges** these subdivide belong to the engine, in
+    /// `LoopTimerLimits`. How far a scale runs is a rule about the timer; how
+    /// often it is labelled is a rule about the drawing.
+    static let durationNumberInterval = 15
+    static let breakNumberInterval = 10
+
     var sliderNumberRowHeight: CGFloat { scaled(15) }
     var sliderNumberRowTopPadding: CGFloat { scaled(3) }
 
@@ -190,19 +205,40 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// seconds row and the divider under it, and between the accent heading
     /// and the list.
     ///
-    /// These carry no landscape variant, unlike the slider and the interval
-    /// column. Not because they were checked and found equal — the export has
-    /// no landscape settings state at all, so there is nothing to check
-    /// against. They scale by idiom and hold their portrait value until a
-    /// landscape settings screen exists to say otherwise.
-    var settingsSectionSpacing: CGFloat { scaled(28) }
-    var settingsRowSpacing: CGFloat { scaled(14) }
-    var accentSectionSpacing: CGFloat { scaled(13) }
+    /// The landscape values are **derived, not drawn.** The export has no
+    /// landscape settings state at all — both files show Settings only in
+    /// their portrait section — so unlike every other landscape variant here
+    /// there is no ground truth to check against. But "no ground truth" could
+    /// not stay resolved to the portrait values, because they do not fit: the
+    /// column is 390.6 pt of content against a 346 pt box on a 402 pt
+    /// landscape iPhone, so the navigation dots landed 45 pt past the bottom
+    /// of the page, under the home indicator.
+    ///
+    /// Only 116 pt of that height is gap; the other 274.6 pt is text, the
+    /// toggle, four accent rows, the divider, the footer and the dots, none of
+    /// which this can touch. Fitting 116 pt of gap into the 71.4 pt that is
+    /// left needs a factor of 0.616 or under.
+    ///
+    /// The export offers two portrait→landscape precedents for a column that
+    /// has to fit a shallow page: the interval setup closes 24 → 16, a third
+    /// off, and the countdown's idle state closes 26 → 14, closer to a half.
+    /// A third off is **not** enough here — it leaves the column 5.9 pt over
+    /// the box, still overflowing. So these follow the countdown's ratio,
+    /// which lands 8.4 pt inside it.
+    ///
+    /// That slack is thin, and it is thin at exactly one height. A landscape
+    /// iPhone shorter than this one would overflow again, and the honest fix
+    /// for that is a scrolling column — which is a layout the export never
+    /// drew and therefore the owner's call, not this file's.
+    var settingsSectionSpacing: CGFloat { scaled(isLandscape ? 15 : 28) }
+    var settingsRowSpacing: CGFloat { scaled(isLandscape ? 8 : 14) }
+    var accentSectionSpacing: CGFloat { scaled(isLandscape ? 7 : 13) }
 
     /// The gap between two accent rows.
-    var accentListSpacing: CGFloat { scaled(11) }
+    var accentListSpacing: CGFloat { scaled(isLandscape ? 6 : 11) }
 
-    /// The gap between a swatch, its name and the active marker.
+    /// The gap between a swatch, its name and the active marker. Horizontal,
+    /// so the shallow page does not squeeze it.
     var accentRowSpacing: CGFloat { scaled(12) }
 
     /// The seconds toggle: a 50 × 29 pt track with a 23 pt knob inset by 3 pt.
@@ -219,7 +255,13 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
         EdgeInsets(top: scaled(11), leading: scaled(13), bottom: scaled(11), trailing: scaled(13))
     }
 
-    /// The border on the selected accent row.
+    /// The border on **every** accent row, selected or not.
+    ///
+    /// All four rows carry a 1.5 pt border in the export. Only the colour
+    /// changes: the selected row draws it in the accent's marker tone over the
+    /// `chip` background, the other three in `hair` over nothing. Drawing the
+    /// inactive rows at `hairlineWidth` instead would shift their content by
+    /// half a point and make the list twitch as the selection moves.
     ///
     /// **Not scaled**, for the same reason as `hairlineWidth`: the export
     /// draws 1.5 px on both idioms.

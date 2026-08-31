@@ -15,8 +15,50 @@ struct TimeDisplay: View {
     /// view only knows how large to set it.
     let time: String
 
-    /// The line beneath — "of 25:00", "since 09:29", a weekday and a date.
-    var secondary: LocalizedStringResource?
+    /// The line beneath, in whichever of the two forms the screen has.
+    private let secondary: Secondary?
+
+    // MARK: - The secondary line
+
+    /// Where the second line's words come from.
+    ///
+    /// Two cases, because the screens genuinely have two. The countdown, the
+    /// count-up and the interval all build theirs from a catalog phrase around
+    /// a number — "of 25:00", "since 09:29", "2:00 hours focused" — and those
+    /// have to go through `LocalizedStringResource` or they never reach the
+    /// catalog. The clock's line has no phrase in it at all: `weekdayAndDate`
+    /// asks the system for the region's own order of weekday, day and month,
+    /// and there is no key that could hold that.
+    ///
+    /// Kept as one optional with two cases rather than two optional
+    /// parameters, so there is no state where both are set and the view has to
+    /// invent a rule for which wins.
+    private enum Secondary {
+
+        /// Catalog text, possibly with a formatted number in it.
+        case localized(LocalizedStringResource)
+
+        /// Text the system built at runtime, which has no catalog key.
+        case verbatim(String)
+    }
+
+    // MARK: - Life cycle
+
+    /// The usual case: a line whose words live in the string catalog.
+    init(time: String, secondary: LocalizedStringResource? = nil) {
+        self.time = time
+        self.secondary = secondary.map(Secondary.localized)
+    }
+
+    /// A line the system formatted, with no catalog entry behind it.
+    ///
+    /// A separate initialiser rather than a second parameter: the two are
+    /// alternatives, and a signature that accepts both invites a call passing
+    /// both.
+    init(time: String, secondaryText: String) {
+        self.time = time
+        self.secondary = .verbatim(secondaryText)
+    }
 
     @Environment(\.loopMetrics) private var metrics
     @Environment(\.loopTypography) private var typography
@@ -29,7 +71,7 @@ struct TimeDisplay: View {
                 .monospacedDigit()
 
             if let secondary {
-                Text(secondary)
+                secondaryLine(secondary)
                     .loopTextStyle(typography.secondaryLine)
             }
         }
@@ -40,5 +82,12 @@ struct TimeDisplay: View {
         // centre down, and this pulls it back. An offset rather than a padding,
         // so the space the block claims does not change with it.
         .offset(y: metrics.timeBlockOffset)
+    }
+
+    @ViewBuilder private func secondaryLine(_ secondary: Secondary) -> some View {
+        switch secondary {
+        case .localized(let resource): Text(resource)
+        case .verbatim(let text): Text(verbatim: text)
+        }
     }
 }

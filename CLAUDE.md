@@ -194,6 +194,13 @@ visible string sits as a literal in a view.
 - `// MARK: -` in any file with more than one type or more than a handful of
   functions.
 - **No numeric or colour literals in feature files.** See above.
+- **One exception, and only one: a tick cadence.** How often a screen wakes to
+  re-read `Date.now` is not a design value. It is not in the export because a
+  still image cannot contain one, and it belongs to the screen that does the
+  waking. Keep it as a named `private static let` with the reasoning in a
+  comment — never an inline literal, and never two names for the same number.
+  Everything else with a number in it is a design value until the owner says
+  otherwise.
 - **Nothing enforces style** — no SwiftLint, no SwiftFormat. So match the file
   you are editing.
 - Never change formatting in the same commit as logic. If an indentation bothers
@@ -226,6 +233,30 @@ the fill fraction at a block boundary. All of that is testable without a view.
 Every fix ships with a test that fails **without** the fix. The counter-check is
 mandatory: pull the fix, watch it go red, put the fix back, watch it go green. A
 regression test nobody has seen fail is decoration.
+
+## Driving the app for a check
+
+Touch injection does not work on the owner's machine: `CGEventPost` is silently
+dropped (`AXIsProcessTrusted` is false) and `osascript` is refused with `-1743`.
+`simctl` has neither a touch nor a rotate command. Several agents burned time
+rediscovering this.
+
+What does work, cheapest first:
+
+- **State**: launch arguments through the NSUserDefaults argument domain,
+  `simctl launch … -key value`.
+- **A specific screen**: render the real view through `ImageRenderer` from a
+  scratch test, or drive `scrollPosition` programmatically.
+- **Landscape**: a modified `Info.plist` in a scratch copy of the **built**
+  `.app`. On iPad this gives true landscape geometry — the system renders at the
+  real size and downscales into the portrait framebuffer, so every value is
+  present and recoverable.
+- **Real taps**: add a UI-test target in a scratch copy of the project and drive
+  it with XCUITest. It uses the automation channel, so none of the above limits
+  apply. This is the only way anyone has exercised a button on this project.
+
+All of it happens in a copy under `/tmp`. The worktree is never written to for a
+check, and a scratch simulator is created, used and deleted.
 
 Views are not unit-tested. They are checked by hand in the simulator, against
 `design/`, in light and dark, on iPhone and iPad, portrait and landscape.
@@ -267,7 +298,15 @@ before parallelising anything.
   IDs, no mention of AI tooling — not in commits, not in PR titles or bodies,
   not in code comments, not anywhere in the repo. This applies to every agent
   without exception.
-- Rebased on current `main`, no merge commits in a PR.
+- **Rebase onto current `main` before a PR — unless another branch is based on
+  your history.** The default is a rebase and a linear PR. But when work is
+  split across several branches and one is cut from another, rebasing the base
+  rewrites commits the dependents are sitting on and strands every one of them.
+  In that case merge `origin/main` in instead, and say in the merge body why.
+  A branch nobody depends on has no excuse: rebase it.
+- Merges **to** `main` are always `--no-ff`, with a body saying what landed and
+  why. The merge commit is the record of a feature arriving; a fast-forward
+  hides it.
 
 ## Branches
 
