@@ -45,8 +45,11 @@ import Foundation
 /// - Do Not Disturb and Focus suppress *notification delivery*. They have never
 ///   governed audio an app plays itself, and that is if anything more true here
 ///   than it was of a system sound: this is ordinary media playback, the same
-///   path a music app uses, and a Focus mode does not stop music. So a cue is
-///   heard under Focus.
+///   path a music app uses, and a Focus mode does not stop music. So a cue
+///   should be heard under Focus — but that one is reasoned from the analogy,
+///   not established. Apple does not document the case, and nobody has put Loop
+///   under a Focus mode with a `.playback` session active and listened. Unlike
+///   the switch above, it is an expectation.
 ///
 /// **Background is the limitation, and it is unchanged by any of this.** Loop
 /// declares no `audio` background mode and starts no background task, so iOS
@@ -125,6 +128,7 @@ enum LoopSounds {
     private static var cache: [Cue: AVAudioPCMBuffer] = [:]
 
     private static var isWired = false
+    private static var isObserving = false
 
     // MARK: - Playing
 
@@ -153,6 +157,16 @@ enum LoopSounds {
     /// most recent thing you heard.
     private static let releaseDelay = 0.25
 
+    /// How late a cue may be and still be worth playing.
+    ///
+    /// A fixed window rather than the cue's own length. What is being measured
+    /// is jitter and suspension, neither of which knows how long the tone is,
+    /// and scaling by duration would hand the finish four times the tolerance
+    /// of a boundary — the most permissive treatment to the cue that matters
+    /// most. Half a second is longer than any plausible hop between runloop
+    /// turns and far shorter than a trip through the background.
+    private static let lateness = 0.5
+
     /// Plays a cue, unless the user has turned sound off.
     ///
     /// The switch is passed in rather than read from a global: the settings
@@ -175,13 +189,13 @@ enum LoopSounds {
             Task { @MainActor in
                 try? await Task.sleep(for: .seconds(wait))
 
-                // A sleep does not run while the app is suspended, so a cue
-                // queued behind another one can wake up long after the moment
-                // it was for — and firing it then is the burst of beeps for
-                // something that happened twenty minutes ago that this file
-                // argues against above. One cue's length of slack, because that
-                // is how late the queue itself can legitimately make it.
-                guard Date.now.timeIntervalSince(start) <= cue.tone.duration else { return }
+                // `start` already accounts for the queue — it is the instant
+                // this cue is due once the one before it has finished — so
+                // anything past it is scheduler jitter or the app having been
+                // suspended mid-sleep. Waking twenty minutes later and beeping
+                // for a boundary long gone is the burst this file argues
+                // against above.
+                guard Date.now.timeIntervalSince(start) <= lateness else { return }
                 emit(cue)
             }
         } else {
@@ -224,7 +238,14 @@ enum LoopSounds {
         wire(buffer.format)
         try? engine.start()
 
-        guard engine.isRunning else { return }
+        guard engine.isRunning else {
+            // Starting failed, which most often means the graph outlived the
+            // route it was built for. Drop it rather than latching a connection
+            // that will fail identically every time from here on.
+            invalidate()
+            return
+        }
+
         player.play()
         player.scheduleBuffer(buffer, at: nil, options: [])
     }
@@ -244,11 +265,66 @@ enum LoopSounds {
     /// Attaches and connects the player once. Reconnecting on every cue would
     /// tear down and rebuild the graph in the instant the sound is due.
     private static func wire(_ format: AVAudioFormat) {
+        observeTeardowns()
+
         guard !isWired else { return }
         isWired = true
 
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: format)
+    }
+
+    /// Forgets the graph, so the next cue builds a fresh one.
+    ///
+    /// The flag exists to avoid rebuilding the graph in the instant a sound is
+    /// due; it must not become a claim that the graph is still valid. Apple
+    /// documents that a configuration change tears down connections to the
+    /// output node, and a latched `isWired` would leave the player attached to
+    /// an output that no longer exists — `engine.start()` then fails and every
+    /// later cue returns silently, for the rest of the process. Unplugging
+    /// headphones would kill the feature until relaunch, with nothing to see.
+    private static func invalidate() {
+        player.stop()
+        engine.stop()
+
+        guard isWired else { return }
+        isWired = false
+
+        engine.disconnectNodeOutput(player)
+        engine.detach(player)
+    }
+
+    /// Watches for the two things that take the graph or the session away.
+    ///
+    /// Registered once and never removed: this layer lives as long as the
+    /// process does, so there is nothing to remove it for.
+    private static func observeTeardowns() {
+        guard !isObserving else { return }
+        isObserving = true
+
+        let center = NotificationCenter.default
+
+        // A route change — headphones pulled, Bluetooth leaving, a call
+        // arriving — is delivered as a configuration change, and the engine's
+        // connections to the output node do not survive it.
+        center.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: engine,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { invalidate() }
+        }
+
+        // An interruption deactivates the session underneath us. Rebuilding on
+        // the next cue is right either way, and Loop has nothing to resume:
+        // a cue is under two seconds, so whatever was interrupted is over.
+        center.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { invalidate() }
+        }
     }
 
     // MARK: - Buffers

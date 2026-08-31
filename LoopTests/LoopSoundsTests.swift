@@ -94,16 +94,45 @@ struct LoopSoundsTests {
         }
     }
 
-    @Test("Every note starts and ends at silence")
+    @Test("Every note fades in and out rather than stepping")
     func theEnvelopeDoesNotClick() {
         // A note that begins or ends at full amplitude is a step in the
         // waveform, and a step is an audible click. This is the whole reason
         // the envelope exists, so it is the thing worth pinning.
+        //
+        // The first sample is deliberately not the assertion: a sine is zero at
+        // phase zero, so `samples[0]` is silent with or without an envelope and
+        // an expectation on it can never fail. The attack has to be caught a
+        // little way into the ramp, where the raw sine has already swung to
+        // full amplitude and only the envelope is holding it down.
         for cue in LoopSounds.Cue.allCases {
             let samples = cue.tone.samples(sampleRate: rate)
-            #expect(abs(samples[0]) < 0.01)
+            let peak = samples.map(abs).max() ?? 0
+
+            // Two milliseconds: well inside the ramp, and long enough that
+            // every pitch used here has passed a full crest within it.
+            let early = samples[0..<Int(0.002 * rate)].map(abs).max() ?? 0
+            #expect(early < 0.35 * peak, "the attack is not shaping the opening of \(cue)")
+
+            // The tail has to arrive at silence, not merely be quiet.
             #expect(abs(samples[samples.count - 1]) < 0.01)
         }
+    }
+
+    @Test("Overlapping notes sum without clipping, up to the documented three")
+    func summedNotesKeepHeadroom() {
+        // The summing path is what `samples(sampleRate:)` advertises and no cue
+        // exercises, because all three are strictly sequential. Three at once
+        // is the ceiling the comment claims, so three at once is what to hold.
+        let chord = LoopTone(notes: [
+            .init(frequency: 880, start: 0, duration: 0.3),
+            .init(frequency: 1_174.66, start: 0, duration: 0.3),
+            .init(frequency: 1_479.98, start: 0, duration: 0.3),
+        ])
+
+        let peak = chord.samples(sampleRate: rate).map(abs).max() ?? 0
+        #expect(peak > 0)
+        #expect(peak < 1)
     }
 
     @Test("A gap between two notes is actually silent")
@@ -124,8 +153,18 @@ struct LoopSoundsTests {
         #expect(LoopTone(notes: []).duration == 0)
         #expect(LoopTone(notes: []).samples(sampleRate: rate).isEmpty)
 
-        // A nonsense sample rate is a division by zero waiting to happen.
+        // A nonsense sample rate is a division by zero waiting to happen — and
+        // worse, `Int(_:)` traps outright on a non-finite `Double`, so the
+        // guard has to run before the frame count is worked out rather than
+        // after it. Zero alone would not have caught that.
         #expect(LoopTone.blockBegan.samples(sampleRate: 0).isEmpty)
+        #expect(LoopTone.blockBegan.samples(sampleRate: -44_100).isEmpty)
+        #expect(LoopTone.blockBegan.samples(sampleRate: .infinity).isEmpty)
+        #expect(LoopTone.blockBegan.samples(sampleRate: .nan).isEmpty)
+
+        // The same trap sits behind a non-finite duration.
+        #expect(LoopTone(notes: [.init(frequency: 440, start: 0, duration: .infinity)])
+            .samples(sampleRate: rate).isEmpty)
     }
 
     @Test("The same cue renders the same samples at any supported rate")
