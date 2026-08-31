@@ -15,9 +15,10 @@ anything:
 - `CONTRIBUTING.md` — the same content as here, in full prose and written for
   humans. In case of doubt, what it says wins.
 - `README.md` — what Loop is and how it is built.
-- `LICENSE` — source-available, **no redistribution of any kind**. Stricter than
-  it looks at first glance. Read section 3 before you suggest anything involving
-  TestFlight, sideloading or a store.
+- `LICENSE` — source-available, **no distribution**, with one narrow exception:
+  a source-only public fork on a code-hosting platform, for contributing or your
+  own use. Stricter than it looks at first glance. Read section 3 before you
+  suggest anything involving TestFlight, sideloading or a store.
 
 ## Language
 
@@ -76,6 +77,18 @@ duration of the *current* block. No bars, no rings, no dots, no segments, no
 second opinion. Interval uses the same fill for focus and for break — only the
 status pill and the round counter change.
 
+**The fill is a progress indicator, never a decoration.** It exists only while a
+block is running, and its height is `1 − remaining / blockDuration` for the
+*current* block. Clock, Count-up and every setup, idle and stopped state have no
+total duration to measure against, so they show **no area at all** — not a
+sliver, not a resting height, not a tint. An area on screen while nothing is
+counting is a bug, and it is the kind that reads as a design choice, so nobody
+reports it.
+
+Rounds, focus length and break length belong to **Interval only**. Countdown has
+exactly one control: the duration. That difference is the whole reason the two
+screens exist separately.
+
 Anything crossing the fill edge — the time, labels, buttons, the navigation
 dots — is **two-toned**: ink above the edge, the on-fill tone below it. In the
 prototype this is the same content rendered twice with `clip-path`. In SwiftUI
@@ -128,14 +141,21 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test \
 
 ```
 Loop/
-  Engine/        timer core — nonisolated, Date-based, no SwiftUI import
+  Engine/        timer core — nonisolated, Date-based, no SwiftUI import.
+                 Time formatting and the persisted timer state live here too:
+                 both are pure Foundation and belong to the tested layer.
   Core/Design/   LoopPalette, LoopTypography, LoopMetrics, LoopMotion
-  Core/          settings, formatting, persistence
+  Core/          settings, strings, view models
   Features/      one folder per screen, plus the shell
   Resources/     IBM Plex Mono, Localizable.xcstrings
 LoopTests/       Swift Testing
 design/          the design export — read-only, never edited to match the code
 ```
+
+The line between `Engine/` and `Core/` is testability, not subject matter. If a
+type is pure `Foundation` and its behaviour can go wrong, it belongs in
+`Engine/` where a test can reach it without a simulator. If it exists only to
+feed a view, it belongs in `Core/`.
 
 **The engine knows no view.** `Loop/Engine/` imports `Foundation` and nothing
 else. It holds plain `Sendable` values and pure functions over them. No
@@ -158,9 +178,10 @@ missing it goes into the design layer, not into the call site.
 `LoopMotion.resolve(_:reduceMotion:)` handles *Reduce Motion* centrally — at a
 hundred call sites it would be forgotten at ninety of them.
 
-**The fill is one component, used four times.** Countdown and Interval do not
-each grow their own copy of the rising area and the two-tone text. There is one
-implementation in the design layer and the screens hand it a fraction.
+**The fill is one component.** Countdown and Interval — the two screens that
+have a total duration and therefore a progress to show — do not each grow their
+own copy of the rising area and the two-tone text. There is one implementation
+in the design layer and the screens hand it a fraction.
 
 **Visible text belongs in `Loop/Resources/Localizable.xcstrings`.** The catalog
 is maintained by hand (`extractionState: manual`); Xcode's automatic extraction
@@ -173,6 +194,13 @@ visible string sits as a literal in a view.
 - `// MARK: -` in any file with more than one type or more than a handful of
   functions.
 - **No numeric or colour literals in feature files.** See above.
+- **One exception, and only one: a tick cadence.** How often a screen wakes to
+  re-read `Date.now` is not a design value. It is not in the export because a
+  still image cannot contain one, and it belongs to the screen that does the
+  waking. Keep it as a named `private static let` with the reasoning in a
+  comment — never an inline literal, and never two names for the same number.
+  Everything else with a number in it is a design value until the owner says
+  otherwise.
 - **Nothing enforces style** — no SwiftLint, no SwiftFormat. So match the file
   you are editing.
 - Never change formatting in the same commit as logic. If an indentation bothers
@@ -205,6 +233,30 @@ the fill fraction at a block boundary. All of that is testable without a view.
 Every fix ships with a test that fails **without** the fix. The counter-check is
 mandatory: pull the fix, watch it go red, put the fix back, watch it go green. A
 regression test nobody has seen fail is decoration.
+
+## Driving the app for a check
+
+Touch injection does not work on the owner's machine: `CGEventPost` is silently
+dropped (`AXIsProcessTrusted` is false) and `osascript` is refused with `-1743`.
+`simctl` has neither a touch nor a rotate command. Several agents burned time
+rediscovering this.
+
+What does work, cheapest first:
+
+- **State**: launch arguments through the NSUserDefaults argument domain,
+  `simctl launch … -key value`.
+- **A specific screen**: render the real view through `ImageRenderer` from a
+  scratch test, or drive `scrollPosition` programmatically.
+- **Landscape**: a modified `Info.plist` in a scratch copy of the **built**
+  `.app`. On iPad this gives true landscape geometry — the system renders at the
+  real size and downscales into the portrait framebuffer, so every value is
+  present and recoverable.
+- **Real taps**: add a UI-test target in a scratch copy of the project and drive
+  it with XCUITest. It uses the automation channel, so none of the above limits
+  apply. This is the only way anyone has exercised a button on this project.
+
+All of it happens in a copy under `/tmp`. The worktree is never written to for a
+check, and a scratch simulator is created, used and deleted.
 
 Views are not unit-tested. They are checked by hand in the simulator, against
 `design/`, in light and dark, on iPhone and iPad, portrait and landscape.
@@ -246,7 +298,15 @@ before parallelising anything.
   IDs, no mention of AI tooling — not in commits, not in PR titles or bodies,
   not in code comments, not anywhere in the repo. This applies to every agent
   without exception.
-- Rebased on current `main`, no merge commits in a PR.
+- **Rebase onto current `main` before a PR — unless another branch is based on
+  your history.** The default is a rebase and a linear PR. But when work is
+  split across several branches and one is cut from another, rebasing the base
+  rewrites commits the dependents are sitting on and strands every one of them.
+  In that case merge `origin/main` in instead, and say in the merge body why.
+  A branch nobody depends on has no excuse: rebase it.
+- Merges **to** `main` are always `--no-ff`, with a body saying what landed and
+  why. The merge commit is the record of a feature arriving; a fast-forward
+  hides it.
 
 ## Branches
 
@@ -286,11 +346,25 @@ specific: `feat/interval-skip-during-break`, not `feat/timer`.
 **No `claude/` prefix** and no other prefix named after the tool being used. The
 branch is named after the work, not after the hammer.
 
-Each feature gets its own worktree:
+Each feature gets its own worktree, and **every worktree lives inside the
+repository**, under `.worktrees/`:
 
 ```bash
-git worktree add ../loop-wt-<feature-slug> feat/<feature-slug>
+git worktree add .worktrees/<feature-slug> -b feat/<feature-slug>
 ```
+
+Never create a worktree as a sibling directory next to the repository. Nothing
+belonging to this project is allowed to sit outside its folder — not a
+worktree, not a scratch checkout, not a build directory. `.worktrees/` is in
+`.gitignore`, so it never reaches a commit. Clean up with
+`git worktree remove .worktrees/<feature-slug>` once the branch is merged, and
+`git worktree list` should show only `main` when nothing is in flight.
+
+Scratch files that are not a checkout go to `/tmp`, never into the repository.
+
+**Push after every commit.** A branch that exists only on this machine is a
+branch nobody can look at. The remote is the state of the work, not a place
+things get uploaded to at the end.
 
 ## How Claude is used here
 
@@ -314,8 +388,10 @@ it was always there.
 ## License context
 
 Loop is source-available and **stricter than Score**: read, clone, build, run on
-your own devices. **No distribution of any kind** — no App Store, no TestFlight,
-no sideloading to third parties, no sale, no giving the build to anyone else.
+your own devices. **No distribution** — no App Store, no TestFlight, no
+sideloading to third parties, no sale, no giving the build to anyone else. The
+one exception is a source-only public fork on a code-hosting platform, notices
+intact, for contributing or your own use; it covers source code, never a build.
 Copyright stays with Levo Studio. Contributors keep authorship, grant Levo Studio
 the usage rights, and are named in the credits.
 

@@ -166,6 +166,50 @@ struct TimerStateStoreTests {
         #expect(state.interval.snapshot(at: start).blockKind == .focus)
     }
 
+    @Test("A stopwatch record with no start instant cannot come back half running")
+    func countUpWithoutAStartInstant() {
+        // The type cannot express "running with nothing to say since when", but
+        // a record can: decoding assigns the properties one by one. Left alone,
+        // the page would report a running run whose "since 09:29" line had
+        // nothing to name.
+        let running = """
+        {
+          "countUp": { "tracker": { "accumulated": 0, "startedAt": 100 } },
+          "countdown": { "durationMinutes": 25, "storedPhase": "idle", "tracker": { "accumulated": 0 } },
+          "interval": {
+            "focusMinutes": 25, "breakMinutes": 5, "rounds": 4,
+            "storedPhase": "setup", "tracker": { "accumulated": 0 }
+          }
+        }
+        """
+
+        let recovered = Self.load(running, at: start)
+        #expect(recovered.countUp.phase(at: start) == .running)
+
+        // The tracker's own instant is the run's instant — there is no other
+        // candidate, and it is the truthful one.
+        #expect(recovered.countUp.startDate == Date(timeIntervalSinceReferenceDate: 100))
+        #expect(recovered.countUp.snapshot(at: start).startDate != nil)
+
+        // With no instant anywhere, banked time is time the page cannot account
+        // for, so the run does not exist.
+        let banked = running.replacingOccurrences(
+            of: "\"accumulated\": 0, \"startedAt\": 100",
+            with: "\"accumulated\": 600"
+        )
+        let reset = Self.load(banked, at: start)
+        #expect(reset.countUp.phase(at: start) == .idle)
+        #expect(reset.countUp.elapsed(at: start) == 0)
+        #expect(reset.countUp.startDate == nil)
+    }
+
+    private static func load(_ record: String, at now: Date) -> LoopTimerState {
+        let defaults = UserDefaults(suiteName: "loop.tests.\(UUID().uuidString)") ?? .standard
+        let key = "loop.timers.state"
+        defaults.set(Data(record.utf8), forKey: key)
+        return TimerStateStore(defaults: defaults, key: key).load(at: now)
+    }
+
     @Test("Clearing the record puts the pages back to their setup state")
     func clear() {
         let store = makeStore()

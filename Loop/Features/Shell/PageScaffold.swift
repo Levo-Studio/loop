@@ -40,14 +40,18 @@ import SwiftUI
 /// a tap is handled once.
 struct PageScaffold<Status: View, Content: View, Controls: View>: View {
 
-    /// How full the rising area is, 0…1.
+    /// How full the rising area is, and which block it is measuring.
     ///
-    /// Left at zero, there is no area at all. That is the right value for the
-    /// clock, the count-up and every setup, idle and stopped state: the area
-    /// is a progress indicator, and without a block duration to measure
-    /// against there is no progress to show. It is never a resting height and
-    /// never a tint.
-    var fillFraction: Double = 0
+    /// Defaults to `.none`, which draws no area at all — the right value for
+    /// the clock, the count-up and every setup, idle and stopped state, where
+    /// there is no block duration to measure against and so no progress to
+    /// show. Never a resting height, never a tint.
+    ///
+    /// A screen with a running block passes `FillProgress(fraction:block:)`.
+    /// There is no way to give a fraction without naming its block, and that
+    /// is deliberate: the block is what tells the area to jump at a boundary
+    /// instead of sliding backwards over a second.
+    var fill: FillProgress = .none
 
     /// The status pill, centred at the top. Built twice — see the note above.
     @ViewBuilder let status: () -> Status
@@ -65,7 +69,7 @@ struct PageScaffold<Status: View, Content: View, Controls: View>: View {
     @Environment(\.loopPage) private var page
 
     var body: some View {
-        FillSurface(fraction: fillFraction) {
+        FillSurface(progress: fill) {
             VStack(spacing: 0) {
                 // The pill is centred in the export; an empty status slot
                 // collapses to nothing, so the settings page keeps its layout.
