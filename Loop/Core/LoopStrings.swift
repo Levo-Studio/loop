@@ -51,6 +51,12 @@ nonisolated enum LoopStrings {
         comment: "Line under the time before a timer has been started"
     )
 
+    static let running = LocalizedStringResource(
+        "state.running",
+        defaultValue: "running",
+        comment: "Status pill detail while the stopwatch is counting"
+    )
+
     static let paused = LocalizedStringResource(
         "state.paused",
         defaultValue: "paused",
@@ -80,6 +86,104 @@ nonisolated enum LoopStrings {
         defaultValue: "Break",
         comment: "The resting block of an interval"
     )
+
+    // MARK: - Lines under the time
+
+    /// "since 09:29" — the stopwatch's running line, naming the instant the run
+    /// began.
+    static func since(_ time: String) -> LocalizedStringResource {
+        LocalizedStringResource(
+            "line.since",
+            defaultValue: "since \(time)",
+            comment: "Line under the stopwatch naming the wall-clock time a run started"
+        )
+    }
+
+    /// "of 25:00" — the running line of the countdown and of the interval,
+    /// naming the length of the block being counted.
+    static func ofDuration(_ duration: String) -> LocalizedStringResource {
+        LocalizedStringResource(
+            "line.of",
+            defaultValue: "of \(duration)",
+            comment: "Line under a counting timer naming the full length of the current block"
+        )
+    }
+
+    /// "25:00 completed" — the countdown's finished line. The number sits
+    /// inside the sentence here, unlike the interval's finished line, where the
+    /// export draws it as the large time above.
+    static func completed(_ duration: String) -> LocalizedStringResource {
+        LocalizedStringResource(
+            "line.completed",
+            defaultValue: "\(duration) completed",
+            comment: "Line under a finished countdown naming the duration that was run"
+        )
+    }
+
+    /// The interval's finished line, under a large "2:00".
+    ///
+    /// The number is drawn above rather than inside the line, so the plural has
+    /// to be chosen from the value rather than left to the catalog. Only a
+    /// total of exactly one hour reads "hour"; 1:30 and 0:00 both take the
+    /// plural, as English wants.
+    static func hoursFocused(_ duration: TimeInterval) -> LocalizedStringResource {
+        duration == 3_600 ? hourFocused : manyHoursFocused
+    }
+
+    private static let hourFocused = LocalizedStringResource(
+        "line.hourFocused",
+        defaultValue: "hour focused",
+        comment: "Line under a finished interval when the total is exactly one hour"
+    )
+
+    private static let manyHoursFocused = LocalizedStringResource(
+        "line.hoursFocused",
+        defaultValue: "hours focused",
+        comment: "Line under a finished interval, under the total drawn as the large time"
+    )
+
+    // MARK: - Status pill
+
+    /// "Round 02 / 04" — the dimmed half of the pill while an interval runs.
+    ///
+    /// The counter is padded to two digits, as the export draws it, and the
+    /// padding is done here rather than in the catalog: digits are not
+    /// translatable, and four screens each padding their own would eventually
+    /// disagree.
+    static func roundCounter(current: Int, total: Int) -> LocalizedStringResource {
+        LocalizedStringResource(
+            "pill.round",
+            defaultValue: "Round \(paddedCounter(current: current, total: total))",
+            comment: "Status pill detail naming the round an interval is in, as \"Round 02 / 04\""
+        )
+    }
+
+    /// "Focus · 02 / 04" — the dimmed half of the pill while an interval is
+    /// held, where the pill's own label is "Paused" and the block has to move
+    /// into the detail.
+    static func blockAndRound(_ block: LocalizedStringResource, current: Int, total: Int) -> LocalizedStringResource {
+        LocalizedStringResource(
+            "pill.blockAndRound",
+            defaultValue: "\(String(localized: block)) · \(paddedCounter(current: current, total: total))",
+            comment: "Status pill detail while an interval is held, as \"Focus · 02 / 04\""
+        )
+    }
+
+    /// "Done · 4 of 4" — the whole pill on a finished interval, which the
+    /// export draws as one run rather than as a label and a detail. The rounds
+    /// are not padded here; the export writes them plain.
+    static func doneRounds(_ rounds: Int) -> LocalizedStringResource {
+        LocalizedStringResource(
+            "pill.doneRounds",
+            defaultValue: "Done · \(rounds) of \(rounds)",
+            comment: "Whole status pill of a finished interval, as \"Done · 4 of 4\""
+        )
+    }
+
+    /// Digits and a slash, so no catalog entry.
+    private static func paddedCounter(current: Int, total: Int) -> String {
+        String(format: "%02d / %02d", current, total)
+    }
 
     // MARK: - Controls
 
@@ -144,6 +248,17 @@ nonisolated enum LoopStrings {
         defaultValue: "Rounds",
         comment: "Label of the interval's round stepper"
     )
+
+    /// "Total 2:00 h" — the line under the interval's stepper. One run in the
+    /// export, so one key: a screen joining a label, a number and a unit would
+    /// be three fragments no translator can reorder.
+    static func total(_ value: String) -> LocalizedStringResource {
+        LocalizedStringResource(
+            "setup.total",
+            defaultValue: "Total \(value) h",
+            comment: "Sum of an interval's blocks under the round stepper, as \"Total 2:00 h\""
+        )
+    }
 
     static let minutesUnit = LocalizedStringResource(
         "unit.minutes",
