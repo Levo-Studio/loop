@@ -57,7 +57,8 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
 
     // MARK: - Storage
 
-    /// Whole minutes, 0…60, matching the scale on the idle screen.
+    /// Whole minutes on `LoopTimerLimits.duration` — up to thirty hours, to
+    /// the minute below two and to five minutes above.
     private(set) var durationMinutes: Int
 
     /// The phase as last written. `running` here can still mean "finished by
@@ -71,7 +72,7 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
     /// 25 minutes is the value the idle screen is drawn with, so it is what the
     /// scale starts at.
     init(durationMinutes: Int = 25) {
-        self.durationMinutes = LoopTimerLimits.clamp(durationMinutes, to: LoopTimerLimits.durationMinutes)
+        self.durationMinutes = LoopTimerLimits.duration.nearest(to: durationMinutes)
         storedPhase = .idle
         tracker = ElapsedTracker()
     }
@@ -158,7 +159,7 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
     mutating func setDuration(minutes: Int, at now: Date) -> Bool {
         commitTransitions(at: now)
         guard storedPhase == .idle else { return false }
-        durationMinutes = LoopTimerLimits.clamp(minutes, to: LoopTimerLimits.durationMinutes)
+        durationMinutes = LoopTimerLimits.duration.nearest(to: minutes)
         return true
     }
 
@@ -208,13 +209,15 @@ nonisolated struct CountdownTimer: Sendable, Codable, Equatable {
 
     /// Written out rather than synthesised. A synthesised `init(from:)` would
     /// assign the stored properties straight from the record and skip the
-    /// clamp above, which is the one promise this type makes about a damaged
-    /// or older store.
+    /// resolve above, which is the one promise this type makes about a damaged
+    /// or older store. It is also the path that repairs a value that is in
+    /// range but no longer on a detent: a record from before the scale was
+    /// staged can hold 63 minutes, and that is snapped to 65 rather than
+    /// dropped.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        durationMinutes = LoopTimerLimits.clamp(
-            try container.decode(Int.self, forKey: .durationMinutes),
-            to: LoopTimerLimits.durationMinutes
+        durationMinutes = LoopTimerLimits.duration.nearest(
+            to: try container.decode(Int.self, forKey: .durationMinutes)
         )
         storedPhase = try container.decode(Phase.self, forKey: .storedPhase)
         tracker = try container.decode(ElapsedTracker.self, forKey: .tracker)

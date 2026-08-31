@@ -96,6 +96,14 @@ nonisolated enum LoopTimeFormat {
     /// The total in the interval setup and on the finished screen: `2:00`, to
     /// which the screen adds its own "h" or "hours focused". Hours are not
     /// padded — the export writes `2:00 h`, not `02:00 h`.
+    ///
+    /// The hour part is a plain division, never a modulo, so it keeps reading
+    /// as hours however far the scales go: a thirty-hour countdown is `30:00`
+    /// and the longest run the interval scales can express is `988:00`, not a
+    /// value that has quietly wrapped through a day. It stays hours rather than
+    /// gaining a day unit because the number sits under "hours focused" and a
+    /// second unit would have to be read before it could be believed; the type
+    /// scale shrinks the wider string on its own.
     static func hoursAndMinutes(_ interval: TimeInterval) -> String {
         let totalMinutes = Int((max(0, interval) / 60).rounded())
         return String(format: "%d:%02d", totalMinutes / 60, totalMinutes % 60)
