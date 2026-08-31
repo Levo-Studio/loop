@@ -12,6 +12,13 @@ import Foundation
 /// where an update can reach it. An attribute is for what cannot change, and
 /// Loop has none.
 ///
+/// **A Live Activity does not outlive a long run.** ActivityKit ends one about
+/// eight hours after it starts and takes it off the lock screen at about
+/// twelve, whatever the app does. The countdown scale goes to thirty hours, so a
+/// run near the top of it loses its Live Activity around two-thirds of the way
+/// through while the timer itself keeps going. The app stays the source of
+/// truth; the empty lock screen is the system's decision, not a bug to hunt.
+///
 /// This file is compiled into both targets. It is the only shape the two agree
 /// on, which is why it holds no view code and no engine code: the app maps a
 /// timer snapshot onto it, the widget maps it onto a frame, and neither has to
@@ -37,14 +44,14 @@ nonisolated struct LoopActivityAttributes: ActivityAttributes {
 
     // MARK: - Upcoming block
 
-    /// The block that follows the one being counted.
+    /// A block the run has not reached yet.
     ///
-    /// It is carried so the lock screen can roll over to it **without an
-    /// update**. At a block boundary the app is very often suspended — that is
-    /// the whole situation a Live Activity exists for — so the one push that
-    /// matters most is the one that cannot be sent. Sending the next block
-    /// ahead of time is the only way the card can be right at an instant the
-    /// app will not be awake for.
+    /// These are carried so the lock screen can roll over **without an update**.
+    /// At a block boundary the app is very often suspended — that is the whole
+    /// situation a Live Activity exists for — so the pushes that matter most are
+    /// the ones that cannot be sent. Sending the rest of the schedule ahead of
+    /// time is the only way the card can be right at instants the app will not
+    /// be awake for.
     struct Upcoming: Codable, Hashable, Sendable {
         let block: Block
         let round: Int
@@ -61,8 +68,7 @@ nonisolated struct LoopActivityAttributes: ActivityAttributes {
     /// update every second — which ActivityKit throttles and drops. What is
     /// stored instead is the *window* the current block occupies in wall time,
     /// which stays true without anything being awake: iOS counts down inside it
-    /// on its own through `Text(timerInterval:pauseTime:)` and
-    /// `ProgressView(timerInterval:)`.
+    /// on its own through `Text(timerInterval:pauseTime:)`.
     struct ContentState: Codable, Hashable, Sendable {
 
         let block: Block
@@ -99,39 +105,53 @@ nonisolated struct LoopActivityAttributes: ActivityAttributes {
         /// instead of failing the whole state.
         let accentID: String
 
-        /// The block after this one, or `nil` where there is none — a
-        /// countdown, or the last focus block of a run.
-        let upcoming: Upcoming?
+        /// The blocks after this one, in order. Empty on a countdown, which is
+        /// one block, and on the last focus block of a run.
+        ///
+        /// Bounded rather than unbounded; see
+        /// `LoopActivityController.maxUpcomingBlocks` for the budget and the
+        /// arithmetic behind the bound.
+        let upcoming: [Upcoming]
 
         // MARK: - Derived
 
         var isPaused: Bool { pausedAt != nil }
 
-        /// The frame to draw once this one has run out.
+        /// The frame to draw at `now`, once `now` is past the block this state
+        /// was pushed for.
         ///
-        /// The widget reaches for this when `ActivityViewContext.isStale` is
-        /// set, which the system does at the `staleDate` the app sent with the
-        /// state — the end of this block. That re-render is the only thing that
-        /// happens at a block boundary while the app is asleep, so it is where
-        /// the roll-over has to live.
+        /// **The block is chosen by time, never by staleness.**
+        /// `ActivityViewContext.isStale` is a stored `Bool` baked into each
+        /// render context, so once the stale instant has passed it reads `true`
+        /// for every later render until new content arrives. Choosing on it
+        /// alone would pin the card to the first block after the boundary and
+        /// hold a wrong round number there indefinitely — worse than the frozen
+        /// digits it was meant to cure, because a frozen `00:00` at least names
+        /// the block it belongs to. `staleDate` is what gets the widget
+        /// re-rendered; this is what decides what the re-render draws.
         ///
         /// A held run has none. Its window does not run out at all, because the
         /// digits are frozen, so there is nothing to roll over to.
-        func rolledOver() -> ContentState? {
-            guard !isPaused, let upcoming else { return nil }
+        func rolledOver(at now: Date) -> ContentState? {
+            guard !isPaused, now >= window.upperBound, !upcoming.isEmpty else { return nil }
+
+            // The first block that has not ended yet, which is how the engine
+            // reads its own schedule. Past everything carried, the last block is
+            // the honest answer: its kind and round are right and its digits sit
+            // at zero, rather than a round from an hour ago counting nothing.
+            let block = upcoming.first { $0.window.upperBound > now } ?? upcoming[upcoming.count - 1]
 
             return ContentState(
-                block: upcoming.block,
-                round: upcoming.round,
+                block: block.block,
+                round: block.round,
                 rounds: rounds,
-                window: upcoming.window,
+                window: block.window,
                 pausedAt: nil,
                 accentID: accentID,
-                // One boundary, not two: the state carries the next block, not
-                // the whole schedule, because the system marks an activity
-                // stale once and there is no second re-render to spend a
-                // further block on.
-                upcoming: nil
+                // Dropped rather than carried: every render starts again from
+                // the state the app pushed, so a roll-over is never itself
+                // rolled over.
+                upcoming: []
             )
         }
 
@@ -154,19 +174,8 @@ nonisolated struct LoopActivityAttributes: ActivityAttributes {
         /// the hour mark rather than merely changing width.
         ///
         /// Past twenty-four hours it does not wrap: a thirty-hour countdown —
-        /// which the scale allows — prints `30:00:00`, verified by rendering it.
+        /// which the scale allows — prints `30:00:00`. That was checked with an
+        /// in-process `ImageRenderer` render of the text, not on a lock screen.
         var showsHours: Bool { duration >= 3_600 }
-
-        /// The height of the rising area at the instant the run was held.
-        ///
-        /// Only a held run needs this. A running one hands the window to
-        /// `ProgressView(timerInterval:)` and lets iOS move it; a held one has
-        /// no moving value at all, and a progress view that kept advancing
-        /// under frozen digits is the same bug from the other side.
-        var pausedFraction: Double {
-            guard let pausedAt, duration > 0 else { return 0 }
-            let elapsed = pausedAt.timeIntervalSince(window.lowerBound)
-            return min(1, max(0, elapsed / duration))
-        }
     }
 }

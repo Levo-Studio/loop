@@ -50,26 +50,37 @@ struct LoopActivityBoundaryTests {
             #expect(snapshot.round == block.round)
 
             let blockEnd = now.addingTimeInterval(snapshot.remaining)
-            let upcoming = LoopActivityController.upcoming(after: snapshot, endingAt: blockEnd)
+            let announced = LoopActivityController.upcoming(after: snapshot, endingAt: blockEnd)
 
-            // What the engine actually runs next: the first block that has not
-            // ended by the time this one does.
-            let expected = schedule[(index + 1)...].first { $0.end > block.end }
+            // Every block the engine actually runs after this one, zero-length
+            // ones stepped over exactly as the engine steps over them.
+            let expected = schedule[(index + 1)...]
+                // A zero-length break is never a block the run is *in*, so it is
+                // never a block the Activity should announce either.
+                .filter { $0.duration > 0 && $0.end > block.end }
+                .prefix(LoopActivityController.maxUpcomingBlocks)
 
-            guard let expected else {
-                #expect(upcoming == nil, "nothing follows the last block")
-                continue
+            #expect(announced.count == expected.count)
+
+            for (announcedBlock, expectedBlock) in zip(announced, expected) {
+                #expect(announcedBlock.round == expectedBlock.round)
+                #expect(announcedBlock.block == (expectedBlock.kind == .focus ? .focus : .rest))
+                #expect(
+                    abs(
+                        announcedBlock.window.upperBound.timeIntervalSince(announcedBlock.window.lowerBound)
+                            - expectedBlock.duration
+                    ) < 0.001
+                )
             }
 
-            guard let upcoming else {
-                Issue.record("no block announced after \(block.kind) of round \(block.round)")
-                continue
+            // The chain starts where this block ends and has no gaps in it.
+            if let first = announced.first {
+                #expect(first.window.lowerBound == blockEnd)
             }
 
-            #expect(upcoming.round == expected.round)
-            #expect(upcoming.block == (expected.kind == .focus ? .focus : .rest))
-            #expect(upcoming.window.lowerBound == blockEnd)
-            #expect(abs(upcoming.window.upperBound.timeIntervalSince(blockEnd) - expected.duration) < 0.001)
+            for (earlier, later) in zip(announced, announced.dropFirst()) {
+                #expect(earlier.window.upperBound == later.window.lowerBound)
+            }
         }
     }
 
@@ -100,17 +111,32 @@ struct LoopActivityBoundaryTests {
             upcoming: LoopActivityController.upcoming(after: snapshot, endingAt: window.upperBound)
         )
 
-        let rolled = try #require(state.rolledOver())
+        // Before the boundary there is nothing to roll over to, however stale
+        // the render context claims to be.
+        #expect(state.rolledOver(at: start.addingTimeInterval(50)) == nil)
 
-        #expect(rolled.block == .rest)
-        #expect(rolled.round == 1)
-        #expect(rolled.window.lowerBound == window.upperBound)
-
-        // The engine agrees: ten seconds past the boundary it is on the break.
+        // Ten seconds past the first boundary: the break of round one, which is
+        // what the engine is on too.
+        let firstBoundary = try #require(state.rolledOver(at: start.addingTimeInterval(70)))
+        #expect(firstBoundary.block == .rest)
+        #expect(firstBoundary.round == 1)
+        #expect(firstBoundary.window.lowerBound == window.upperBound)
         #expect(timer.snapshot(at: start.addingTimeInterval(70)).blockKind == .break)
 
-        // And the roll-over is the end of the line — one boundary, not two.
-        #expect(rolled.rolledOver() == nil)
+        // And past the *second* boundary, from the same pushed state and with
+        // no update in between: the focus block of round two. This is the case
+        // that selecting on `isStale` alone got wrong — it would still be
+        // showing the break of round one here.
+        let secondBoundary = try #require(state.rolledOver(at: start.addingTimeInterval(130)))
+        #expect(secondBoundary.block == .focus)
+        #expect(secondBoundary.round == 2)
+        #expect(timer.snapshot(at: start.addingTimeInterval(130)).blockKind == .focus)
+        #expect(timer.snapshot(at: start.addingTimeInterval(130)).round == 2)
+
+        // Past the whole run, the last block rather than a round from earlier.
+        let afterTheEnd = try #require(state.rolledOver(at: start.addingTimeInterval(10_000)))
+        #expect(afterTheEnd.round == 2)
+        #expect(afterTheEnd.block == .focus)
     }
 
     @Test("A held run has no boundary to roll over")
@@ -137,6 +163,6 @@ struct LoopActivityBoundaryTests {
             upcoming: LoopActivityController.upcoming(after: snapshot, endingAt: window.upperBound)
         )
 
-        #expect(held.rolledOver() == nil)
+        #expect(held.rolledOver(at: start.addingTimeInterval(10_000)) == nil)
     }
 }
