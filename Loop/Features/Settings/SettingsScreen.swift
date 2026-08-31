@@ -13,36 +13,54 @@ import SwiftUI
 struct SettingsScreen: View {
 
     @Environment(LoopSettings.self) private var settings
+
+    var body: some View {
+        // `@Bindable` here rather than inside a slot: the slots are built twice
+        // by `FillSurface`, and anything declared in them exists twice. This is
+        // a projection of shared state rather than storage, but it belongs
+        // outside for the same reason the rest of the state does.
+        @Bindable var settings = settings
+
+        return PageScaffold {
+            EmptyView()
+        } content: {
+            SettingsColumn(showSeconds: $settings.showSeconds, accent: $settings.accent)
+        } controls: {
+            SettingsFooter()
+        }
+    }
+}
+
+// MARK: - Column
+
+/// The heading, the seconds row and the accent list.
+///
+/// A view of its own rather than a `@ViewBuilder` on the screen, because the ink
+/// has to be read from inside `PageScaffold`. `FillSurface` puts the tone for
+/// the layer it is drawing into the environment, so a screen reading `loopInk`
+/// above the scaffold gets the default rather than the running palette — the
+/// text would keep the light scheme's ink in dark mode. Every component in the
+/// design layer reads it at the leaf for the same reason.
+private struct SettingsColumn: View {
+
+    @Binding var showSeconds: Bool
+    @Binding var accent: LoopAccent
+
     @Environment(\.loopMetrics) private var metrics
     @Environment(\.loopTypography) private var typography
     @Environment(\.loopInk) private var ink
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        // `@Bindable` here rather than inside a slot: the slots are built twice
-        // by `FillSurface`, and anything declared in them exists twice. This is
-        // a projection of shared state, not storage, but it belongs outside for
-        // the same reason the rest of the state does.
-        @Bindable var settings = settings
+        VStack(alignment: .leading, spacing: metrics.settingsSectionSpacing) {
+            Text(LoopStrings.settings)
+                .loopTextStyle(typography.sectionHeading)
 
-        return PageScaffold {
-            EmptyView()
-        } content: {
-            VStack(alignment: .leading, spacing: metrics.settingsSectionSpacing) {
-                Text(LoopStrings.settings)
-                    .loopTextStyle(typography.sectionHeading)
-
-                secondsSection(isOn: $settings.showSeconds)
-                accentSection
-            }
-            .foregroundStyle(ink.base)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        } controls: {
-            Text(LoopStrings.footer)
-                .loopTextStyle(typography.footer)
-                .foregroundStyle(ink.base)
-                .multilineTextAlignment(.center)
+            secondsSection
+            accentSection
         }
+        .foregroundStyle(ink.base)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Seconds
@@ -50,11 +68,11 @@ struct SettingsScreen: View {
     /// The seconds row and the divider under it. The divider belongs to this
     /// section rather than sitting between the two, because the export ties it
     /// to the row with the tighter of the two gaps.
-    private func secondsSection(isOn: Binding<Bool>) -> some View {
+    private var secondsSection: some View {
         VStack(spacing: metrics.settingsRowSpacing) {
             Button {
                 withAnimation(LoopMotion.resolve(LoopMotion.selection, reduceMotion: reduceMotion)) {
-                    isOn.wrappedValue.toggle()
+                    showSeconds.toggle()
                 }
             } label: {
                 HStack(spacing: 0) {
@@ -63,17 +81,17 @@ struct SettingsScreen: View {
 
                     Spacer(minLength: 0)
 
-                    SecondsToggle(isOn: isOn.wrappedValue)
+                    SecondsToggle(isOn: showSeconds)
                 }
                 // The whole row takes the tap, not just the pill: 29 pt of
                 // track is under the 44 pt a finger needs, and a settings row
-                // that reacts to being tapped anywhere is what the platform
-                // does everywhere else.
+                // that reacts to a tap anywhere on it is what the platform does
+                // everywhere else.
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
             .accessibilityRepresentation {
-                Toggle(isOn: isOn) { Text(LoopStrings.secondsInTheClock) }
+                Toggle(isOn: $showSeconds) { Text(LoopStrings.secondsInTheClock) }
             }
 
             Rectangle()
@@ -90,16 +108,32 @@ struct SettingsScreen: View {
                 .loopTextStyle(typography.sectionHeading)
 
             VStack(spacing: metrics.accentListSpacing) {
-                ForEach(LoopAccent.allCases) { accent in
-                    AccentRow(accent: accent, isActive: accent == settings.accent) {
-                        guard accent != settings.accent else { return }
+                ForEach(LoopAccent.allCases) { candidate in
+                    AccentRow(accent: candidate, isActive: candidate == accent) {
+                        guard candidate != accent else { return }
                         withAnimation(LoopMotion.resolve(LoopMotion.selection, reduceMotion: reduceMotion)) {
-                            settings.accent = accent
+                            accent = candidate
                         }
                     }
                 }
             }
         }
+    }
+}
+
+// MARK: - Footer
+
+/// The line above the navigation dots. The only place Levo Studio is named.
+private struct SettingsFooter: View {
+
+    @Environment(\.loopTypography) private var typography
+    @Environment(\.loopInk) private var ink
+
+    var body: some View {
+        Text(LoopStrings.footer)
+            .loopTextStyle(typography.footer)
+            .foregroundStyle(ink.base)
+            .multilineTextAlignment(.center)
     }
 }
 
