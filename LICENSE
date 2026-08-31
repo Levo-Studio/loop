@@ -34,10 +34,14 @@ right
       or control;
 
   (c) to modify the software for your own use and to build and run the modified
-      version under the terms of (b).
+      version under the terms of (b); and
 
-No further rights are granted. Section 3 limits this grant and prevails over it
-in case of doubt.
+  (d) to make the source code available as a public fork within the narrow
+      limits set out at the end of section 3, and to submit contributions under
+      section 4.
+
+No further rights are granted. Section 3 limits this grant and prevails in the
+event of a conflict.
 
 ## 3. What is not permitted
 
@@ -67,8 +71,9 @@ prohibited:
       creating that impression;
 
   (f) making a modified version of the software publicly available, publishing
-      it or distributing it publicly; the only exception is the submission of
-      contributions under section 4;
+      it or distributing it publicly; the only exceptions are the submission of
+      contributions under section 4 and a public fork within the limits set out
+      at the end of this section;
 
   (g) removing, altering or obscuring copyright, license or provenance notices
       in the software;
@@ -77,10 +82,21 @@ prohibited:
       the visual design of the app for a product, a service or a version of the
       software of your own.
 
-A public fork of the source code on a code-hosting platform that leaves the
-notices under (g) unchanged and that serves the preparation of a contribution
-under section 4 or your own use does not count as publication within the meaning
-of (f).
+**Public forks.** A fork of the source code on a code-hosting platform is exempt
+from (a) and (f), provided that it
+
+  (i)   contains source code only, no compiled binary and no build ready to
+        install;
+
+  (ii)  leaves the notices under (g) unchanged and carries this license file
+        unchanged; and
+
+  (iii) serves the preparation of a contribution under section 4 or your own
+        use under section 2 (b) and (c).
+
+This exemption is limited to the fork itself. It permits no other form of
+distribution, and in particular it does not permit passing a compiled binary or
+an installable build to anyone.
 
 ## 4. Contributions
 
