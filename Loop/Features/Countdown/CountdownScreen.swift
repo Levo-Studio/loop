@@ -15,6 +15,11 @@ import SwiftUI
 /// `.sensoryFeedback` inside a closure below.
 struct CountdownScreen: View {
 
+    /// The sound switch and the swipe-to-dismiss switch. Read here, above the
+    /// scaffold, because everything below it is built twice — and because both
+    /// answers are needed by code that is not a view at all.
+    @Environment(LoopSettings.self) private var settings
+
     /// The timer itself. A value, not an observable object — the engine holds no
     /// view and publishes nothing; a new frame comes from `now` moving.
     @State private var timer = CountdownTimer()
@@ -40,16 +45,51 @@ struct CountdownScreen: View {
         // pill.
         let snapshot = timer.snapshot(at: now)
 
+        // Asked of `LoopDismissal` rather than read straight off the setting.
+        // The interval draws a finished state too and ignores the same switch;
+        // that asymmetry is one function's job, and a screen that re-derived it
+        // would be the copy that keeps the old answer the day the rule changes.
+        let requiresSwipe = snapshot.phase == .finished
+            && LoopDismissal.requiresSwipe(.countdown, swipeToDismissEnabled: settings.swipeToDismiss)
+
         PageScaffold(fill: fill(for: snapshot)) {
             pill(for: snapshot)
         } content: {
             content(for: snapshot)
         } controls: {
-            controls(for: snapshot)
+            controls(for: snapshot, requiresSwipe: requiresSwipe)
         }
         // The tick sits on the screen rather than in a slot, because a slot is
         // built twice and would run two of them.
         .task(id: snapshot.phase) { await run(phase: snapshot.phase) }
+        // Same reason, and one more: the shell pages horizontally through a
+        // scroll view, so the dismissal has to run alongside that gesture
+        // rather than in place of it. `.all` only while a swipe is actually
+        // required, so every other state is untouched.
+        .simultaneousGesture(dismissSwipe, including: requiresSwipe ? .all : .subviews)
+    }
+
+    // MARK: - Dismissing
+
+    /// The swipe that clears a finished countdown when the setting asks for
+    /// one.
+    ///
+    /// **Vertical**, and deliberately not the horizontal slide a lock-screen
+    /// alarm uses: horizontal belongs to the shell, which moves between the
+    /// five pages with it. Read horizontally here, the countdown would dismiss
+    /// itself on the way to the settings page.
+    ///
+    /// The axis is the whole test. `DragGesture` already refuses anything
+    /// shorter than its minimum distance, so what is left to decide is only
+    /// whether the movement was a dismissal or a page turn, and that is which
+    /// way it went — not how far, which would be a length this screen has no
+    /// drawn value for.
+    private var dismissSwipe: some Gesture {
+        DragGesture()
+            .onEnded { gesture in
+                guard abs(gesture.translation.height) > abs(gesture.translation.width) else { return }
+                stop()
+            }
     }
 
     // MARK: - Status
@@ -112,7 +152,10 @@ struct CountdownScreen: View {
 
     // MARK: - Controls
 
-    @ViewBuilder private func controls(for snapshot: CountdownTimer.Snapshot) -> some View {
+    @ViewBuilder private func controls(
+        for snapshot: CountdownTimer.Snapshot,
+        requiresSwipe: Bool
+    ) -> some View {
         switch snapshot.phase {
         case .idle:
             ControlRow(
@@ -135,7 +178,13 @@ struct CountdownScreen: View {
         case .finished:
             ControlRow(
                 primary: .init(LoopStrings.restart) { start() },
-                secondary: .init(LoopStrings.close) { stop() }
+                // Dead but present while a swipe is required, exactly as the
+                // idle row draws its reset: a finished countdown that can be
+                // tapped away is not the alarm the setting asks for, and
+                // hiding the button would move the row in the one state where
+                // it has to hold still. Restart stays live throughout — it
+                // begins a new run rather than dismissing this one.
+                secondary: .init(LoopStrings.close, isEnabled: !requiresSwipe) { stop() }
             )
         }
     }
@@ -218,7 +267,29 @@ struct CountdownScreen: View {
             timer.commitTransitions(at: instant)
 
             let frame = timer.snapshot(at: instant)
-            guard frame.phase == .running else { return }
+            // The lock screen and the Dynamic Island, off the same snapshot the
+            // tick already has. Called every tick rather than on a transition:
+            // the controller pushes only when something it shows has moved, and
+            // a second opinion about that here would be the copy that is wrong.
+            // It sees the finished frame too, which is what ends the Activity.
+            LoopActivityController.shared.update(countdown: frame, accent: settings.accent, at: instant)
+
+            guard frame.phase == .running else {
+                // The one place the finish is observed. Everything inside a
+                // scaffold slot is built twice and would play the tone twice,
+                // and `.task(id:)` restarting on the new phase is a rebuild,
+                // not a transition — a run that ends while this screen is off
+                // to one side would sound on arrival rather than at zero.
+                //
+                // A finish reached while the app is in the background is
+                // silent: Loop declares no audio background mode, so iOS has
+                // suspended it. The timer is unaffected — it derives from
+                // `Date` — and the tone fires on return instead.
+                if frame.phase == .finished {
+                    LoopSounds.play(.timerFinished, enabled: settings.sound)
+                }
+                return
+            }
 
             // A remaining time that has just landed on a whole second waits a
             // full one for the next, rather than spinning on a zero sleep.
@@ -257,8 +328,8 @@ private struct CountdownSetup: View {
             ScaleSlider(
                 label: LoopStrings.duration,
                 minutes: $minutes,
-                maximumMinutes: LoopTimerLimits.durationMinutes.upperBound,
-                numberEvery: Self.numberEvery,
+                minuteScale: LoopTimerLimits.duration,
+                numberEvery: LoopMetrics.countdownNumberInterval,
                 unit: LoopStrings.minutesUnit
             )
         }
@@ -267,18 +338,11 @@ private struct CountdownSetup: View {
         // its own layout, with the preview and the scale sharing the middle.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-    /// A number under the scale every quarter of the hour — 0, 15, 30, 45, 60.
-    ///
-    /// It belongs beside `sliderMajorTickInterval` in `LoopMetrics`, next to the
-    /// tick spacing it is a multiple of; the interval page needs the same value
-    /// and a second scale that prints every ten. Named here rather than written
-    /// into the call so there is one place to delete when it moves.
-    private static let numberEvery = 15
 }
 
 // MARK: - Preview
 
 #Preview {
     CountdownScreen()
+        .environment(LoopSettings(defaults: UserDefaults(suiteName: "preview") ?? .standard))
 }
