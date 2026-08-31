@@ -15,7 +15,9 @@ import Foundation
 /// - **The countdown may require a swipe.** It is the alarm case — a duration
 ///   set to run out at a particular moment, where the whole point is that it
 ///   does not stop demanding attention until someone acknowledges it. That is
-///   `swipeToDismiss`, and it is on by default.
+///   `swipeToDismiss`, and it is on by default. It is literally true now: the
+///   finished state rings until it is dismissed, and the dismissal is a slide
+///   across a drawn track rather than a gesture on the page.
 /// - **The interval never requires a swipe.** Not at a block boundary and not
 ///   at the end. A boundary plays its tone and the run continues on its own;
 ///   making someone wipe the screen to get their break, or to get back to work,
@@ -37,6 +39,14 @@ nonisolated enum LoopDismissal {
 
     /// Whether the finished state has to be swiped away rather than tapped or
     /// left alone.
+    ///
+    /// The rule kept its shape when the gesture became a control. What changed
+    /// is what the screen does with the answer — it draws `SlideToStop` in the
+    /// control row's place instead of arming a drag on the whole page — and
+    /// that is the caller's business, not this rule's. The name stays "swipe"
+    /// because the setting it reads is `swipeToDismiss`, whose stored key and
+    /// visible label both say so; a rule reading one word and its input another
+    /// is how the two stop matching.
     static func requiresSwipe(_ timer: FinishedTimer, swipeToDismissEnabled: Bool) -> Bool {
         switch timer {
         case .countdown: swipeToDismissEnabled

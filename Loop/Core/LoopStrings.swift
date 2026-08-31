@@ -139,29 +139,6 @@ nonisolated enum LoopStrings {
         )
     }
 
-    /// "25:00 completed · swipe to dismiss" — the same finished line when the
-    /// countdown is waiting to be swiped away.
-    ///
-    /// A second key rather than the finished line plus a fragment appended at
-    /// the call site, for the reason `total(_:)` gives: this is one run of text
-    /// and a translator has to be able to reorder the whole of it, including
-    /// which half comes first.
-    ///
-    /// The words are the settings toggle's own — "Swipe to dismiss the
-    /// countdown" — so someone who goes looking for why the Close button is
-    /// dead finds the switch by the phrase they just read. "Swipe to close"
-    /// would echo the button instead, but it would name the button the setting
-    /// does not, and the alarm this state imitates says dismiss. No direction
-    /// is promised because none is required: the gesture is vertical and both
-    /// ways count.
-    static func completedAwaitingSwipe(_ duration: String) -> LocalizedStringResource {
-        LocalizedStringResource(
-            "line.completedSwipe",
-            defaultValue: "\(duration) completed \u{00B7} swipe to dismiss",
-            comment: "Line under a finished countdown that has to be swiped away, as \"25:00 completed \u{00B7} swipe to dismiss\""
-        )
-    }
-
     /// The interval's finished line, under a large "2:00".
     ///
     /// The number is drawn above rather than inside the line, so the plural has
@@ -275,6 +252,21 @@ nonisolated enum LoopStrings {
         "control.close",
         defaultValue: "Close",
         comment: "Button that leaves the finished state"
+    )
+
+    /// The instruction read through the slide-to-stop track on a ringing
+    /// countdown.
+    ///
+    /// "Stop" rather than "dismiss", because the app already has a Stop button
+    /// and this is the same act on a state that is making a noise: the words on
+    /// the controls of this app say what the control does, not what happens to
+    /// the screen afterwards. The direction is not named — the knob is drawn
+    /// at the left end of the track and there is only one way for it to go, so
+    /// a promise of "right" would repeat what the drawing has already said.
+    static let slideToStop = LocalizedStringResource(
+        "control.slideToStop",
+        defaultValue: "Slide to stop",
+        comment: "Instruction inside the track that dismisses a ringing countdown"
     )
 
     // MARK: - Fields
