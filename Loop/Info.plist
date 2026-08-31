@@ -7,6 +7,12 @@
 	     file. It exists only for UIAppFonts, which has no INFOPLIST_KEY_
 	     counterpart. A synchronized resource folder flattens into the bundle
 	     root, so the entries carry no directory. -->
+	<!-- Live Activities are opt-in per app, and the key belongs to the app
+	     rather than to the widget extension: ActivityKit reads it when the app
+	     asks for an Activity. It is a declaration, not a capability — no
+	     entitlement and no provisioning profile change come with it. -->
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UIAppFonts</key>
 	<array>
 		<string>IBMPlexMono-Light.ttf</string>
