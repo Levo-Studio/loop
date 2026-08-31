@@ -57,6 +57,12 @@ struct LoopStepper: View {
     /// Both circles are drawn at full strength in every state of the export,
     /// including at 1 and at 99. The tap is a no-op at the bounds; it does not
     /// announce itself, because the design has no state for that.
+    ///
+    /// The comparison below is that bound and nothing else — the stepped value
+    /// is computed from `value` and can only come back equal to it when the
+    /// clamp bit, so unlike a scale's drag there is no reachable case where it
+    /// swallows a move. One tap is one gesture here, too: nothing sends two of
+    /// these through a single body pass.
     private func circle(_ glyph: String, step: Int) -> some View {
         Button {
             let stepped = min(range.upperBound, max(range.lowerBound, value + step))

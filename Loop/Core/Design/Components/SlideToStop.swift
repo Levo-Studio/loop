@@ -131,10 +131,16 @@ struct SlideToStop: View {
             .onEnded { _ in
                 guard progress < 1 else { return }
 
-                // `settle` rather than `selection`: this is the curve for a
-                // control coming to rest after the finger has left it, and the
-                // knob can be most of a row away from home.
-                withAnimation(LoopMotion.resolve(LoopMotion.settle, reduceMotion: reduceMotion)) {
+                // `selection`, the app's one curve for a change the hand
+                // just made — and the right one here even though the knob can
+                // be nearly a row's width from home. The distance is not the
+                // question. The scale's old `settle` was long because it
+                // carried travel the *flick asked for*; this carries travel
+                // that was asked for and then withdrawn, and a control that
+                // takes half a second to admit it was not answered reads as
+                // still deciding. Short, so the refusal is over before the
+                // hand is.
+                withAnimation(LoopMotion.resolve(LoopMotion.selection, reduceMotion: reduceMotion)) {
                     progress = 0
                 }
             }

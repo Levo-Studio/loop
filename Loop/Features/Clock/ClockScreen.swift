@@ -14,11 +14,12 @@ import SwiftUI
 ///
 /// ## It ticks while it is off screen, and that is the decision
 ///
-/// The pages are a `LazyHStack` in a paging scroll view, and lazy only governs
-/// when a page is first built. Once the strip has been swiped through, all five
-/// stay realised, so this one goes on waking once a second while the user sits
-/// on Interval — measured at fifteen ticks over fifteen seconds, eight of them
-/// with the clock nowhere near the screen.
+/// The pages are an `HStack` in a paging scroll view, so all five are realised
+/// for as long as the app runs and this one goes on waking once a second while
+/// the user sits on Interval — measured at fifteen ticks over fifteen seconds,
+/// eight of them with the clock nowhere near the screen. It was a `LazyHStack`
+/// and made no difference to that: lazy only ever governed the first build, and
+/// after one pass through the strip all five stayed realised anyway.
 ///
 /// It is not gated, and not for want of trying:
 ///

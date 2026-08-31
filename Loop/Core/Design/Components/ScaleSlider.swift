@@ -113,17 +113,32 @@ struct ScaleSlider: View {
     /// have no rising area at all, so the second copy is masked to nothing.
     @State private var scrollMinutes: Double?
 
-    /// The value the current drag started from. Read once per gesture, so that
-    /// snapping `minutes` mid-drag does not feed back into where the finger
-    /// thinks it started.
+    /// Where the scale stood when the current drag's translation was zero.
+    ///
+    /// Taken once when the finger lands, so that snapping `minutes` mid-drag
+    /// does not feed back into where the finger thinks it started — and moved
+    /// again only at the ends of the scale, where the finger travels and the
+    /// scale cannot follow.
     @State private var gestureOrigin: Double = 0
 
     /// Whether a finger is on the scale.
     ///
-    /// `scrollMinutes` cannot answer this: it stays set through the settle
-    /// after the finger has gone, which is exactly the window in which a new
-    /// drag has to be told apart from a continuing one.
+    /// `scrollMinutes` cannot answer this: it stays set through the snap after
+    /// the finger has gone, which is exactly the window in which a new drag has
+    /// to be told apart from a continuing one.
     @State private var isDragging = false
+
+    /// Where the scale is actually drawn, which during the snap is not what the
+    /// state says. See `DrawnPosition`.
+    @State private var drawn = DrawnPosition()
+
+    /// Which detent the last tap was for.
+    ///
+    /// Kept here rather than derived from `minutes`, because `minutes` is a
+    /// binding onto the snapshot the frame was built from and cannot answer a
+    /// question about what has happened since. This is the view's own state, so
+    /// it is current for every callback in a pass.
+    @State private var feedback = DetentFeedback()
 
     var body: some View {
         VStack(alignment: .leading, spacing: metrics.sliderSpacing) {
@@ -140,6 +155,11 @@ struct ScaleSlider: View {
             case .decrement: minuteScale.previous(before: minutes)
             @unknown default: minutes
             }
+            // Unlike the drag's, this comparison is a limit and not an
+            // elision: at either end of the scale the step returns the value
+            // it was given, and there is neither a move to write nor a detent
+            // to announce. One adjustment is one gesture, so there is no second
+            // one to be a pass behind.
             guard adjusted != minutes else { return }
             minutes = adjusted
             // Same reason the drag fires it here: this view is built twice
@@ -205,6 +225,7 @@ struct ScaleSlider: View {
             .contentShape(.rect)
             .gesture(drag(pitch: pitch))
         }
+        .modifier(DrawnPositionReader(minutes: Double(displayedMinutes), position: drawn))
         .frame(height: scaleHeight)
         // The scale runs past both ends of its box in every state that is not
         // at a limit, and a tick spilling into the header or into the control
@@ -377,57 +398,39 @@ struct ScaleSlider: View {
         DragGesture(minimumDistance: 0)
             .onChanged { gesture in
                 guard pitch > 0 else { return }
-                if !isDragging {
-                    // From where the scale is standing, not from `minutes`.
-                    // A finger put down during a settle takes the scale over
-                    // from where it visibly is; reading the binding would
-                    // start it from the value the settle has not arrived at.
-                    gestureOrigin = Double(displayedMinutes)
-                    isDragging = true
-                }
-
-                // Dragging left moves the scale left, which brings larger
-                // values under the marker — the same direction a physical dial
-                // under a fingertip would turn.
-                let moved = gestureOrigin - Double(gesture.translation.width / pitch)
-                scrollMinutes = bounded(moved)
-                settle(on: minuteScale.nearest(to: moved))
+                if !isDragging { takeOver() }
+                move(translation: gesture.translation.width, pitch: pitch)
             }
             .onEnded { gesture in
                 guard pitch > 0 else { return }
 
-                // A scale that stops dead under the finger is unusable at this
-                // range: thirty hours is some ten metres of scale at the drawn
-                // density, and reaching the far end without momentum would take
-                // dozens of drags. The projection is UIKit's own — the same
-                // deceleration every scroll view in the system uses — so a
-                // flick here carries as far as a flick anywhere else.
+                // **The scale stops where the finger stops.** No projection of
+                // where a flick "would have" gone: a control that keeps turning
+                // after the hand has left is one you have to correct afterwards,
+                // and this one is touched for every timer anybody sets.
                 //
-                // Reduce Motion gets no throw. Carrying a value a long way on
-                // its own is exactly the kind of unrequested travel the setting
-                // asks to be spared, so there the scale stops where the finger
-                // left it.
+                // The cost is honest — thirty hours is a long way at the drawn
+                // density — but distance is not paid for by moving on its own.
                 isDragging = false
 
-                let travel = reduceMotion ? gesture.translation.width : gesture.predictedEndTranslation.width
-                let projected = gestureOrigin - Double(travel / pitch)
-                let target = minuteScale.nearest(to: projected)
+                let landed = move(translation: gesture.translation.width, pitch: pitch)
+                let target = minuteScale.nearest(to: landed)
 
-                // The value changes when the scale arrives, not when the finger
-                // leaves. Writing it here instead would put the landing number
-                // in the header while the marker was still half a second and
-                // possibly several hours away from it — the header and the
-                // scale are two readings of one value and must never disagree.
+                // The snap to the detent, and only that: at most half a detent
+                // of travel, over `selection`, which is the app's length for a
+                // change the user just made. A scale left resting between two
+                // values would be claiming a value it is not on.
                 //
-                // Resting exactly on the detent and then handing the drawing
-                // back to the binding: holding a fractional position after the
-                // gesture would leave the scale standing on a stale number the
-                // next time the value is set from anywhere else.
-                withAnimation(LoopMotion.resolve(LoopMotion.settle, reduceMotion: reduceMotion)) {
+                // The value follows the scale rather than the finger — it is
+                // written when the snap arrives — and the drawing goes back to
+                // the binding at the same moment, because holding a fractional
+                // position after the gesture would leave the scale standing on a
+                // stale number the next time the value is set from elsewhere.
+                withAnimation(LoopMotion.resolve(LoopMotion.selection, reduceMotion: reduceMotion)) {
                     scrollMinutes = Double(target)
                 } completion: {
-                    // A finger back on the scale owns it; this settle is over
-                    // and its landing value is no longer the answer.
+                    // A finger back on the scale owns it; this snap is over and
+                    // its landing value is no longer the answer.
                     guard !isDragging else { return }
                     settle(on: target)
                     scrollMinutes = nil
@@ -435,19 +438,79 @@ struct ScaleSlider: View {
             }
     }
 
+    /// Hands the scale to a finger that has just landed on it.
+    ///
+    /// From where the scale is **drawn**, which is neither `minutes` — a
+    /// binding onto the frame's snapshot — nor `scrollMinutes`, which during
+    /// the snap already holds the detent the snap is travelling to. Taking the
+    /// second would make the scale jump forward under the finger that came down
+    /// to stop it, which is the opposite of what putting a finger on something
+    /// means.
+    private func takeOver() {
+        let visible = drawn.minutes ?? Double(displayedMinutes)
+
+        // Ends the snap where it has got to. Assigning inside a transaction
+        // with no animation is what removes the one still running; leaving it
+        // to run would keep moving the scale under a finger that is now
+        // driving it.
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { scrollMinutes = visible }
+
+        gestureOrigin = visible
+        // Landing on the scale is not choosing the detent under it, so the
+        // detent the finger arrives on is recorded rather than announced.
+        feedback.begin(at: minuteScale.nearest(to: visible))
+        isDragging = true
+    }
+
+    /// Puts the scale where this gesture's translation says it should be, and
+    /// answers where that turned out to be.
+    ///
+    /// Dragging left moves the scale left, which brings larger values under the
+    /// marker — the direction a physical dial under a fingertip would turn.
+    @discardableResult
+    private func move(translation: CGFloat, pitch: CGFloat) -> Double {
+        let reached = gestureOrigin - Double(translation / pitch)
+        let held = bounded(reached)
+
+        // Past an end the finger keeps travelling and the scale cannot follow.
+        // Moving the origin by exactly that overshoot rather than remembering
+        // it is what makes the way back immediate: without this, a finger that
+        // has run a screen past zero has to give every point of it back before
+        // the scale moves at all, which reads as the control fighting the hand.
+        gestureOrigin += held - reached
+
+        scrollMinutes = held
+        settle(on: minuteScale.nearest(to: held))
+        return held
+    }
+
     /// Moves the value to a detent, with the one tap of feedback that detent is
     /// owed.
     ///
+    /// The write is unconditional. Comparing against `minutes` first — the
+    /// obvious thing, and what this did — costs a write: the binding's getter
+    /// reads the snapshot the frame was built from, so it is one body pass
+    /// behind everything written during that pass. Two callbacks in a single
+    /// pass and a finger that comes back to the value last drawn, and the
+    /// comparison reports "no change" for the detent the finger really is on,
+    /// so the value the drag ended on is the one that never arrives. The
+    /// setters behind the binding clamp to this same scale and take a value
+    /// they already hold without complaint, so nothing was being saved.
+    ///
+    /// The tap is a different question and is asked separately. It has to be:
+    /// a drag reports many times per detent, and one tap per callback is a buzz
+    /// rather than the sense of counting minutes. `DetentFeedback` answers it
+    /// from this view's own state, which — unlike the binding — is current
+    /// within the pass.
+    ///
     /// Fired from the gesture rather than by watching `minutes`: this view is
     /// built twice inside `FillSurface`, and a modifier that watches the binding
-    /// would fire from both copies. One tick per detent is what makes the drag
-    /// feel like counting minutes rather than sliding a value — and the guard is
-    /// what keeps it to one, including on a flick, where the value crosses
-    /// hundreds of detents and only the one it lands on is a choice.
+    /// would fire from both copies.
     private func settle(on value: Int) {
-        guard value != minutes else { return }
         minutes = value
-        LoopHaptics.detent()
+        if feedback.arrived(at: value) { LoopHaptics.detent() }
     }
 
     /// Holds the scale inside its range.
@@ -464,4 +527,44 @@ struct ScaleSlider: View {
     /// keeps its width as it crosses ten. Sub-hour values only; see
     /// `headerValue`.
     private static let valueFormat = "%02d"
+}
+
+// MARK: - Where the scale is drawn
+
+/// The position the scale is being drawn at, which for the length of the snap
+/// is not the position the state holds.
+///
+/// `withAnimation` sets the value immediately and interpolates only the
+/// drawing, so the state answers "where it is going" throughout. That is the
+/// wrong answer for exactly one question — where a finger arriving mid-snap
+/// takes the scale over from — and the right one everywhere else, so the
+/// drawn position is kept beside it rather than replacing it.
+///
+/// A reference and not `@State`: it is written on every frame of an animation,
+/// and writing state there would invalidate the view whose drawing is being
+/// measured.
+private final class DrawnPosition {
+    var minutes: Double?
+}
+
+/// Copies the interpolation out of an animation as it runs.
+///
+/// The only way to read a value SwiftUI is animating: `animatableData` is what
+/// the interpolation is applied to, so its setter is called once per frame with
+/// the position actually about to be drawn.
+private struct DrawnPositionReader: ViewModifier, Animatable {
+
+    var minutes: Double
+
+    let position: DrawnPosition
+
+    var animatableData: Double {
+        get { minutes }
+        set {
+            minutes = newValue
+            position.minutes = newValue
+        }
+    }
+
+    func body(content: Content) -> some View { content }
 }
