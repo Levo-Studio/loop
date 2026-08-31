@@ -57,16 +57,35 @@ nonisolated enum LoopStrings {
         comment: "Status pill detail while the stopwatch is counting"
     )
 
-    static let paused = LocalizedStringResource(
-        "state.paused",
+    /// The dimmed half of the pill on a held count-up or countdown, where the
+    /// pill's own label is the page name.
+    ///
+    /// The export uses two different words for being held — `pausiert` in the
+    /// pill and `angehalten` under the time — and English has to keep them
+    /// apart too, or the same word is drawn twice on one screen. The pill says
+    /// which state the timer is in; `onHold` says what has happened to the
+    /// time. The names carry their slot so the two cannot be swapped by
+    /// reaching for the obvious one.
+    static let pausedDetail = LocalizedStringResource(
+        "state.pausedDetail",
         defaultValue: "paused",
-        comment: "Line under the time while a timer is held"
+        comment: "Status pill detail on a held count-up or countdown, beside the page name"
     )
 
+    /// The pill's label on a held interval, which moves the block and the round
+    /// into the detail beside it.
     static let pausedStatus = LocalizedStringResource(
         "state.pausedStatus",
         defaultValue: "Paused",
-        comment: "Status pill label while a timer is held"
+        comment: "Status pill label while an interval is held"
+    )
+
+    /// The line under the time on any held timer. See `pausedDetail` for why
+    /// this is a second word rather than the same one.
+    static let onHold = LocalizedStringResource(
+        "state.onHold",
+        defaultValue: "on hold",
+        comment: "Line under the time while a timer is held, on all three timer pages"
     )
 
     static let done = LocalizedStringResource(
