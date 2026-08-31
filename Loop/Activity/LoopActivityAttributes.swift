@@ -35,6 +35,22 @@ nonisolated struct LoopActivityAttributes: ActivityAttributes {
         case rest = "break"
     }
 
+    // MARK: - Upcoming block
+
+    /// The block that follows the one being counted.
+    ///
+    /// It is carried so the lock screen can roll over to it **without an
+    /// update**. At a block boundary the app is very often suspended — that is
+    /// the whole situation a Live Activity exists for — so the one push that
+    /// matters most is the one that cannot be sent. Sending the next block
+    /// ahead of time is the only way the card can be right at an instant the
+    /// app will not be awake for.
+    struct Upcoming: Codable, Hashable, Sendable {
+        let block: Block
+        let round: Int
+        let window: ClosedRange<Date>
+    }
+
     // MARK: - Content state
 
     /// One frame of the Live Activity, derived from the same timer snapshot the
@@ -83,9 +99,41 @@ nonisolated struct LoopActivityAttributes: ActivityAttributes {
         /// instead of failing the whole state.
         let accentID: String
 
+        /// The block after this one, or `nil` where there is none — a
+        /// countdown, or the last focus block of a run.
+        let upcoming: Upcoming?
+
         // MARK: - Derived
 
         var isPaused: Bool { pausedAt != nil }
+
+        /// The frame to draw once this one has run out.
+        ///
+        /// The widget reaches for this when `ActivityViewContext.isStale` is
+        /// set, which the system does at the `staleDate` the app sent with the
+        /// state — the end of this block. That re-render is the only thing that
+        /// happens at a block boundary while the app is asleep, so it is where
+        /// the roll-over has to live.
+        ///
+        /// A held run has none. Its window does not run out at all, because the
+        /// digits are frozen, so there is nothing to roll over to.
+        func rolledOver() -> ContentState? {
+            guard !isPaused, let upcoming else { return nil }
+
+            return ContentState(
+                block: upcoming.block,
+                round: upcoming.round,
+                rounds: rounds,
+                window: upcoming.window,
+                pausedAt: nil,
+                accentID: accentID,
+                // One boundary, not two: the state carries the next block, not
+                // the whole schedule, because the system marks an activity
+                // stale once and there is no second re-render to spend a
+                // further block on.
+                upcoming: nil
+            )
+        }
 
         /// The length of the current block.
         var duration: TimeInterval {

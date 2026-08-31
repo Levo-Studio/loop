@@ -47,7 +47,10 @@ final class LoopActivityController {
                     rounds: 1,
                     window: Self.window(remaining: snapshot.remaining, duration: snapshot.duration, at: now),
                     pausedAt: snapshot.phase == .paused ? now : nil,
-                    accentID: accent.rawValue
+                    accentID: accent.rawValue,
+                    // A countdown is one block. There is nothing after it, so
+                    // there is no boundary it could be asleep through.
+                    upcoming: nil
                 )
             )
         }
@@ -63,17 +66,67 @@ final class LoopActivityController {
             end()
 
         case .running, .paused:
+            let window = Self.window(remaining: snapshot.remaining, duration: snapshot.blockDuration, at: now)
+
             apply(
                 LoopActivityAttributes.ContentState(
                     block: snapshot.blockKind == .focus ? .focus : .rest,
                     round: snapshot.round,
                     rounds: snapshot.rounds,
-                    window: Self.window(remaining: snapshot.remaining, duration: snapshot.blockDuration, at: now),
+                    window: window,
                     pausedAt: snapshot.phase == .paused ? now : nil,
-                    accentID: accent.rawValue
+                    accentID: accent.rawValue,
+                    upcoming: Self.upcoming(after: snapshot, endingAt: window.upperBound)
                 )
             )
         }
+    }
+
+    // MARK: - The next block
+
+    /// The block that follows the one the snapshot is in.
+    ///
+    /// This walks the same rule as `IntervalTimer.schedule` — focus, break,
+    /// focus, break, and no break after the final round — from the three scales
+    /// the snapshot carries, because a snapshot is one frame and does not hand
+    /// out the schedule around it. Two readings of one rule is exactly the
+    /// duplication this project does not want, so `LoopActivityBoundaryTests`
+    /// checks this answer against `IntervalTimer.schedule` itself for every
+    /// block of a range of configurations. If the engine's shape ever changes,
+    /// that test goes red rather than the lock screen going quietly wrong.
+    nonisolated static func upcoming(
+        after snapshot: IntervalTimer.Snapshot,
+        endingAt blockEnd: Date
+    ) -> LoopActivityAttributes.Upcoming? {
+        let focus = TimeInterval(snapshot.focusMinutes) * 60
+        let rest = TimeInterval(snapshot.breakMinutes) * 60
+
+        let next: (block: LoopActivityAttributes.Block, round: Int, duration: TimeInterval)? = switch snapshot.blockKind {
+        case .focus where snapshot.round >= snapshot.rounds:
+            // The run ends on a focus block; there is no break after the last
+            // round and nothing follows it.
+            nil
+
+        // A zero-minute break is legal and means focus blocks back to back. The
+        // engine steps over a block that ends where it starts rather than
+        // showing it for a frame, and so does this.
+        case .focus where rest > 0:
+            (.rest, snapshot.round, rest)
+
+        case .focus:
+            (.focus, snapshot.round + 1, focus)
+
+        case .break:
+            (.focus, snapshot.round + 1, focus)
+        }
+
+        guard let next else { return nil }
+
+        return LoopActivityAttributes.Upcoming(
+            block: next.block,
+            round: next.round,
+            window: blockEnd...blockEnd.addingTimeInterval(max(next.duration, 1))
+        )
     }
 
     // MARK: - Ending

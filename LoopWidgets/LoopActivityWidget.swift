@@ -14,9 +14,9 @@ struct LoopActivityWidget: Widget {
 
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: LoopActivityAttributes.self) { context in
-            LoopActivityLockScreen(state: context.state)
+            LoopActivityLockScreen(state: context.shownState)
         } dynamicIsland: { context in
-            let state = context.state
+            let state = context.shownState
 
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -91,5 +91,32 @@ private struct LockScreenBody: View {
         .padding(LoopActivityMetrics.cardPadding)
         .activityBackgroundTint(palette.background)
         .activitySystemActionForegroundColor(palette.inkOnBackground.base)
+    }
+}
+
+
+// MARK: - Rolling over a boundary
+
+extension ActivityViewContext where Attributes == LoopActivityAttributes {
+
+    /// The state to draw, after a block boundary the app slept through.
+    ///
+    /// `Text(timerInterval:)` counts inside one window and stops at its end; it
+    /// does not roll into the next block on its own. So an interval whose focus
+    /// block ended while the app was suspended would sit at `00:00` under a
+    /// stale "Focus · Round 02 / 04" until the app was opened — confidently
+    /// wrong, and the failure the boundary matters most for.
+    ///
+    /// The app cannot push at that instant, but it can send the next block with
+    /// the current one, and the system re-renders the activity at the
+    /// `staleDate` the app set to that block's end. That re-render is what this
+    /// reads: once stale, the card draws the block that has actually started,
+    /// counting its own window, with no update involved.
+    ///
+    /// It covers **one** boundary. An interval left suspended across two of
+    /// them rolls over the first and then freezes on the second, because there
+    /// is no second staleness to spend.
+    var shownState: LoopActivityAttributes.ContentState {
+        isStale ? (state.rolledOver() ?? state) : state
     }
 }

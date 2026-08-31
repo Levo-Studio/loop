@@ -22,7 +22,8 @@ struct LoopActivityStateTests {
             rounds: 1,
             window: LoopActivityController.window(remaining: remaining, duration: duration, at: now),
             pausedAt: paused ? now : nil,
-            accentID: LoopAccent.petrol.rawValue
+            accentID: LoopAccent.petrol.rawValue,
+            upcoming: nil
         )
     }
 
@@ -74,7 +75,8 @@ struct LoopActivityStateTests {
                 at: now.addingTimeInterval(1)
             ),
             pausedAt: nil,
-            accentID: LoopAccent.petrol.rawValue
+            accentID: LoopAccent.petrol.rawValue,
+            upcoming: nil
         )
 
         #expect(!LoopActivityController.hasMoved(from: first, to: second))
@@ -93,7 +95,8 @@ struct LoopActivityStateTests {
                 at: now.addingTimeInterval(3_600)
             ),
             pausedAt: now.addingTimeInterval(3_600),
-            accentID: LoopAccent.petrol.rawValue
+            accentID: LoopAccent.petrol.rawValue,
+            upcoming: nil
         )
 
         #expect(!LoopActivityController.hasMoved(from: first, to: later))
