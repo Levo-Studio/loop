@@ -27,6 +27,15 @@ final class LoopActivityController {
     /// nothing is never sent. See `hasMoved(from:to:)`.
     private var pushed: LoopActivityAttributes.ContentState?
 
+    /// Set when a request was refused, and cleared when the run ends.
+    ///
+    /// `apply` is called on the screen's tick, so without this a request that
+    /// throws — Live Activities switched off, the per-app limit reached, a
+    /// state over budget — would be retried once a second for the length of the
+    /// run. The answer will not have changed by the next tick, and the run that
+    /// failed to start one is not the run that should keep asking.
+    private var isRefused = false
+
     // MARK: - Countdown
 
     /// Brings the Live Activity in line with a countdown frame.
@@ -171,8 +180,9 @@ final class LoopActivityController {
 
         self.activity = nil
         pushed = nil
+        isRefused = false
 
-        Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        enqueue { await activity.end(nil, dismissalPolicy: .immediate) }
     }
 
     // MARK: - The window
@@ -200,6 +210,7 @@ final class LoopActivityController {
 
     private func apply(_ state: LoopActivityAttributes.ContentState) {
         guard let pushed else {
+            guard !isRefused else { return }
             start(state)
             return
         }
@@ -209,7 +220,30 @@ final class LoopActivityController {
         self.pushed = state
         let content = Self.content(state)
 
-        Task { [activity] in await activity?.update(content) }
+        enqueue { [activity] in await activity?.update(content) }
+    }
+
+    // MARK: - Ordering
+
+    /// The last handed-off piece of ActivityKit work, so the next one can wait
+    /// for it.
+    ///
+    /// `Activity.update` and `Activity.end` are `async`, and unstructured tasks
+    /// start in no particular order. A skip landing right behind a resume could
+    /// otherwise be applied first, leaving the lock screen on the older frame
+    /// while `pushed` insists the newer one was sent — and nothing would push
+    /// again until the next boundary. Chaining them keeps the order the screen
+    /// produced them in.
+    private var pending: Task<Void, Never>?
+
+    /// The work stays on the main actor, because `Activity` is not `Sendable`
+    /// and the handle cannot cross to another one.
+    private func enqueue(_ work: @escaping @MainActor () async -> Void) {
+        let previous = pending
+        pending = Task { @MainActor in
+            await previous?.value
+            await work()
+        }
     }
 
     private func start(_ state: LoopActivityAttributes.ContentState) {
@@ -227,6 +261,7 @@ final class LoopActivityController {
         // request that left `pushed` set would suppress every later update and
         // the lock screen would stay empty for the rest of the run.
         pushed = activity == nil ? nil : state
+        isRefused = activity == nil
     }
 
     private static func content(
