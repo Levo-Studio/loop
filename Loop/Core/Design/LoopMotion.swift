@@ -24,6 +24,17 @@ nonisolated enum LoopMotion {
     /// A change the user made: a slider detent, an accent, a page.
     static let selection = Animation.easeOut(duration: 0.18)
 
+    /// A scale coasting to rest on a detent after the finger has left it.
+    ///
+    /// Longer than `selection`, and it has to be: `selection` covers a change
+    /// that has already happened by the time it is drawn, while this one covers
+    /// a distance the flick asked for — on a scale that runs to thirty hours
+    /// that can be hours of travel, and 0.18 s of it reads as a jump rather
+    /// than as coasting. Eased out rather than sprung, because a scroll that
+    /// overshoots its detent and comes back has picked a value the finger did
+    /// not.
+    static let settle = Animation.easeOut(duration: 0.45)
+
     /// The animation to actually use, given the accessibility setting.
     ///
     /// Central on purpose. Reduce Motion has to be honoured at every animated

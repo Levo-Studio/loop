@@ -111,6 +111,28 @@ nonisolated struct LoopTypography: Equatable, Sendable {
         )
     }
 
+    /// The `BREAK` headline above the time on the interval's break screen.
+    ///
+    /// Decided after the export, so the notes are the source rather than the
+    /// HTML: 32 pt, weight 500, uppercase, at the status pill's letter-spacing,
+    /// and at full opacity — every other uppercase label in the app is dimmed
+    /// to 62 %, and this one is not a label. Clearly a headline, clearly
+    /// subordinate to the 104 pt time. Focus deliberately has none.
+    ///
+    /// The landscape size is **derived, not drawn.** A landscape break screen
+    /// has to fit a pill, this headline, the 84 pt time, the line under it and
+    /// a control row, so the headline gives the way everything large does. It
+    /// takes the same 30 → 26 step the slider's marker takes, which is the
+    /// export's own landscape treatment at the nearest size to this one.
+    var breakHeadline: LoopTextStyle {
+        LoopTextStyle(
+            weight: .medium,
+            size: (isLandscape ? 26 : 32) * scale,
+            trackingEm: 0.14,
+            uppercased: true
+        )
+    }
+
     // MARK: - Labels
 
     /// The status pill at the top of every timer page.
