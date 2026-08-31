@@ -178,7 +178,11 @@ enum LoopSounds {
     /// of a boundary — the most permissive treatment to the cue that matters
     /// most. Half a second is longer than any plausible hop between runloop
     /// turns and far shorter than a trip through the background.
-    private static let lateness = 0.5
+    ///
+    /// `nonisolated` and not private because `LoopAlarm.Schedule` asks the same
+    /// question of its own wakes and has to get the same answer. It is one
+    /// tolerance, not two numbers that happen to agree today.
+    nonisolated static let lateness = 0.5
 
     /// Plays a cue, unless the user has turned sound off.
     ///
@@ -261,6 +265,22 @@ enum LoopSounds {
 
         player.play()
         player.scheduleBuffer(buffer, at: nil, options: [])
+    }
+
+    /// Cuts whatever is sounding and hands the audio system back at once.
+    ///
+    /// The one way to interrupt a cue rather than wait it out, and it exists
+    /// for the repeating alarm: a dismissal has to be silent immediately, and
+    /// the finish cue is 1.75 s long, so letting the sounding in flight run to
+    /// its end would leave the alarm ringing over the state it just dismissed.
+    ///
+    /// It also clears the queue instant, so the next cue after a dismissal
+    /// starts now rather than waiting behind a sounding that no longer exists.
+    static func silence() {
+        release?.cancel()
+        release = nil
+        freeAt = .distantPast
+        stop()
     }
 
     /// Stops the engine and hands the audio system back.

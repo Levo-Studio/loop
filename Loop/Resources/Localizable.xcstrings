@@ -145,6 +145,18 @@
         }
       }
     },
+    "control.slideToStop": {
+      "comment": "Instruction inside the track that dismisses a ringing countdown",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slide to stop"
+          }
+        }
+      }
+    },
     "control.start": {
       "comment": "Button that begins a timer",
       "extractionState": "manual",
@@ -201,18 +213,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ completed"
-          }
-        }
-      }
-    },
-    "line.completedSwipe": {
-      "comment": "Line under a finished countdown that has to be swiped away, as \"25:00 completed · swipe to dismiss\"",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ completed · swipe to dismiss"
           }
         }
       }

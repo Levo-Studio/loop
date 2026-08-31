@@ -17,7 +17,10 @@ struct CountdownScreen: View {
 
     /// The sound switch and the swipe-to-dismiss switch. Read here, above the
     /// scaffold, because everything below it is built twice — and because both
-    /// answers are needed by code that is not a view at all.
+    /// answers are needed by code that is not a view at all: one decides
+    /// whether the finished state rings, the other how it is dismissed, and
+    /// they are independent. With sound off there is no alarm and the slide is
+    /// still the only way out.
     @Environment(LoopSettings.self) private var settings
 
     /// The countdown, owned by the app rather than by this page. Read above the
@@ -41,6 +44,16 @@ struct CountdownScreen: View {
     /// block. This changes on `start` alone and holds still across a pause.
     @State private var run = 0
 
+    /// How far the slide-to-stop knob has travelled, 0…1.
+    ///
+    /// Declared here rather than inside `SlideToStop`, and this is the case
+    /// `PageScaffold`'s rule is actually about. A finished countdown draws a
+    /// **full** area, so both of the two-tone layers are on screen at once —
+    /// unlike a slider, whose second copy is masked away on a page with no
+    /// fill. State inside the control would exist twice, only one copy takes
+    /// touches, and the knob that moved would be the one nobody can see.
+    @State private var slideProgress: Double = 0
+
     var body: some View {
         // One snapshot per frame. Asking the timer for the phase, then the
         // time, then the fraction would be three different instants, and one
@@ -58,41 +71,25 @@ struct CountdownScreen: View {
         PageScaffold(fill: fill(for: snapshot)) {
             pill(for: snapshot)
         } content: {
-            content(for: snapshot, requiresSwipe: requiresSwipe)
+            content(for: snapshot)
         } controls: {
             controls(for: snapshot, requiresSwipe: requiresSwipe)
         }
         // The tick sits on the screen rather than in a slot, because a slot is
         // built twice and would run two of them.
         .task(id: snapshot.phase) { await run(phase: snapshot.phase) }
-        // Same reason, and one more: the shell pages horizontally through a
-        // scroll view, so the dismissal has to run alongside that gesture
-        // rather than in place of it. `.all` only while a swipe is actually
-        // required, so every other state is untouched.
-        .simultaneousGesture(dismissSwipe, including: requiresSwipe ? .all : .subviews)
-    }
-
-    // MARK: - Dismissing
-
-    /// The swipe that clears a finished countdown when the setting asks for
-    /// one.
-    ///
-    /// **Vertical**, and deliberately not the horizontal slide a lock-screen
-    /// alarm uses: horizontal belongs to the shell, which moves between the
-    /// five pages with it. Read horizontally here, the countdown would dismiss
-    /// itself on the way to the settings page.
-    ///
-    /// The axis is the whole test. `DragGesture` already refuses anything
-    /// shorter than its minimum distance, so what is left to decide is only
-    /// whether the movement was a dismissal or a page turn, and that is which
-    /// way it went — not how far, which would be a length this screen has no
-    /// drawn value for.
-    private var dismissSwipe: some Gesture {
-        DragGesture()
-            .onEnded { gesture in
-                guard abs(gesture.translation.height) > abs(gesture.translation.width) else { return }
-                stop()
-            }
+        // The alarm is a repeating cue and this screen is the only thing that
+        // starts one, so it is also the only thing that can be sure it ends.
+        // A page torn down while it rings would otherwise leave a task
+        // sounding for a state that no longer exists.
+        .onDisappear { LoopAlarm.stop() }
+        // Sound off means no alarm, including one that is already ringing.
+        // The switch is on another page, so this is reachable: swipe to
+        // settings while it rings, turn it off, and it has to stop there
+        // rather than on the next dismissal.
+        .onChange(of: settings.sound) { _, isOn in
+            if !isOn { LoopAlarm.stop() }
+        }
     }
 
     // MARK: - Status
@@ -114,13 +111,7 @@ struct CountdownScreen: View {
 
     // MARK: - Content
 
-    /// The finished state is the one place a swipe can be the only way out, so
-    /// it is the one place the middle of the page has to say so — hence the
-    /// flag reaching this far down.
-    @ViewBuilder private func content(
-        for snapshot: CountdownTimer.Snapshot,
-        requiresSwipe: Bool
-    ) -> some View {
+    @ViewBuilder private func content(for snapshot: CountdownTimer.Snapshot) -> some View {
         switch snapshot.phase {
         case .idle:
             CountdownSetup(time: LoopTimeFormat.remaining(snapshot.duration), minutes: durationMinutes(for: snapshot))
@@ -132,24 +123,9 @@ struct CountdownScreen: View {
         case .paused:
             TimeDisplay(time: LoopTimeFormat.remaining(snapshot.remaining), secondary: LoopStrings.onHold)
         case .finished:
-            // The hint rides on the line the export already draws here, rather
-            // than on a line of its own. A second line would be a second
-            // catalog phrase in a slot the design gives one, and the time block
-            // is centred on its own height: adding a line to it lifts the
-            // 00:00 off the place the export puts it, in the state that is on
-            // by default. Extended, the block keeps its drawn geometry to the
-            // point, and the instruction is set in the same quiet role as the
-            // rest of the line, which is where a user already reads what this
-            // screen is doing.
-            //
-            // The separator is the pill's — "Countdown · paused", "Done · 4 of
-            // 4" — so an appended qualifier looks the same wherever the app
-            // adds one.
             TimeDisplay(
                 time: LoopTimeFormat.remaining(snapshot.remaining),
-                secondary: requiresSwipe
-                    ? LoopStrings.completedAwaitingSwipe(LoopTimeFormat.remaining(snapshot.duration))
-                    : LoopStrings.completed(LoopTimeFormat.remaining(snapshot.duration))
+                secondary: LoopStrings.completed(LoopTimeFormat.remaining(snapshot.duration))
             )
         }
     }
@@ -196,25 +172,28 @@ struct CountdownScreen: View {
                 secondary: .init(LoopStrings.stop) { stop() }
             )
         case .finished:
-            ControlRow(
-                primary: .init(LoopStrings.restart) { start() },
-                // Dead but present while a swipe is required, exactly as the
-                // idle row draws its reset: a finished countdown that can be
-                // tapped away is not the alarm the setting asks for, and
-                // hiding the button would move the row in the one state where
-                // it has to hold still. Restart stays live throughout — it
-                // begins a new run rather than dismissing this one.
+            if requiresSwipe {
+                // The whole of the row, and Restart is gone with it. That is
+                // the decision the state forces: an alarm has exactly one
+                // action, which is to acknowledge it, and a live Restart
+                // beside a ringing countdown is a tap that silences nothing
+                // and quietly begins another twenty-five minutes. It is not
+                // lost either — the slide lands on the idle state with the
+                // duration untouched and Start under the thumb, so restarting
+                // is one further tap on a button that is already there.
                 //
-                // It stays now that the line above says "swipe to dismiss",
-                // and the two do not contradict each other: the dead button
-                // names the thing that is unavailable and the line names the
-                // way that is left, which is the pair a lock-screen alarm
-                // draws too. Dropping it would leave the row half empty or
-                // stretch Restart across a width the export never draws, and
-                // both are larger changes to a drawn state than the one this
-                // hint is fixing.
-                secondary: .init(LoopStrings.close, isEnabled: !requiresSwipe) { stop() }
-            )
+                // The track is exactly as tall as the two buttons it stands
+                // in for, so nothing on the page moves between the states.
+                SlideToStop(label: LoopStrings.slideToStop, progress: $slideProgress) { stop() }
+            } else {
+                ControlRow(
+                    primary: .init(LoopStrings.restart) { start() },
+                    // Both live: with the setting off, the finished state is
+                    // dismissed by tapping Close, and this is the row the page
+                    // has always drawn there.
+                    secondary: .init(LoopStrings.close) { stop() }
+                )
+            }
         }
     }
 
@@ -224,8 +203,13 @@ struct CountdownScreen: View {
     /// engine, so the tap redraws at the time it happened rather than at the
     /// time of the last tick.
     private func start() {
+        // Before the change and before the write: a restart from a ringing
+        // finish has to be silent from the tap, not from the next repetition.
+        LoopAlarm.stop()
+
         act { $0.start(at: $1) }
         run += 1
+        slideProgress = 0
     }
 
     /// The area and the block it measures. Idle has no block at all; a finished
@@ -247,7 +231,12 @@ struct CountdownScreen: View {
     }
 
     private func stop() {
+        LoopAlarm.stop()
         act { countdown, _ in countdown.reset() }
+        // Home again for the next finish. The control is gone by the time this
+        // is read, so it is reset here rather than by the animation that would
+        // otherwise be running over a state that no longer exists.
+        slideProgress = 0
     }
 
     /// Runs a change against a freshly read instant and draws the page for that
@@ -319,7 +308,12 @@ struct CountdownScreen: View {
                 // suspended it. The timer is unaffected — it derives from
                 // `Date` — and the tone fires on return instead.
                 if frame.phase == .finished {
-                    LoopSounds.play(.timerFinished, enabled: settings.sound)
+                    // An alarm rather than the single cue this used to play:
+                    // one tone that sounds once and stops is a notification,
+                    // and a countdown set to run out at a particular moment
+                    // has to still be asking when someone reaches the room.
+                    // It rings until the finished state is dismissed.
+                    LoopAlarm.start(enabled: settings.sound)
                 }
                 return
             }
