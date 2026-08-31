@@ -72,10 +72,12 @@ struct CountUpScreen: View {
     /// cannot change, and waking every second to redraw it would cost battery
     /// for nothing.
     ///
-    /// It sleeps to the next whole second of *elapsed* time rather than for a
-    /// flat second. The displayed value is `floor(elapsed)`, so that is the
-    /// instant the digits actually change; a fixed interval would drift away
-    /// from it and the display would flip late by a growing margin.
+    /// The wait comes from `LoopTimeFormat`, paired with the formatter that
+    /// draws the value: it sleeps to the instant the digits on screen change,
+    /// not for a flat second. Computing it here instead would leave the sleep
+    /// and the rounding free to disagree — a hair either side of a whole
+    /// second and the page either redraws late or wakes to find the same
+    /// string and goes straight back to sleep.
     private func tick() async {
         while !Task.isCancelled {
             let frame = timer.snapshot(at: now)
@@ -85,8 +87,8 @@ struct CountUpScreen: View {
             // first pass waits rather than reassigning an instant the page is
             // already drawn for. Whoever started the run set `now` to the same
             // instant it began at.
-            let untilNextSecond = 1 - frame.elapsed.truncatingRemainder(dividingBy: 1)
-            try? await Task.sleep(for: .seconds(untilNextSecond))
+            let wait = LoopTimeFormat.untilNextSecond(after: frame.elapsed)
+            try? await Task.sleep(for: .seconds(wait))
 
             // `Task.sleep` returns at once when the task is cancelled, and a
             // cancelled ticker must not leave a last instant behind it.
