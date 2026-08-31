@@ -4,8 +4,10 @@ import UIKit
 
 /// The app icon is wired up entirely in `project.pbxproj` — a build setting and
 /// a Resources entry, neither of which any Swift file mentions. When that wiring
-/// breaks, the build stays green and ships a white placeholder instead. These
-/// checks are the only thing standing between that and a release.
+/// breaks, `actool` emits no icon at all and says nothing about it: the build
+/// stays green, the bundle simply has no icon in it, and the home screen falls
+/// back to a blank tile. These checks are the only thing standing between that
+/// and a release.
 @Suite("App icon")
 struct LoopAppIconTests {
 
