@@ -267,7 +267,15 @@ before parallelising anything.
   IDs, no mention of AI tooling — not in commits, not in PR titles or bodies,
   not in code comments, not anywhere in the repo. This applies to every agent
   without exception.
-- Rebased on current `main`, no merge commits in a PR.
+- **Rebase onto current `main` before a PR — unless another branch is based on
+  your history.** The default is a rebase and a linear PR. But when work is
+  split across several branches and one is cut from another, rebasing the base
+  rewrites commits the dependents are sitting on and strands every one of them.
+  In that case merge `origin/main` in instead, and say in the merge body why.
+  A branch nobody depends on has no excuse: rebase it.
+- Merges **to** `main` are always `--no-ff`, with a body saying what landed and
+  why. The merge commit is the record of a feature arriving; a fast-forward
+  hides it.
 
 ## Branches
 
