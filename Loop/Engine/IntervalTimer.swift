@@ -104,8 +104,8 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
 
     /// The values the setup screen is drawn with.
     init(focusMinutes: Int = 25, breakMinutes: Int = 5, rounds: Int = 4) {
-        self.focusMinutes = LoopTimerLimits.clamp(focusMinutes, to: LoopTimerLimits.durationMinutes)
-        self.breakMinutes = LoopTimerLimits.clamp(breakMinutes, to: LoopTimerLimits.breakMinutes)
+        self.focusMinutes = LoopTimerLimits.focus.nearest(to: focusMinutes)
+        self.breakMinutes = LoopTimerLimits.breakLength.nearest(to: breakMinutes)
         self.rounds = LoopTimerLimits.clamp(rounds, to: LoopTimerLimits.rounds)
         storedPhase = .setup
         tracker = ElapsedTracker()
@@ -274,7 +274,7 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
     mutating func setFocusMinutes(_ minutes: Int, at now: Date) -> Bool {
         commitTransitions(at: now)
         guard storedPhase == .setup else { return false }
-        focusMinutes = LoopTimerLimits.clamp(minutes, to: LoopTimerLimits.durationMinutes)
+        focusMinutes = LoopTimerLimits.focus.nearest(to: minutes)
         return true
     }
 
@@ -282,7 +282,7 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
     mutating func setBreakMinutes(_ minutes: Int, at now: Date) -> Bool {
         commitTransitions(at: now)
         guard storedPhase == .setup else { return false }
-        breakMinutes = LoopTimerLimits.clamp(minutes, to: LoopTimerLimits.breakMinutes)
+        breakMinutes = LoopTimerLimits.breakLength.nearest(to: minutes)
         return true
     }
 
@@ -362,20 +362,22 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
         case tracker
     }
 
-    /// Written out rather than synthesised. A synthesised `init(from:)` skips
-    /// the clamps above, and a stored `rounds` of zero would then reach
+    /// Written out rather than synthesised. A synthesised `init(from:)` would
+    /// assign the stored properties straight from the record and skip the
+    /// resolves above, and a stored `rounds` of zero would then reach
     /// `1...rounds` in `schedule` and trap on the launch path — a corrupted
-    /// store has to stay loadable, which is the whole point of clamping rather
-    /// than trapping.
+    /// store has to stay loadable, which is the whole point of resolving
+    /// rather than trapping. Resolving is also what repairs a value that is in
+    /// range but no longer on a detent: a record from before the scales were
+    /// staged can hold a 122-minute focus block, and that is snapped to 120
+    /// rather than dropped.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        focusMinutes = LoopTimerLimits.clamp(
-            try container.decode(Int.self, forKey: .focusMinutes),
-            to: LoopTimerLimits.durationMinutes
+        focusMinutes = LoopTimerLimits.focus.nearest(
+            to: try container.decode(Int.self, forKey: .focusMinutes)
         )
-        breakMinutes = LoopTimerLimits.clamp(
-            try container.decode(Int.self, forKey: .breakMinutes),
-            to: LoopTimerLimits.breakMinutes
+        breakMinutes = LoopTimerLimits.breakLength.nearest(
+            to: try container.decode(Int.self, forKey: .breakMinutes)
         )
         rounds = LoopTimerLimits.clamp(
             try container.decode(Int.self, forKey: .rounds),

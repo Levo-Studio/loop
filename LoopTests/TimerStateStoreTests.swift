@@ -138,9 +138,9 @@ struct TimerStateStoreTests {
         let record = """
         {
           "countUp": { "tracker": { "accumulated": -5 } },
-          "countdown": { "durationMinutes": 900, "storedPhase": "idle", "tracker": { "accumulated": 0 } },
+          "countdown": { "durationMinutes": 9000, "storedPhase": "idle", "tracker": { "accumulated": 0 } },
           "interval": {
-            "focusMinutes": 900, "breakMinutes": -4, "rounds": 0,
+            "focusMinutes": 9000, "breakMinutes": -4, "rounds": 0,
             "storedPhase": "running", "tracker": { "accumulated": -10 }
           }
         }
@@ -154,9 +154,9 @@ struct TimerStateStoreTests {
         let state = TimerStateStore(defaults: defaults, key: key).load(at: start)
 
         #expect(state.interval.rounds == 1)
-        #expect(state.interval.focusMinutes == 60)
+        #expect(state.interval.focusMinutes == 8 * 60)
         #expect(state.interval.breakMinutes == 0)
-        #expect(state.countdown.durationMinutes == 60)
+        #expect(state.countdown.durationMinutes == 30 * 60)
         #expect(state.countUp.elapsed(at: start) == 0)
 
         // And the schedule the clamped record produces is readable rather than
@@ -164,6 +164,32 @@ struct TimerStateStoreTests {
         #expect(state.interval.schedule.count == 1)
         #expect(state.interval.snapshot(at: start).round == 1)
         #expect(state.interval.snapshot(at: start).blockKind == .focus)
+    }
+
+    @Test("A stored value between two detents is resolved, not rejected")
+    func offDetentRecordIsSnapped() {
+        // The scales were not always staged, so a perfectly legal older record
+        // can hold a value that no longer sits on a detent. Falling back to the
+        // default would throw away what the user set; snapping keeps it.
+        let record = """
+        {
+          "countUp": { "tracker": { "accumulated": 0 } },
+          "countdown": { "durationMinutes": 123, "storedPhase": "idle", "tracker": { "accumulated": 0 } },
+          "interval": {
+            "focusMinutes": 122, "breakMinutes": 7, "rounds": 4,
+            "storedPhase": "setup", "tracker": { "accumulated": 0 }
+          }
+        }
+        """
+
+        let state = Self.load(record, at: start)
+
+        #expect(state.countdown.durationMinutes == 125)
+        #expect(state.interval.focusMinutes == 120)
+
+        // Below two hours nothing moves: every minute is still a detent, and a
+        // break is on one-minute steps over its whole length.
+        #expect(state.interval.breakMinutes == 7)
     }
 
     @Test("A stopwatch record with no start instant cannot come back half running")
