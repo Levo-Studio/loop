@@ -31,7 +31,7 @@ struct LoopStepper: View {
             Spacer(minLength: 0)
 
             HStack(spacing: metrics.stepperSpacing) {
-                circle(Self.minusGlyph, step: -1, isEnabled: value > range.lowerBound)
+                circle(Self.minusGlyph, step: -1)
 
                 HStack(alignment: .firstTextBaseline, spacing: 0) {
                     Text(verbatim: String(value))
@@ -47,13 +47,16 @@ struct LoopStepper: View {
                 // crosses ten.
                 .frame(minWidth: metrics.stepperValueWidth)
 
-                circle(Self.plusGlyph, step: 1, isEnabled: value < range.upperBound)
+                circle(Self.plusGlyph, step: 1)
             }
         }
         .foregroundStyle(ink.base)
     }
 
-    private func circle(_ glyph: String, step: Int, isEnabled: Bool) -> some View {
+    /// Both circles are drawn at full strength in every state of the export,
+    /// including at 1 and at 99. The tap is a no-op at the bounds; it does not
+    /// announce itself, because the design has no state for that.
+    private func circle(_ glyph: String, step: Int) -> some View {
         Button {
             let stepped = min(range.upperBound, max(range.lowerBound, value + step))
             guard stepped != value else { return }
@@ -71,8 +74,6 @@ struct LoopStepper: View {
                 }
         }
         .buttonStyle(.plain)
-        .disabled(!isEnabled)
-        .opacity(isEnabled ? 1 : LoopMetrics.disabledOpacity)
     }
 
     // The export sets a true minus sign, not a hyphen — at this weight and size
