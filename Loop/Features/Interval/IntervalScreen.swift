@@ -21,7 +21,6 @@ struct IntervalScreen: View {
     @State private var now = Date.now
 
     @Environment(\.loopMetrics) private var metrics
-    @Environment(\.loopTypography) private var typography
 
     /// Read on the screen rather than inside a slot: the sound switch decides
     /// whether a boundary is audible, and the place that notices the boundary
@@ -384,6 +383,13 @@ struct IntervalScreen: View {
                 // setting says — the countdown is the alarm, this is not — and
                 // one function answering for both screens is why the two cannot
                 // quietly drift apart.
+                //
+                // So this is a constant `true` today, and it has to stay one
+                // until there is something to swipe: this screen draws no
+                // dismissal gesture, so an answer of `true` would dim the only
+                // way off the finished state and strand the run there. Whoever
+                // gives the interval a swipe wires the gesture first and this
+                // flag second, not the other way round.
                 secondary: .init(LoopStrings.close, isEnabled: !requiresSwipe) { reset() }
             )
         }
@@ -437,7 +443,6 @@ struct IntervalScreen: View {
     private func rounds(_ current: Int) -> Binding<Int> {
         Binding(get: { current }, set: { value in act { $0.setRounds(value, at: $1) } })
     }
-
 }
 
 // MARK: - Break time block
