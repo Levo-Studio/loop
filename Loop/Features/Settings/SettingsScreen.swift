@@ -83,10 +83,11 @@ private struct SettingsColumn: View {
 
                     SecondsToggle(isOn: showSeconds)
                 }
-                // The whole row takes the tap, not just the pill: 29 pt of
-                // track is under the 44 pt a finger needs, and a settings row
-                // that reacts to a tap anywhere on it is what the platform does
-                // everywhere else.
+                // The whole row takes the tap, not just the pill. The row is as
+                // tall as the track the design draws, so this does not buy the
+                // 44 pt a finger wants — it widens the target rather than
+                // heightening it, and a settings row that reacts to a tap
+                // anywhere along it is what the platform does everywhere else.
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -144,9 +145,13 @@ private struct SettingsFooter: View {
 /// The knob is drawn in the page background rather than in an ink, so it reads
 /// as a hole punched through the accent rather than as a dot laid on top of it.
 ///
-/// - Note: The export draws the toggle in its on state only, in both schemes.
-///   The off state moves the knob to the leading inset and drops the track to
-///   `hair`, the tone the design gives every inactive surface.
+/// - Note: **The off state is not in the export.** Neither file draws this
+///   toggle off, in either scheme or on either idiom, so it is an invention and
+///   should be read as one. It keeps the drawn geometry and moves the knob to
+///   the leading inset; the track takes `hairStrong`, the tone the design gives
+///   an inactive *object* — the stepper circles, the secondary button — rather
+///   than `hair`, which belongs to 1 pt lines. A 50 × 29 pt capsule at 15 %
+///   sits at 1.19 : 1 against the background and all but vanishes.
 private struct SecondsToggle: View {
 
     let isOn: Bool
@@ -156,16 +161,26 @@ private struct SecondsToggle: View {
     @Environment(\.loopInk) private var ink
 
     var body: some View {
-        ZStack(alignment: isOn ? .trailing : .leading) {
+        ZStack {
             Capsule()
-                .fill(isOn ? palette.marker : ink.hair)
+                .fill(isOn ? palette.marker : ink.hairStrong)
 
             Circle()
                 .fill(palette.background)
                 .frame(width: metrics.toggleKnobSize, height: metrics.toggleKnobSize)
-                .padding(metrics.toggleKnobInset)
+                // An offset from the centre rather than a switched `ZStack`
+                // alignment: alignment is not animatable, so the knob would
+                // jump between the insets while the caller's `withAnimation`
+                // wrapped a change with nothing animatable in it.
+                .offset(x: isOn ? knobOffset : -knobOffset)
         }
         .frame(width: metrics.toggleSize.width, height: metrics.toggleSize.height)
+    }
+
+    /// Half the distance the knob travels: the track's half width, less the
+    /// inset and the knob's own half width.
+    private var knobOffset: CGFloat {
+        (metrics.toggleSize.width - metrics.toggleKnobSize) / 2 - metrics.toggleKnobInset
     }
 }
 
