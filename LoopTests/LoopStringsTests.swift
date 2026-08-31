@@ -57,6 +57,8 @@ struct LoopStringsTests {
             (LoopStrings.rounds, "Rounds"),
             (LoopStrings.minutesUnit, " min"),
             (LoopStrings.secondsInTheClock, "Seconds in the clock"),
+            (LoopStrings.sound, "Sound"),
+            (LoopStrings.swipeToDismiss, "Swipe to dismiss the countdown"),
             (LoopStrings.accentColour, "Accent colour"),
             (LoopStrings.activeAccent, "Active"),
         ]
@@ -123,7 +125,8 @@ struct LoopStringsTests {
             LoopStrings.restart, LoopStrings.close,
             LoopStrings.duration, LoopStrings.rounds,
             LoopStrings.minutesUnit, LoopStrings.timesUnit,
-            LoopStrings.secondsInTheClock, LoopStrings.accentColour,
+            LoopStrings.secondsInTheClock, LoopStrings.sound,
+            LoopStrings.swipeToDismiss, LoopStrings.accentColour,
             LoopStrings.activeAccent, LoopStrings.footer,
             LoopStrings.since("09:29"), LoopStrings.ofDuration("25:00"),
             LoopStrings.completed("25:00"), LoopStrings.total("2:00"),

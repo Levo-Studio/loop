@@ -299,6 +299,25 @@ nonisolated enum LoopStrings {
         comment: "Label of the toggle that shows seconds on the clock page"
     )
 
+    /// "Sound" — the label of the toggle that governs all three tones. One
+    /// switch, so one word: naming a single cue here would promise a choice
+    /// the setting does not offer.
+    static let sound = LocalizedStringResource(
+        "settings.sound",
+        defaultValue: "Sound",
+        comment: "Label of the toggle that turns the app's three tones on and off"
+    )
+
+    /// "Swipe to dismiss the countdown" — the label of the toggle behind
+    /// `LoopDismissal`. The countdown is named in the label because the
+    /// interval deliberately ignores this setting, and a bare "Swipe to
+    /// dismiss" would read as applying to both.
+    static let swipeToDismiss = LocalizedStringResource(
+        "settings.swipeToDismiss",
+        defaultValue: "Swipe to dismiss the countdown",
+        comment: "Label of the toggle that makes a finished countdown wait for a swipe, like an alarm"
+    )
+
     static let accentColour = LocalizedStringResource(
         "settings.accentColour",
         defaultValue: "Accent colour",
