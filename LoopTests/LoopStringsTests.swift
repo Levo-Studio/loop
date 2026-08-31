@@ -76,6 +76,10 @@ struct LoopStringsTests {
         #expect(resolved(LoopStrings.since("09:29")) == "since 09:29")
         #expect(resolved(LoopStrings.ofDuration("25:00")) == "of 25:00")
         #expect(resolved(LoopStrings.completed("25:00")) == "25:00 completed")
+        // The swipe hint is appended inside the same run, with the middle dot
+        // the pill uses, so it is one key and one thing to translate.
+        #expect(resolved(LoopStrings.completedAwaitingSwipe("25:00"))
+            == "25:00 completed \u{00B7} swipe to dismiss")
         #expect(resolved(LoopStrings.total("2:00")) == "Total 2:00 h")
     }
 
@@ -129,7 +133,8 @@ struct LoopStringsTests {
             LoopStrings.swipeToDismiss, LoopStrings.accentColour,
             LoopStrings.activeAccent, LoopStrings.footer,
             LoopStrings.since("09:29"), LoopStrings.ofDuration("25:00"),
-            LoopStrings.completed("25:00"), LoopStrings.total("2:00"),
+            LoopStrings.completed("25:00"),
+            LoopStrings.completedAwaitingSwipe("25:00"), LoopStrings.total("2:00"),
             LoopStrings.hoursFocused(3_600), LoopStrings.hoursFocused(7_200),
             LoopStrings.roundCounter(current: 2, total: 4),
             LoopStrings.blockAndRound(LoopStrings.focus, current: 2, total: 4),
