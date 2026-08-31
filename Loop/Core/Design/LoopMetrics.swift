@@ -169,19 +169,37 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// A taller tick every five minutes.
     static let sliderMajorTickInterval = 5
 
-    /// How often a number is printed under the scale, in minutes.
+    /// How often a number is printed under a scale, in minutes.
     ///
-    /// Two values, because the two scale lengths need different densities: the
-    /// hour-long scales — the countdown's duration and the interval's focus
-    /// block — print 0/15/30/45/60, and the half-hour break scale prints
-    /// 0/10/20/30. Both are drawn identically in all four layouts, so unlike
-    /// nearly everything else here they take neither the idiom factor nor a
-    /// landscape variant: they count minutes, and a minute is not a length.
+    /// One per scale, named for the scale rather than for the density, because
+    /// the density is the answer and the scale is the question. The countdown
+    /// and the interval's focus block happen to share one — both run in hours
+    /// and both want a number every quarter of one — but they are separate
+    /// constants over a shared base so that changing one is a decision about
+    /// that screen rather than an accident to the other.
+    ///
+    /// The break runs to two hours and is numbered every ten minutes, which is
+    /// the density a value usually set between three and fifteen minutes wants.
+    ///
+    /// All three are drawn identically in all four layouts, so unlike nearly
+    /// everything else here they take neither the idiom factor nor a landscape
+    /// variant: they count minutes, and a minute is not a length. The pitch
+    /// between two minutes is the thing that scales, and that is
+    /// `sliderMinutePitch(width:)`.
     ///
     /// The **ranges** these subdivide belong to the engine, in
-    /// `LoopTimerLimits`. How far a scale runs is a rule about the timer; how
-    /// often it is labelled is a rule about the drawing.
-    static let durationNumberInterval = 15
+    /// `LoopTimerLimits`, and so does which values on them can be picked. How
+    /// far a scale runs and where it stops are rules about the timer; how often
+    /// it is labelled is a rule about the drawing.
+    private static let hoursLongNumberInterval = 15
+
+    /// The countdown's duration scale — its only control.
+    static let countdownNumberInterval = hoursLongNumberInterval
+
+    /// The interval's focus scale.
+    static let focusNumberInterval = hoursLongNumberInterval
+
+    /// The interval's break scale.
     static let breakNumberInterval = 10
 
     var sliderNumberRowHeight: CGFloat { scaled(15) }

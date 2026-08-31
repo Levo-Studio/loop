@@ -26,37 +26,50 @@ struct ScaleSlider: View {
 
     @Binding var minutes: Int
 
-    /// The values the scale may stop on, and the range it draws.
-    let detents: ScaleDetents
+    /// How far the scale runs and which values on it can be stopped on.
+    ///
+    /// Handed in by the screen rather than decided here. Which durations are
+    /// selectable is a rule about the timer — one-minute steps to two hours,
+    /// five-minute steps beyond — and rules about the timer live in
+    /// `Loop/Engine/`, where a test can reach them without a simulator.
+    let minuteScale: LoopMinuteScale
 
     /// How often a number is printed under the scale, in minutes.
     ///
-    /// Comes from `LoopMetrics.durationNumberInterval` or
-    /// `LoopMetrics.breakNumberInterval`. Deliberately has no default: a
-    /// wrong-but-plausible density is the kind of thing that survives review,
-    /// so each scale has to say which of the two it is.
+    /// Comes from `LoopMetrics.countdownNumberInterval`,
+    /// `.focusNumberInterval` or `.breakNumberInterval`. Deliberately has no
+    /// default: a wrong-but-plausible density is the kind of thing that
+    /// survives review, so each scale has to say which of the three it is.
     let numberEvery: Int
 
-    /// The unit after the value in the header.
+    /// The unit after the header's value **while it is under an hour** — " min"
+    /// on every scale in the app.
+    ///
+    /// Only half the answer, because only half of it is the caller's to choose.
+    /// The header switches to `h:mm` at an hour, and the unit that goes with
+    /// that format goes with the format rather than with the screen: a call
+    /// site that could pair "2:05" with " min" is a call site that eventually
+    /// does.
     let unit: LocalizedStringResource
 
     init(
         label: LocalizedStringResource,
         minutes: Binding<Int>,
-        detents: ScaleDetents,
+        minuteScale: LoopMinuteScale,
         numberEvery: Int,
         unit: LocalizedStringResource
     ) {
         self.label = label
         self._minutes = minutes
-        self.detents = detents
+        self.minuteScale = minuteScale
         self.numberEvery = numberEvery
         self.unit = unit
     }
 
     /// A scale with a detent on every minute up to `maximumMinutes`.
     ///
-    /// The plain arithmetic case, for a screen whose range is not staged.
+    /// The plain unstaged case, for a screen that has not moved to one of the
+    /// engine's scales yet.
     init(
         label: LocalizedStringResource,
         minutes: Binding<Int>,
@@ -67,7 +80,10 @@ struct ScaleSlider: View {
         self.init(
             label: label,
             minutes: minutes,
-            detents: .everyMinute(through: maximumMinutes),
+            minuteScale: LoopMinuteScale(
+                range: 0...max(0, maximumMinutes),
+                stages: [.init(start: 0, step: 1)]
+            ),
             numberEvery: numberEvery,
             unit: unit
         )
@@ -113,8 +129,8 @@ struct ScaleSlider: View {
         .accessibilityValue(Text(accessibilityValue))
         .accessibilityAdjustableAction { direction in
             let adjusted = switch direction {
-            case .increment: detents.next(after: minutes)
-            case .decrement: detents.previous(before: minutes)
+            case .increment: minuteScale.next(after: minutes)
+            case .decrement: minuteScale.previous(before: minutes)
             @unknown default: minutes
             }
             guard adjusted != minutes else { return }
@@ -136,11 +152,11 @@ struct ScaleSlider: View {
             Spacer(minLength: 0)
 
             HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text(verbatim: String(format: Self.valueFormat, minutes))
+                Text(verbatim: headerValue)
                     .loopTextStyle(typography.sliderValue)
                     .monospacedDigit()
 
-                Text(unit)
+                Text(minutes < Self.minutesInAnHour ? unit : LoopStrings.hoursUnit)
                     .loopTextStyle(typography.valueUnit)
             }
         }
@@ -264,15 +280,15 @@ struct ScaleSlider: View {
     private func visibleDetents(origin: CGFloat, pitch: CGFloat, width: CGFloat) -> [Int] {
         guard pitch > 0 else { return [] }
 
-        let first = max(detents.range.lowerBound, Int(floor((-origin) / pitch)))
-        let last = min(detents.range.upperBound, Int(ceil((width - origin) / pitch)))
+        let first = max(minuteScale.range.lowerBound, Int(floor((-origin) / pitch)))
+        let last = min(minuteScale.range.upperBound, Int(ceil((width - origin) / pitch)))
         guard first <= last else { return [] }
 
         var values: [Int] = []
-        var value = detents.nearest(to: Double(first))
+        var value = minuteScale.nearest(to: Double(first))
         while value <= last {
             if value >= first { values.append(value) }
-            let following = detents.next(after: value)
+            let following = minuteScale.next(after: value)
             // A detent rule that does not advance would spin here forever, and
             // the top of the range answers itself by design.
             guard following > value else { break }
@@ -289,8 +305,8 @@ struct ScaleSlider: View {
     private func visibleNumbers(origin: CGFloat, pitch: CGFloat, width: CGFloat) -> [Int] {
         guard pitch > 0, numberEvery > 0 else { return [] }
 
-        let first = max(detents.range.lowerBound, Int(floor((-origin) / pitch)))
-        let last = min(detents.range.upperBound, Int(ceil((width - origin) / pitch)))
+        let first = max(minuteScale.range.lowerBound, Int(floor((-origin) / pitch)))
+        let last = min(minuteScale.range.upperBound, Int(ceil((width - origin) / pitch)))
         guard first <= last else { return [] }
 
         let start = ((first + numberEvery - 1) / numberEvery) * numberEvery
@@ -308,10 +324,30 @@ struct ScaleSlider: View {
     /// because it is about reading a duration, not about how far apart the
     /// detents are.
     private static func numberLabel(minutes: Int) -> String {
-        minutes < 60
+        minutes < minutesInAnHour
             ? String(minutes)
             : LoopTimeFormat.hoursAndMinutes(TimeInterval(minutes) * 60)
     }
+
+    /// The number beside the label, on the same rule as the row.
+    ///
+    /// The header and the scale are two readings of one value, and a header
+    /// saying "1800 min" over a row of `h:mm` would be two answers to the same
+    /// question. Under an hour it keeps the export's leading zero — "05 min",
+    /// not "5 min" — so the value does not change width as it crosses ten;
+    /// `h:mm` has its own padding and needs none added.
+    private var headerValue: String {
+        minutes < Self.minutesInAnHour
+            ? String(format: Self.valueFormat, minutes)
+            : LoopTimeFormat.hoursAndMinutes(TimeInterval(minutes) * 60)
+    }
+
+    /// Where both readings switch from minutes to `h:mm`.
+    ///
+    /// Not a design value and not a limit: it is the point at which a duration
+    /// stops being said in minutes in ordinary speech, which is why the header
+    /// and the row share it rather than each carrying a literal.
+    private static let minutesInAnHour = 60
 
     /// What VoiceOver reads for the current value.
     ///
@@ -336,7 +372,7 @@ struct ScaleSlider: View {
                 // under a fingertip would turn.
                 let moved = gestureOrigin - Double(gesture.translation.width / pitch)
                 scrollMinutes = bounded(moved)
-                settle(on: detents.nearest(to: moved))
+                settle(on: minuteScale.nearest(to: moved))
             }
             .onEnded { gesture in
                 guard pitch > 0 else { return }
@@ -354,7 +390,7 @@ struct ScaleSlider: View {
                 // left it.
                 let travel = reduceMotion ? gesture.translation.width : gesture.predictedEndTranslation.width
                 let projected = gestureOrigin - Double(travel / pitch)
-                let target = detents.nearest(to: projected)
+                let target = minuteScale.nearest(to: projected)
                 settle(on: target)
 
                 // Rest exactly on the detent, then hand the drawing back to the
@@ -391,7 +427,7 @@ struct ScaleSlider: View {
     /// stops under the marker with half a screen of nothing beyond it, which is
     /// what a fixed centre needs at the edges.
     private func bounded(_ value: Double) -> Double {
-        min(Double(detents.range.upperBound), max(Double(detents.range.lowerBound), value))
+        min(Double(minuteScale.range.upperBound), max(Double(minuteScale.range.lowerBound), value))
     }
 
     /// A slot wide enough for any number on the scale, so the label can be
@@ -400,6 +436,7 @@ struct ScaleSlider: View {
     private static let numberSlotWidth: CGFloat = 100
 
     /// The export prints a leading zero — "05 min", not "5 min" — so the value
-    /// keeps its width as it crosses ten.
+    /// keeps its width as it crosses ten. Sub-hour values only; see
+    /// `headerValue`.
     private static let valueFormat = "%02d"
 }
