@@ -141,14 +141,21 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test \
 
 ```
 Loop/
-  Engine/        timer core — nonisolated, Date-based, no SwiftUI import
+  Engine/        timer core — nonisolated, Date-based, no SwiftUI import.
+                 Time formatting and the persisted timer state live here too:
+                 both are pure Foundation and belong to the tested layer.
   Core/Design/   LoopPalette, LoopTypography, LoopMetrics, LoopMotion
-  Core/          settings, formatting, persistence
+  Core/          settings, strings, view models
   Features/      one folder per screen, plus the shell
   Resources/     IBM Plex Mono, Localizable.xcstrings
 LoopTests/       Swift Testing
 design/          the design export — read-only, never edited to match the code
 ```
+
+The line between `Engine/` and `Core/` is testability, not subject matter. If a
+type is pure `Foundation` and its behaviour can go wrong, it belongs in
+`Engine/` where a test can reach it without a simulator. If it exists only to
+feed a view, it belongs in `Core/`.
 
 **The engine knows no view.** `Loop/Engine/` imports `Foundation` and nothing
 else. It holds plain `Sendable` values and pure functions over them. No
