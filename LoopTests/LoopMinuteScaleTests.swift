@@ -68,6 +68,13 @@ struct LoopMinuteScaleTests {
         // released picker never jumps forward past where it was let go.
         #expect(duration.nearest(to: 122.5) == 120)
 
+        // The same tie on the stage boundary, where the neighbours are a
+        // minute apart below and five above rather than five either side. It
+        // is the first case a refactor of the tie rule gets wrong, because it
+        // is the only one where "halfway" is not halfway between detents of
+        // equal width.
+        #expect(duration.nearest(to: 119.5) == 119)
+
         #expect(duration.nearest(to: 44.9) == 45)
         #expect(duration.nearest(to: 45.4) == 45)
 

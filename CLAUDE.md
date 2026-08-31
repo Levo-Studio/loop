@@ -81,9 +81,16 @@ the export's older answer where it disagrees:
   by the screen width. Steps are staged: one minute up to two hours, five
   minutes beyond that, up to thirty hours. The export draws the inverse — a
   fixed scale with a travelling marker — and is superseded here.
-- **Sound.** iOS system sounds, no bundled assets. One tone when a block ends
-  and a different one when the next begins, so the two are distinguishable
-  without looking. A tone when a countdown finishes.
+- **Sound.** Tones synthesised at runtime — still no bundled assets, but not
+  iOS system sounds either. One tone when a block ends and a different one when
+  the next begins, so the two are distinguishable without looking, and a third
+  when a countdown finishes. They are synthesised because the owner requires a
+  timer to be heard on a **muted** phone: the `.playback` category is documented
+  to sound through the Ring/Silent switch, while whether
+  `AudioServicesPlaySystemSound` does is documented in neither direction. The
+  one moment the feature exists for does not rest on undocumented behaviour.
+  Playback ducks other audio rather than mixing under it or stopping it, and the
+  audio session is never held between cues.
 - **The countdown's finished state can require a swipe** to dismiss, like an
   alarm. It is a setting and it is **on** by default.
 - **The interval never requires a swipe.** Not at a block boundary, not at the
@@ -285,6 +292,12 @@ What does work, cheapest first:
 - **Real taps**: add a UI-test target in a scratch copy of the project and drive
   it with XCUITest. It uses the automation channel, so none of the above limits
   apply. This is the only way anyone has exercised a button on this project.
+
+**A warning about scratch copies.** `cp -R` of a worktree carries its `.git`
+*pointer file*, which still points at the shared index in the real repository —
+so a `git checkout` inside the copy writes back into the worktree you were
+trying not to touch. Use `git archive` or `git worktree add` for a scratch
+checkout, not `cp -R`.
 
 All of it happens in a copy under `/tmp`. The worktree is never written to for a
 check, and a scratch simulator is created, used and deleted.
