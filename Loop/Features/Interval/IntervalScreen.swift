@@ -30,7 +30,7 @@ struct IntervalScreen: View {
         // an area that belongs to the break.
         let snapshot = timer.snapshot(at: now)
 
-        PageScaffold(fillFraction: snapshot.fraction) {
+        PageScaffold(fill: fill(snapshot)) {
             pill(snapshot)
         } content: {
             content(snapshot)
@@ -42,6 +42,51 @@ struct IntervalScreen: View {
         .task(id: snapshot.phase) {
             await follow(snapshot.phase)
         }
+    }
+
+    // MARK: - The rising area
+
+    /// How full the area is, and which block it is measuring.
+    ///
+    /// Setup has no area at all: the area measures a block, and in setup no
+    /// block is running. Everything else hands over the fraction together with
+    /// the identity below, so `FillSurface` can tell a block ending from a
+    /// block progressing and drop the area rather than sliding it down.
+    private func fill(_ snapshot: IntervalTimer.Snapshot) -> FillProgress {
+        guard snapshot.phase != .setup else { return .none }
+
+        return FillProgress(
+            fraction: snapshot.fraction,
+            block: FillBlock(
+                kind: snapshot.blockKind,
+                round: snapshot.round,
+                isFinished: snapshot.phase == .finished
+            )
+        )
+    }
+
+    /// What the area is measuring.
+    ///
+    /// The kind and the round together, because focus 2 and break 2 are
+    /// different blocks. Deliberately nothing that moves while a block runs —
+    /// putting the fraction or the remaining time in here would make every
+    /// tick a new block and turn the whole rise into a stutter of jumps.
+    ///
+    /// Running and paused share an identity on purpose: holding a timer
+    /// freezes the area where it stands, and a change of identity would drop
+    /// it to nothing instead.
+    ///
+    /// `isFinished` looks redundant next to those two and is not. A one-round
+    /// run restarts from the finished screen straight back into round 1 of the
+    /// same kind, so without it the identity would be unchanged across a
+    /// restart and the area would slide from full back to empty — the exact
+    /// slide this type exists to prevent. It costs nothing anywhere else: the
+    /// last focus block and the finished screen are both at 1.0, so the
+    /// identity changing between them is a jump from full to full.
+    private struct FillBlock: Hashable {
+        let kind: IntervalTimer.BlockKind
+        let round: Int
+        let isFinished: Bool
     }
 
     // MARK: - Ticking
