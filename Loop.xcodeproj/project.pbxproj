@@ -71,6 +71,8 @@
 				Activity/LoopActivityAttributes.swift,
 				Core/Design/Components/StatusPill.swift,
 				Core/Design/LoopAccent.swift,
+				Core/Design/LoopActivityMetrics.swift,
+				Core/Design/LoopActivityTypography.swift,
 				Core/Design/LoopFonts.swift,
 				Core/Design/LoopMetrics.swift,
 				Core/Design/LoopPalette.swift,

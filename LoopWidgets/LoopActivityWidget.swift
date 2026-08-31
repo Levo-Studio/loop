@@ -30,12 +30,6 @@ struct LoopActivityWidget: Widget {
                         LoopActivityTime(state: state, style: LoopActivityTypography.time)
                     }
                 }
-
-                DynamicIslandExpandedRegion(.bottom) {
-                    LoopActivitySurface(accentID: state.accentID) {
-                        LoopActivityProgress(state: state)
-                    }
-                }
             } compactLeading: {
                 LoopActivitySurface(accentID: state.accentID) {
                     LoopActivityMark()
@@ -61,9 +55,10 @@ struct LoopActivityWidget: Widget {
 
 /// The card on the lock screen and in the banner.
 ///
-/// The layout is the app's timer page compressed into a band: the pill above,
-/// the time under it, and the accent area along the bottom edge — the same
-/// order, the same roles, the same fonts.
+/// The layout is the app's timer page with everything the page has that this
+/// surface cannot carry taken out: the pill above and the time under it, the
+/// same order, the same roles, the same fonts. The rising area does not come
+/// with them — see the note in `LoopActivityParts.swift`.
 struct LoopActivityLockScreen: View {
 
     let state: LoopActivityAttributes.ContentState
@@ -91,8 +86,6 @@ private struct LockScreenBody: View {
             LoopActivityStatus(state: state)
 
             LoopActivityTime(state: state, style: LoopActivityTypography.time)
-
-            LoopActivityProgress(state: state)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(LoopActivityMetrics.cardPadding)
