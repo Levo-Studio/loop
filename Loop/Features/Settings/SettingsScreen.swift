@@ -111,9 +111,13 @@ private struct SettingsColumn: View {
             }
         }
         .foregroundStyle(ink.base)
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// The column itself, offered to `ViewThatFits` twice.
+    ///
+    /// The width frame belongs here rather than outside the candidates: each
+    /// one has to fill the page on its own, and inside a scroll view there is
+    /// nothing further out to widen it.
     private var column: some View {
         VStack(alignment: .leading, spacing: metrics.settingsSectionSpacing) {
             Text(LoopStrings.settings)
