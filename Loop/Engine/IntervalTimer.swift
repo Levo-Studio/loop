@@ -362,13 +362,15 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
         case tracker
     }
 
-    /// Written out rather than synthesised. A synthesised `init(from:)` skips
-    /// the resolves above — which both clamp to the scale and snap a value
-    /// that is in range but off the detents, so a record from before the
-    /// scales were staged keeps what it can rather than losing it — and a stored `rounds` of zero would then reach
+    /// Written out rather than synthesised. A synthesised `init(from:)` would
+    /// assign the stored properties straight from the record and skip the
+    /// resolves above, and a stored `rounds` of zero would then reach
     /// `1...rounds` in `schedule` and trap on the launch path — a corrupted
-    /// store has to stay loadable, which is the whole point of clamping rather
-    /// than trapping.
+    /// store has to stay loadable, which is the whole point of resolving
+    /// rather than trapping. Resolving is also what repairs a value that is in
+    /// range but no longer on a detent: a record from before the scales were
+    /// staged can hold a 122-minute focus block, and that is snapped to 120
+    /// rather than dropped.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         focusMinutes = LoopTimerLimits.focus.nearest(
