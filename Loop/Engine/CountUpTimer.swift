@@ -33,6 +33,20 @@ nonisolated struct CountUpTimer: Sendable, Codable, Equatable {
 
         /// The instant the run began, for the "since 09:29" line. `nil` while
         /// idle.
+        ///
+        /// The optionality is wider than the states the engine can produce:
+        /// `running` and `paused` always have an instant — `start(at:)` sets
+        /// one and decoding repairs a record that lost it — so only `idle` is
+        /// ever `nil`. A screen still has to write a branch for a combination
+        /// that cannot happen.
+        ///
+        /// The shape that would say so is a payload on the phase,
+        /// `case running(since: Date)`, or an accessor only the running case
+        /// can reach, picked once for all three snapshots rather than for this
+        /// one. It is deferred, not missed: the phase is what every screen
+        /// switches on, and churning five of them again costs more than one
+        /// guarded `nil` that is currently honest. Whoever adds the sixth
+        /// screen should reopen it.
         let startDate: Date?
     }
 

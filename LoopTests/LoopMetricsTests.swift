@@ -147,6 +147,33 @@ struct LoopMetricsTests {
         "sliderMarkerHeight": (30, 26),
     ]
 
+    /// The values the export draws at the same size on both idioms.
+    ///
+    /// Strokes, not dimensions. A 1 px border is drawn at device resolution
+    /// and stays 1 px while the layout around it grows by 1.15. The slider
+    /// tick widths look like the same thing and are not — they are drawn
+    /// geometry and do scale — which is exactly why this is a list and not a
+    /// rule about thin things.
+    private static let unscaled: Set<String> = [
+        "hairlineWidth",
+        "accentRowBorderWidth",
+    ]
+
+    @Test("The strokes the export does not scale stay put on iPad")
+    func unscaledValues() {
+        let phone = LoopMetrics(isPad: false, isLandscape: false)
+        let pad = LoopMetrics(isPad: true, isLandscape: false)
+
+        #expect(phone.hairlineWidth == 1)
+        #expect(pad.hairlineWidth == 1)
+        #expect(phone.accentRowBorderWidth == 1.5)
+        #expect(pad.accentRowBorderWidth == 1.5)
+
+        // The near neighbours that do scale, so the two cannot be conflated.
+        #expect(abs(pad.sliderMinuteTickWidth - 1.15) < 0.001)
+        #expect(abs(pad.sliderMajorTickWidth - 1.725) < 0.001)
+    }
+
     @Test("Only the values the export redraws change with the orientation")
     func orientationVariants() {
         let portrait = LoopMetrics(isPad: false, isLandscape: false)
@@ -187,10 +214,14 @@ struct LoopMetricsTests {
         let factor: CGFloat = 1.15
 
         for (name, value) in Self.scalars {
-            #expect(
-                abs(value(pad) - value(phone) * factor) < 0.001,
-                "\(name) does not scale by 1.15"
-            )
+            if Self.unscaled.contains(name) {
+                #expect(value(pad) == value(phone), "\(name) should not scale")
+            } else {
+                #expect(
+                    abs(value(pad) - value(phone) * factor) < 0.001,
+                    "\(name) does not scale by 1.15"
+                )
+            }
         }
     }
 
