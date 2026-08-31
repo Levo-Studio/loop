@@ -421,8 +421,20 @@
         }
       }
     },
-    "state.paused": {
-      "comment": "Line under the time while a timer is held",
+    "state.onHold": {
+      "comment": "Line under the time while a timer is held, on all three timer pages",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "on hold"
+          }
+        }
+      }
+    },
+    "state.pausedDetail": {
+      "comment": "Status pill detail on a held count-up or countdown, beside the page name",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -434,7 +446,7 @@
       }
     },
     "state.pausedStatus": {
-      "comment": "Status pill label while a timer is held",
+      "comment": "Status pill label while an interval is held",
       "extractionState": "manual",
       "localizations": {
         "en": {
