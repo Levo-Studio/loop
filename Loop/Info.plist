@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Everything Xcode can derive from build settings stays in the build
+	     settings; GENERATE_INFOPLIST_FILE merges those keys on top of this
+	     file. It exists only for UIAppFonts, which has no INFOPLIST_KEY_
+	     counterpart. A synchronized resource folder flattens into the bundle
+	     root, so the entries carry no directory. -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>IBMPlexMono-Light.ttf</string>
+		<string>IBMPlexMono-Regular.ttf</string>
+		<string>IBMPlexMono-Medium.ttf</string>
+	</array>
+</dict>
+</plist>
