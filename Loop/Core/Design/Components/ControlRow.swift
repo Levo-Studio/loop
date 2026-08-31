@@ -16,7 +16,7 @@ struct ControlRow: View {
     struct Item {
 
         let title: LocalizedStringResource
-        var isEnabled = true
+        let isEnabled: Bool
         let action: () -> Void
 
         init(_ title: LocalizedStringResource, isEnabled: Bool = true, action: @escaping () -> Void) {
