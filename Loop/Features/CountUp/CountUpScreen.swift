@@ -55,6 +55,12 @@ struct CountUpScreen: View {
         // value inside one is installed on both copies of that slot and fires
         // from both, which here would be two tickers racing to set `now`.
         .task(id: frame.phase) { await tick() }
+        // The page can be scrolled away from and come back to with a run still
+        // going, in which case it comes back drawn for whenever it left. Only
+        // a running stopwatch can be stale, so only that case is refreshed —
+        // an idle or held one is drawn for an instant that still holds, and
+        // reassigning it would be a write that changes nothing.
+        .onAppear { if frame.phase == .running { now = .now } }
     }
 
     // MARK: - Ticking
