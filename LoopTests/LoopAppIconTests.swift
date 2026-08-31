@@ -14,43 +14,73 @@ struct LoopAppIconTests {
     /// document can never be renamed on its own.
     private static let iconName = "loop-icon"
 
+    /// `actool` writes one of these per idiom, and the target builds for both
+    /// (`TARGETED_DEVICE_FAMILY = "1,2"`). `Bundle.main` only ever exposes the
+    /// one matching the device the tests happen to run on, so the raw plist is
+    /// read instead — otherwise half the guard would be dead on every run.
+    private static let iconKeys = ["CFBundleIcons", "CFBundleIcons~ipad"]
+
+    /// The Info.plist as it sits on disk, with the `~ipad` variants intact.
+    /// `Bundle.main.infoDictionary` has already collapsed those into the keys
+    /// for the current idiom, which is exactly the information this needs.
+    private func rawInfoPlist() throws -> [String: Any] {
+        let url = Bundle.main.bundleURL.appendingPathComponent("Info.plist")
+        let data = try Data(contentsOf: url)
+        let plist = try PropertyListSerialization.propertyList(from: data, format: nil)
+        return try #require(plist as? [String: Any])
+    }
+
+    private func primaryIcon(in plist: [String: Any], forKey key: String) throws -> [String: Any] {
+        let icons = try #require(plist[key] as? [String: Any], "\(key) is missing from the Info.plist")
+        return try #require(icons["CFBundlePrimaryIcon"] as? [String: Any], "\(key) has no primary icon")
+    }
+
     /// An Icon Composer icon is named under `CFBundleIcons`, not at the top
     /// level of the Info.plist. A missing key means
     /// `ASSETCATALOG_COMPILER_APPICON_NAME` no longer names an icon the asset
     /// catalog knows about.
-    @Test("The primary icon is named in the Info.plist")
+    @Test("The primary icon is named for both idioms")
     func primaryIconIsNamed() throws {
-        let icons = try #require(Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any])
-        let primary = try #require(icons["CFBundlePrimaryIcon"] as? [String: Any])
-        #expect(primary["CFBundleIconName"] as? String == Self.iconName)
+        let plist = try rawInfoPlist()
+        for key in Self.iconKeys {
+            let primary = try primaryIcon(in: plist, forKey: key)
+            #expect(primary["CFBundleIconName"] as? String == Self.iconName, "wrong icon name under \(key)")
+        }
     }
 
     /// Naming it is not shipping it. Alongside the compiled `Assets.car`,
     /// `actool` writes flattened PNGs into the bundle root and lists them in
     /// `CFBundleIconFiles` — they exist only if it genuinely rendered the icon,
     /// which makes them the cheapest proof that it did.
-    ///
-    /// The stack itself is deliberately not loaded through `UIImage(named:)`:
-    /// an icon stack is not an image asset and asking for it as one raises.
     @Test("The rendered icon files are in the bundle and carry pixels")
     func iconFilesAreRendered() throws {
-        let icons = try #require(Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any])
-        let primary = try #require(icons["CFBundlePrimaryIcon"] as? [String: Any])
-        let files = try #require(primary["CFBundleIconFiles"] as? [String])
-        #expect(files.isEmpty == false)
+        let plist = try rawInfoPlist()
+        let root = Bundle.main.bundleURL
+        let contents = try FileManager.default.contentsOfDirectory(atPath: root.path)
 
-        for file in files {
-            #expect(file.hasPrefix(Self.iconName), "\(file) does not belong to \(Self.iconName)")
+        for key in Self.iconKeys {
+            let primary = try primaryIcon(in: plist, forKey: key)
+            let files = try #require(primary["CFBundleIconFiles"] as? [String], "\(key) lists no icon files")
+            #expect(files.isEmpty == false, "\(key) lists no icon files")
 
-            // The bundle holds the @2x variant; `path(forResource:)` does not
-            // resolve the scale suffix on its own for a plain resource lookup.
-            let path = try #require(
-                Bundle.main.path(forResource: "\(file)@2x", ofType: "png"),
-                "no rendered PNG for \(file)"
-            )
-            let image = try #require(UIImage(contentsOfFile: path), "\(file)@2x.png is not a readable image")
-            #expect(image.size.width >= 60)
-            #expect(image.size.height >= 60)
+            for file in files {
+                #expect(file.hasPrefix(Self.iconName), "\(file) does not belong to \(Self.iconName)")
+
+                // The entries name the icon without its scale or idiom suffix,
+                // so the rendition is matched on the stem rather than looked up
+                // by an exact filename that only holds for one of them.
+                let renditions = contents.filter { $0.hasPrefix(file + "@") && $0.hasSuffix(".png") }
+                #expect(renditions.isEmpty == false, "no rendered PNG for \(file) (\(key))")
+
+                for rendition in renditions {
+                    let image = try #require(
+                        UIImage(contentsOfFile: root.appendingPathComponent(rendition).path),
+                        "\(rendition) is not a readable image"
+                    )
+                    #expect(image.size.width >= 60, "\(rendition) is too small to be the real artwork")
+                    #expect(image.size.height >= 60, "\(rendition) is too small to be the real artwork")
+                }
+            }
         }
     }
 }
