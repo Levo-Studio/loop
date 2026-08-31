@@ -61,13 +61,15 @@ struct LoopActivityBoundaryTests {
                 continue
             }
 
-            let upcomingBlock = try? #require(upcoming)
-            #expect(upcomingBlock?.round == expected.round)
-            #expect(upcomingBlock?.block == (expected.kind == .focus ? .focus : .rest))
-            #expect(upcomingBlock?.window.lowerBound == blockEnd)
-            #expect(
-                abs((upcomingBlock?.window.upperBound.timeIntervalSince(blockEnd) ?? 0) - expected.duration) < 0.001
-            )
+            guard let upcoming else {
+                Issue.record("no block announced after \(block.kind) of round \(block.round)")
+                continue
+            }
+
+            #expect(upcoming.round == expected.round)
+            #expect(upcoming.block == (expected.kind == .focus ? .focus : .rest))
+            #expect(upcoming.window.lowerBound == blockEnd)
+            #expect(abs(upcoming.window.upperBound.timeIntervalSince(blockEnd) - expected.duration) < 0.001)
         }
     }
 
