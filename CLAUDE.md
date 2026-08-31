@@ -15,9 +15,10 @@ anything:
 - `CONTRIBUTING.md` — the same content as here, in full prose and written for
   humans. In case of doubt, what it says wins.
 - `README.md` — what Loop is and how it is built.
-- `LICENSE` — source-available, **no redistribution of any kind**. Stricter than
-  it looks at first glance. Read section 3 before you suggest anything involving
-  TestFlight, sideloading or a store.
+- `LICENSE` — source-available, **no distribution**, with one narrow exception:
+  a source-only public fork on a code-hosting platform, for contributing or your
+  own use. Stricter than it looks at first glance. Read section 3 before you
+  suggest anything involving TestFlight, sideloading or a store.
 
 ## Language
 
@@ -170,9 +171,10 @@ missing it goes into the design layer, not into the call site.
 `LoopMotion.resolve(_:reduceMotion:)` handles *Reduce Motion* centrally — at a
 hundred call sites it would be forgotten at ninety of them.
 
-**The fill is one component, used four times.** Countdown and Interval do not
-each grow their own copy of the rising area and the two-tone text. There is one
-implementation in the design layer and the screens hand it a fraction.
+**The fill is one component.** Countdown and Interval — the two screens that
+have a total duration and therefore a progress to show — do not each grow their
+own copy of the rising area and the two-tone text. There is one implementation
+in the design layer and the screens hand it a fraction.
 
 **Visible text belongs in `Loop/Resources/Localizable.xcstrings`.** The catalog
 is maintained by hand (`extractionState: manual`); Xcode's automatic extraction
@@ -340,8 +342,10 @@ it was always there.
 ## License context
 
 Loop is source-available and **stricter than Score**: read, clone, build, run on
-your own devices. **No distribution of any kind** — no App Store, no TestFlight,
-no sideloading to third parties, no sale, no giving the build to anyone else.
+your own devices. **No distribution** — no App Store, no TestFlight, no
+sideloading to third parties, no sale, no giving the build to anyone else. The
+one exception is a source-only public fork on a code-hosting platform, notices
+intact, for contributing or your own use; it covers source code, never a build.
 Copyright stays with Levo Studio. Contributors keep authorship, grant Levo Studio
 the usage rights, and are named in the credits.
 
