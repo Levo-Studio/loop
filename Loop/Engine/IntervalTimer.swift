@@ -39,14 +39,20 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
 
     // MARK: - Snapshot
 
-    /// Everything one frame of the interval screen needs, read at a single
-    /// instant and off a single build of the schedule.
+    /// Every part of a frame that depends on *when* it is read, taken at a
+    /// single instant and off a single build of the schedule.
     ///
     /// Asking for the phase, then the block, then the time, then the fraction
     /// is four different `now` values and four walks of the schedule. Two of
     /// those instants either side of a block boundary put a "Focus" pill above
     /// a fraction that belongs to the break, and the flicker gets blamed on the
     /// view.
+    ///
+    /// What is *not* here is what does not move with time: the setup screen's
+    /// sum is `plannedDuration`, and the large number on the finished screen is
+    /// `focusedDuration`. Both are properties of the timer, and neither is
+    /// `blockDuration` — reaching for the snapshot there would print one focus
+    /// block, 25:00, where the total, 1:40, belongs.
     struct Snapshot: Sendable, Equatable {
         let phase: Phase
         let blockKind: BlockKind
@@ -128,66 +134,80 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
 
     // MARK: - Reading
 
-    /// The whole readable state at one instant. This is what a screen draws
-    /// from; the accessors below are conveniences for a single value.
-    func snapshot(at now: Date) -> Snapshot {
+    /// One resolve and one walk of the schedule, which every read goes through.
+    ///
+    /// Two public read paths would be two copies of "which block is this", and
+    /// the copies only have to disagree once.
+    private struct Reading {
+        let phase: Phase
+        let elapsed: TimeInterval
+
+        /// The block the elapsed value sits in. `nil` before a run begins and
+        /// once it is over — there is no current block in either case.
+        let block: Block?
+    }
+
+    private func reading(at now: Date) -> Reading {
         let resolved = resolved(at: now)
 
         switch resolved.storedPhase {
         case .setup:
-            // No block is running, so there is no area — a filled screen under
-            // a timer that has not been started reads as a design choice rather
-            // than as the bug it is.
-            return Snapshot(
-                phase: .setup,
-                blockKind: .focus,
-                round: 1,
-                rounds: rounds,
-                remaining: focusDuration,
-                blockDuration: focusDuration,
-                fraction: 0,
-                canSkip: false
-            )
+            return Reading(phase: .setup, elapsed: 0, block: nil)
 
         case .running, .paused:
             let elapsed = resolved.tracker.elapsed(at: now)
 
             // A record whose elapsed already sits past the schedule — a store
             // written by an older build, or one edited by hand — reads as
-            // finished instead of dropping through to an index that is not
-            // there.
-            guard let block = resolved.block(atElapsed: elapsed) else { return finishedSnapshot() }
-
-            let remaining = min(max(0, block.end - elapsed), block.duration)
-
-            return Snapshot(
-                phase: resolved.storedPhase,
-                blockKind: block.kind,
-                round: block.round,
-                rounds: rounds,
-                remaining: remaining,
-                blockDuration: block.duration,
-                fraction: block.duration > 0 ? 1 - remaining / block.duration : 1,
-                canSkip: resolved.storedPhase == .running && block.kind == .break
-            )
+            // finished rather than as a running run with no block.
+            guard let block = resolved.block(atElapsed: elapsed) else {
+                return Reading(phase: .finished, elapsed: elapsed, block: nil)
+            }
+            return Reading(phase: resolved.storedPhase, elapsed: elapsed, block: block)
 
         case .finished:
-            return finishedSnapshot()
+            return Reading(phase: .finished, elapsed: resolved.plannedDuration, block: nil)
         }
     }
 
-    /// The run always ends on the last focus block, which is what the pill
-    /// keeps reading: "Done · 4 of 4".
-    private func finishedSnapshot() -> Snapshot {
-        Snapshot(
-            phase: .finished,
-            blockKind: .focus,
-            round: rounds,
+    /// The whole time-dependent state at one instant. This is what a screen
+    /// draws from; the accessors below are conveniences for a single value.
+    func snapshot(at now: Date) -> Snapshot {
+        snapshot(from: reading(at: now))
+    }
+
+    private func snapshot(from reading: Reading) -> Snapshot {
+        guard let block = reading.block else {
+            // Nothing is running. Before a run that means no area at all — a
+            // filled screen under a timer that has not been started reads as a
+            // design choice rather than as the bug it is — and after one it
+            // means the last focus block, full, which is what "Done · 4 of 4"
+            // is drawn over.
+            let isSetup = reading.phase == .setup
+
+            return Snapshot(
+                phase: reading.phase,
+                blockKind: .focus,
+                round: isSetup ? 1 : rounds,
+                rounds: rounds,
+                remaining: isSetup ? focusDuration : 0,
+                blockDuration: focusDuration,
+                fraction: isSetup ? 0 : 1,
+                canSkip: false
+            )
+        }
+
+        let remaining = min(max(0, block.end - reading.elapsed), block.duration)
+
+        return Snapshot(
+            phase: reading.phase,
+            blockKind: block.kind,
+            round: block.round,
             rounds: rounds,
-            remaining: 0,
-            blockDuration: focusDuration,
-            fraction: 1,
-            canSkip: false
+            remaining: remaining,
+            blockDuration: block.duration,
+            fraction: block.duration > 0 ? 1 - remaining / block.duration : 1,
+            canSkip: reading.phase == .running && block.kind == .break
         )
     }
 
@@ -203,11 +223,7 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
     func canSkip(at now: Date) -> Bool { snapshot(at: now).canSkip }
 
     /// The block the run is in, or `nil` once it is over or before it begins.
-    func currentBlock(at now: Date) -> Block? {
-        let resolved = resolved(at: now)
-        guard resolved.storedPhase == .running || resolved.storedPhase == .paused else { return nil }
-        return resolved.block(atElapsed: resolved.tracker.elapsed(at: now))
-    }
+    func currentBlock(at now: Date) -> Block? { reading(at: now).block }
 
     // MARK: - Resolving
 
@@ -283,7 +299,9 @@ nonisolated struct IntervalTimer: Sendable, Codable, Equatable {
     @discardableResult
     mutating func skip(at now: Date) -> Bool {
         commitTransitions(at: now)
-        guard snapshot(at: now).canSkip, let block = currentBlock(at: now) else { return false }
+
+        let reading = reading(at: now)
+        guard snapshot(from: reading).canSkip, let block = reading.block else { return false }
 
         // Landing exactly on the boundary puts the run at the start of the next
         // block, which is the focus block that follows every break.

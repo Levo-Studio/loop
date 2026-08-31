@@ -200,6 +200,22 @@ struct IntervalTimerTests {
         #expect(afterBoundary.remaining == 1_500)
     }
 
+    @Test("The area freezes while the run is held and carries on from there")
+    func fractionFreezesWhileHeld() {
+        var timer = running(standard())
+        timer.pause(at: at(750))
+
+        // Four hours held. Without the freeze the whole run would be over.
+        let heldFor = at(750 + 4 * 3_600)
+        #expect(timer.fraction(at: at(750)) == 0.5)
+        #expect(timer.fraction(at: heldFor) == 0.5)
+        #expect(timer.snapshot(at: heldFor).fraction == 0.5)
+        #expect(timer.snapshot(at: heldFor).blockKind == .focus)
+
+        timer.resume(at: heldFor)
+        #expect(timer.fraction(at: heldFor.addingTimeInterval(375)) == 0.75)
+    }
+
     // MARK: - Finish
 
     @Test("A run left going overnight comes back finished")
