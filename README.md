@@ -26,7 +26,7 @@ code at all. There is nothing to sync, so there is nothing to leak.
 | **Storage** | On device, no backend, no account, no network code |
 | **Tests** | Swift Testing, engine covered without a simulator |
 | **Language** | English, string catalog maintained by hand |
-| **License** | Source-available — read, build, run. No distribution at all. |
+| **License** | Source-available — read, build, run. No distribution, bar a source-only fork. |
 
 How it came about, why it looks the way it does and what got cut is in the
 **[case study](https://juliusgrimm.dev/projects/loop)**.
