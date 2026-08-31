@@ -118,8 +118,15 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// The gap between the two buttons of a control row.
     var controlRowSpacing: CGFloat { scaled(10) }
 
-    /// The width of a secondary button's border and of a divider line.
-    var hairlineWidth: CGFloat { scaled(1) }
+    /// The width of a secondary button's border, a divider line and a stepper
+    /// circle.
+    ///
+    /// **Not scaled.** The export draws these at 1 px on iPad exactly as on
+    /// iPhone, while everything around them grows by 1.15 — a hairline is a
+    /// stroke at device resolution, not a dimension of the layout. The slider
+    /// ticks are the opposite case and do scale: they are drawn geometry that
+    /// happens to be thin, not a border.
+    var hairlineWidth: CGFloat { 1 }
 
     /// The opacity a disabled control drops to. It stays in place rather than
     /// disappearing, so the layout does not move when a button becomes legal.
@@ -213,7 +220,10 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     }
 
     /// The border on the selected accent row.
-    var accentRowBorderWidth: CGFloat { scaled(1.5) }
+    ///
+    /// **Not scaled**, for the same reason as `hairlineWidth`: the export
+    /// draws 1.5 px on both idioms.
+    var accentRowBorderWidth: CGFloat { 1.5 }
 
     var accentSwatchSize: CGFloat { scaled(20) }
     var accentSwatchRadius: CGFloat { scaled(6) }
