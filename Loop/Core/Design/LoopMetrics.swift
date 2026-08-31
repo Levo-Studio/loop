@@ -234,7 +234,13 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
         EdgeInsets(top: scaled(11), leading: scaled(13), bottom: scaled(11), trailing: scaled(13))
     }
 
-    /// The border on the selected accent row.
+    /// The border on **every** accent row, selected or not.
+    ///
+    /// All four rows carry a 1.5 pt border in the export. Only the colour
+    /// changes: the selected row draws it in the accent's marker tone over the
+    /// `chip` background, the other three in `hair` over nothing. Drawing the
+    /// inactive rows at `hairlineWidth` instead would shift their content by
+    /// half a point and make the list twitch as the selection moves.
     ///
     /// **Not scaled**, for the same reason as `hairlineWidth`: the export
     /// draws 1.5 px on both idioms.
