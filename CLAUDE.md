@@ -81,9 +81,16 @@ the export's older answer where it disagrees:
   by the screen width. Steps are staged: one minute up to two hours, five
   minutes beyond that, up to thirty hours. The export draws the inverse — a
   fixed scale with a travelling marker — and is superseded here.
-- **Sound.** iOS system sounds, no bundled assets. One tone when a block ends
-  and a different one when the next begins, so the two are distinguishable
-  without looking. A tone when a countdown finishes.
+- **Sound.** Tones synthesised at runtime — still no bundled assets, but not
+  iOS system sounds either. One tone when a block ends and a different one when
+  the next begins, so the two are distinguishable without looking, and a third
+  when a countdown finishes. They are synthesised because the owner requires a
+  timer to be heard on a **muted** phone: the `.playback` category is documented
+  to sound through the Ring/Silent switch, while whether
+  `AudioServicesPlaySystemSound` does is documented in neither direction. The
+  one moment the feature exists for does not rest on undocumented behaviour.
+  Playback ducks other audio rather than mixing under it or stopping it, and the
+  audio session is never held between cues.
 - **The countdown's finished state can require a swipe** to dismiss, like an
   alarm. It is a setting and it is **on** by default.
 - **The interval never requires a swipe.** Not at a block boundary, not at the
