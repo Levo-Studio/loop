@@ -139,6 +139,29 @@ nonisolated enum LoopStrings {
         )
     }
 
+    /// "25:00 completed · swipe to dismiss" — the same finished line when the
+    /// countdown is waiting to be swiped away.
+    ///
+    /// A second key rather than the finished line plus a fragment appended at
+    /// the call site, for the reason `total(_:)` gives: this is one run of text
+    /// and a translator has to be able to reorder the whole of it, including
+    /// which half comes first.
+    ///
+    /// The words are the settings toggle's own — "Swipe to dismiss the
+    /// countdown" — so someone who goes looking for why the Close button is
+    /// dead finds the switch by the phrase they just read. "Swipe to close"
+    /// would echo the button instead, but it would name the button the setting
+    /// does not, and the alarm this state imitates says dismiss. No direction
+    /// is promised because none is required: the gesture is vertical and both
+    /// ways count.
+    static func completedAwaitingSwipe(_ duration: String) -> LocalizedStringResource {
+        LocalizedStringResource(
+            "line.completedSwipe",
+            defaultValue: "\(duration) completed \u{00B7} swipe to dismiss",
+            comment: "Line under a finished countdown that has to be swiped away, as \"25:00 completed \u{00B7} swipe to dismiss\""
+        )
+    }
+
     /// The interval's finished line, under a large "2:00".
     ///
     /// The number is drawn above rather than inside the line, so the plural has

@@ -58,7 +58,7 @@ struct CountdownScreen: View {
         PageScaffold(fill: fill(for: snapshot)) {
             pill(for: snapshot)
         } content: {
-            content(for: snapshot)
+            content(for: snapshot, requiresSwipe: requiresSwipe)
         } controls: {
             controls(for: snapshot, requiresSwipe: requiresSwipe)
         }
@@ -114,7 +114,13 @@ struct CountdownScreen: View {
 
     // MARK: - Content
 
-    @ViewBuilder private func content(for snapshot: CountdownTimer.Snapshot) -> some View {
+    /// The finished state is the one place a swipe can be the only way out, so
+    /// it is the one place the middle of the page has to say so — hence the
+    /// flag reaching this far down.
+    @ViewBuilder private func content(
+        for snapshot: CountdownTimer.Snapshot,
+        requiresSwipe: Bool
+    ) -> some View {
         switch snapshot.phase {
         case .idle:
             CountdownSetup(time: LoopTimeFormat.remaining(snapshot.duration), minutes: durationMinutes(for: snapshot))
@@ -126,9 +132,24 @@ struct CountdownScreen: View {
         case .paused:
             TimeDisplay(time: LoopTimeFormat.remaining(snapshot.remaining), secondary: LoopStrings.onHold)
         case .finished:
+            // The hint rides on the line the export already draws here, rather
+            // than on a line of its own. A second line would be a second
+            // catalog phrase in a slot the design gives one, and the time block
+            // is centred on its own height: adding a line to it lifts the
+            // 00:00 off the place the export puts it, in the state that is on
+            // by default. Extended, the block keeps its drawn geometry to the
+            // point, and the instruction is set in the same quiet role as the
+            // rest of the line, which is where a user already reads what this
+            // screen is doing.
+            //
+            // The separator is the pill's — "Countdown · paused", "Done · 4 of
+            // 4" — so an appended qualifier looks the same wherever the app
+            // adds one.
             TimeDisplay(
                 time: LoopTimeFormat.remaining(snapshot.remaining),
-                secondary: LoopStrings.completed(LoopTimeFormat.remaining(snapshot.duration))
+                secondary: requiresSwipe
+                    ? LoopStrings.completedAwaitingSwipe(LoopTimeFormat.remaining(snapshot.duration))
+                    : LoopStrings.completed(LoopTimeFormat.remaining(snapshot.duration))
             )
         }
     }
@@ -183,6 +204,15 @@ struct CountdownScreen: View {
                 // hiding the button would move the row in the one state where
                 // it has to hold still. Restart stays live throughout — it
                 // begins a new run rather than dismissing this one.
+                //
+                // It stays now that the line above says "swipe to dismiss",
+                // and the two do not contradict each other: the dead button
+                // names the thing that is unavailable and the line names the
+                // way that is left, which is the pair a lock-screen alarm
+                // draws too. Dropping it would leave the row half empty or
+                // stretch Restart across a width the export never draws, and
+                // both are larger changes to a drawn state than the one this
+                // hint is fixing.
                 secondary: .init(LoopStrings.close, isEnabled: !requiresSwipe) { stop() }
             )
         }
