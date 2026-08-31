@@ -1,0 +1,216 @@
+Loop Source-Available License
+Version 1.0
+
+Copyright (c) 2026 Levo Studio. All rights reserved.
+
+## In short
+
+The source code of Loop is open. You may read it, clone it, study it, change it,
+build it yourself and run it on devices you own. What you may not do is pass it
+on: no store, no TestFlight — not even your own —, no sideloading to anyone
+else, no handing a compiled build to a friend, no selling it, and no presenting
+yourself as the author or provider of Loop under whatever name. Loop is and
+stays a product of Levo Studio. Pull requests are expressly welcome, and every
+contribution is named in the credits.
+
+This is not an open-source license in the sense of the Open Source Definition,
+because it restricts distribution and commercial use. From here on the sections
+apply. Where the summary and the sections disagree, the sections win.
+
+## 1. Acceptance
+
+Whoever exercises one of the permissions granted below accepts this license.
+Whoever does not accept it has no rights in the software.
+
+## 2. Grant of rights
+
+Subject to the conditions and limits of this license, the licensor grants you a
+worldwide, royalty-free, non-exclusive, non-transferable and non-sublicensable
+right
+
+  (a) to retrieve, read and study the source code of the software;
+
+  (b) to reproduce, compile, build and run the software on devices that you own
+      or control;
+
+  (c) to modify the software for your own use and to build and run the modified
+      version under the terms of (b).
+
+No further rights are granted. Section 3 limits this grant and prevails over it
+in case of doubt.
+
+## 3. What is not permitted
+
+Without a separate written agreement with Levo Studio, the following is
+prohibited:
+
+  (a) distributing the software or a version derived from it in any form —
+      including publication in the App Store or in any other app store,
+      marketplace or distribution channel, distribution via TestFlight
+      including a TestFlight programme of your own, sideloading to third
+      parties, and passing a compiled binary to any other person at all,
+      regardless of the name used and regardless of whose developer account is
+      involved;
+
+  (b) selling, renting, leasing, sublicensing or otherwise transferring the
+      software or a version derived from it for a fee or any other
+      consideration;
+
+  (c) using the software to offer a product or a service to third parties, for
+      a fee or free of charge, including any hosted offering or any offering
+      operated as software as a service;
+
+  (d) incorporating the software into a commercially offered product or a
+      commercially offered service;
+
+  (e) presenting yourself as the author, publisher or provider of Loop, or
+      creating that impression;
+
+  (f) making a modified version of the software publicly available, publishing
+      it or distributing it publicly; the only exception is the submission of
+      contributions under section 4;
+
+  (g) removing, altering or obscuring copyright, license or provenance notices
+      in the software;
+
+  (h) using the name "Loop", the mark "Levo Studio", the logo, the app icon or
+      the visual design of the app for a product, a service or a version of the
+      software of your own.
+
+A public fork of the source code on a code-hosting platform that leaves the
+notices under (g) unchanged and that serves the preparation of a contribution
+under section 4 or your own use does not count as publication within the meaning
+of (f).
+
+## 4. Contributions
+
+Contributions are welcome. Whoever has an idea that makes Loop better should
+open a pull request.
+
+  (a) Whoever submits a contribution grants Levo Studio a worldwide,
+      royalty-free, irrevocable, perpetual, non-exclusive and sublicensable
+      right to reproduce, modify, distribute, make publicly available and
+      exploit the contribution — in the project, in the published app and in
+      future versions, including versions offered for a fee.
+
+  (b) Authorship of the contribution stays with the contributor. The grant of
+      rights under (a) is not a transfer of authorship.
+
+  (c) The contributor is named in the credits of the project. The rules for
+      that entry are in the README.
+
+  (d) Whoever submits a contribution warrants that they hold the rights
+      required to do so and that the contribution does not infringe the rights
+      of third parties.
+
+  (e) Levo Studio is under no obligation to accept, adopt or publish a
+      contribution.
+
+## 5. Trademarks and design
+
+This license grants no rights in the trademarks, signs, names, logos or product
+names of Levo Studio, in particular none in the designations "Levo Studio" and
+"Loop" and none in the app icon, the word-and-figure mark and the visual design
+of the app.
+
+You may not use these signs for a product, a service or a version of the
+software of your own, and you may not act in a way that suggests a connection
+with Levo Studio or an endorsement by Levo Studio.
+
+Plain factual reference is permitted: you may say that your version is based on
+Loop by Levo Studio.
+
+## 6. Patents
+
+This license grants no patent rights, neither expressly nor by implication.
+Whoever initiates or knowingly supports patent proceedings asserting that the
+software infringes a patent loses all rights under this license with immediate
+effect.
+
+## 7. Termination
+
+Your rights under this license end automatically if you breach any of its
+conditions.
+
+If the breach is curable, your rights are reinstated retroactively provided you
+cure the breach within 30 days of becoming aware of it and provided your rights
+have not already been reinstated once under this section.
+
+Sections 3 (g), 3 (h), 4, 5, 8, 9 and 11 survive termination.
+
+## 8. Warranty disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS" AND WITHOUT WARRANTY OF ANY KIND, WHETHER
+EXPRESS OR IMPLIED, INCLUDING THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT OF THIRD-PARTY RIGHTS. IF THIS
+DISCLAIMER IS INEFFECTIVE UNDER APPLICABLE LAW, IT APPLIES TO THE FULLEST EXTENT
+PERMITTED.
+
+The software measures elapsed time for the user's own purposes. It is not a
+certified timekeeping instrument and no assurance is given as to the accuracy of
+the values it displays. It must not be relied upon where accurate timing
+matters.
+
+## 9. Limitation of liability
+
+The licensor is not liable for damages arising out of this license or out of the
+use or the inability to use the software, in particular not for indirect
+damages, consequential damages, lost profit, lost revenue, loss of data or lost
+opportunities — on whatever legal basis.
+
+Liability for intent and gross negligence, for injury to life, body or health,
+under the German Product Liability Act, and for the culpable breach of material
+contractual obligations remains unaffected; in the last case liability is
+limited to the foreseeable damage typical of this kind of agreement. Liability
+that cannot be excluded or limited under mandatory law is neither excluded nor
+limited.
+
+## 10. Definitions
+
+**Licensor** is Levo Studio, the rights holder in the software.
+
+**Software** is the work provided under this license, including source code,
+build configuration, design assets and accompanying files, in every version
+provided by the licensor.
+
+**You** is the natural or legal person exercising rights under this license.
+
+**Modified version** is any editing, adaptation, translation, extension or other
+transformation of the software, as well as any work that builds upon it.
+
+**Contribution** is any work that someone knowingly submits for inclusion in the
+project, in particular by pull request.
+
+**Publicly** means any circle of recipients beyond yourself.
+
+## 11. Governing law and venue
+
+The law of the Federal Republic of Germany applies, excluding the UN Convention
+on Contracts for the International Sale of Goods and the conflict-of-laws rules
+of private international law. Mandatory consumer protection provisions of the
+state in which a consumer has their habitual residence remain unaffected.
+
+The exclusive venue for all disputes arising out of or in connection with this
+license is Tübingen, to the extent such a venue can validly be agreed.
+
+If a provision of this license is ineffective, the remaining provisions stay
+effective. The ineffective provision is replaced by what comes closest to its
+purpose.
+
+## 12. Third-party components
+
+The bundled font IBM Plex Mono is licensed separately under the SIL Open Font
+License 1.1. Its license text is included with the font files. This license does
+not restrict your rights in that font, and the SIL Open Font License grants you
+no rights in the remaining parts of the software.
+
+## 13. Further rights
+
+Everything not permitted here — publication in a store, distribution of any
+kind, commercial use, passing a build to other people — requires a separate
+written agreement. Just ask.
+
+---
+
+Rights holder: **Levo Studio**, Europaplatz 2/1, 72072 Tübingen
+Contact: julius@levo-studio.com
