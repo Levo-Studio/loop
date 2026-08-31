@@ -24,7 +24,7 @@ code at all. There is nothing to sync, so there is nothing to leak.
 |---|---|
 | **Engine** | `Date`-based, `nonisolated`, no SwiftUI import, no ticks counted |
 | **Storage** | On device, no backend, no account, no network code |
-| **Tests** | Swift Testing, engine covered without a simulator |
+| **Tests** | Swift Testing, not XCTest. Engine coverage is coming, not counted yet. |
 | **Language** | English, string catalog maintained by hand |
 | **License** | Source-available — read, build, run. No distribution, bar a source-only fork. |
 
