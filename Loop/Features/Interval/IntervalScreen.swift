@@ -313,7 +313,110 @@ struct IntervalScreen: View {
     /// timer's setters, so there is one read path and one clamping site. The
     /// sum underneath is the documented exception: it is arithmetic over the
     /// three scales rather than anything the run moves.
+    ///
+    /// **Why it scrolls at all.** This is the tallest of the five pages — two
+    /// scales, a divider, a stepper and the total — and the two scales cannot
+    /// give: a `ScaleSlider` is a header over a tick row and a number row, all
+    /// held to a fixed height so the ticks stay the length the export draws
+    /// them. Measured at 667 × 375, the landscape box of an iPhone SE (3rd
+    /// generation) and an iPhone 13 mini, both of which iOS 26 still runs on:
+    /// the page wants 397 pt and has 375, so it stands **22 pt over**. What
+    /// that costs is not a tight margin, it is a collision — the total line
+    /// lands on top of the Start button and the navigation dots are pushed
+    /// against the bottom edge. A 402 pt landscape box, an iPhone 17 Pro,
+    /// clears the same column by 5 pt. So this is not theoretical and it is not
+    /// far from the devices that do fit.
+    ///
+    /// It is reachable on iPad too, and there without any small device
+    /// involved: Loop supports multiple scenes, so a window resized short is a
+    /// short page, and `RootShell` reads it as iPad landscape with the same
+    /// fixed column. At 1024 × 400 the page wants 456 pt and loses the dots
+    /// entirely.
+    ///
+    /// **Why `ViewThatFits` and not a plain `ScrollView`.** A scroll view that
+    /// is always there is always scrollable: it bounces, it flashes an
+    /// indicator, and it changes how the column is placed in the space it is
+    /// given. A layout that fits today should look exactly as it did before
+    /// this was added, and the only way to be sure of that is for there to be
+    /// no scroll view in the tree at all. So the plain column is offered first
+    /// and taken wherever it fits; the scrolling copy is what is left when it
+    /// does not. Settings solved the same problem the same way, for the same
+    /// reason. How exactly `ViewThatFits` draws that line is the paragraph
+    /// after next, and it is not quite where it should be.
+    ///
+    /// The navigation dots and the page padding are `PageScaffold`'s and sit
+    /// outside this view, so they stay put while the column moves under them.
+    /// The dots are the app's only navigation and must never scroll away.
+    ///
+    /// **The two branches do not align alike, and that is the documented cost.**
+    /// The plain column is centred in the space the scaffold gives it, which is
+    /// how the export draws the page. A scroll view cannot centre content
+    /// taller than its viewport, so the scrolling branch top-aligns instead:
+    /// the first paint puts the focus scale flush under the pill and leaves the
+    /// total below the fold, with no indicator at rest to say it is there. That
+    /// reads as a clipped layout rather than a scrollable one, and it is a real
+    /// cost rather than a detail. It is taken knowingly — the alignment is
+    /// inherent to scrolling, it happens only where the alternative is two
+    /// controls drawn on top of each other, and the export never drew this
+    /// state.
+    ///
+    /// **`ViewThatFits` switches about 20 pt before the column stops fitting,
+    /// and that is measured rather than assumed.** The height it compares a
+    /// candidate against is the one `PageScaffold`'s stack proposes while it is
+    /// still sizing itself, not the one the content slot ends up with: at a
+    /// 402 pt page the slot is offered 224.5 pt and finally given 244.5. Swept
+    /// at a 874 pt width, the plain branch is therefore taken from a 417 pt
+    /// page upwards though the column needs only 397. Everything with 20 pt of
+    /// slack or more is untouched, which is every layout the app is drawn for
+    /// except one: an iPhone 17 Pro in landscape clears the column by 5 pt and
+    /// is handed the scrolling branch anyway, where the page settles about
+    /// 2.5 pt lower because a scroll view reports a different ideal height to
+    /// the stack above it and the stack redistributes. Nothing collides there
+    /// and nothing leaves the screen — the total, both buttons and the dots are
+    /// all still drawn — but it is a visible change on a page that did fit, and
+    /// it is the price of this fix rather than a bug in it.
+    ///
+    /// Closing that last gap needs the proposal itself to be right, which is
+    /// `PageScaffold`'s business and every page's problem rather than this
+    /// one's. Three attempts that did not close it are recorded so they are not
+    /// tried again: a `GeometryReader` around the scrolling branch feeding the
+    /// column a `minHeight` of the viewport, `defaultScrollAnchor(.center,
+    /// for: .alignment)`, and dropping the greedy frame from the plain
+    /// candidate. All three centre the scrolled column correctly and none of
+    /// them helps, because the shift does not come from how the column sits
+    /// inside the branch — it comes from what the branch reports to the stack.
+    ///
+    /// - Note: `FillSurface` builds this twice, and a scroll view carries an
+    ///   offset of its own that the two copies do not share. It cannot drift
+    ///   here, and for a stronger reason than on Settings: this branch exists
+    ///   only in setup, and setup is exactly the phase that passes `.none`, so
+    ///   the second copy is masked to a zero-height rectangle and draws
+    ///   nothing. Even while the area animates away on a reset, the second copy
+    ///   takes no touches — `FillSurface` marks it `allowsHitTesting(false)` —
+    ///   so there is no gesture that could move one copy and not the other.
+    ///   Whoever gives the setup state a fill has to lift the scroll position
+    ///   above the scaffold and pass it in, the way `RootShell` does with the
+    ///   current page.
     private func setup(_ snapshot: IntervalTimer.Snapshot) -> some View {
+        ViewThatFits(in: .vertical) {
+            setupColumn(snapshot)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            ScrollView(.vertical) {
+                setupColumn(snapshot)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    /// The column itself, offered to `ViewThatFits` twice.
+    ///
+    /// The frames belong to the candidates rather than to this view: the plain
+    /// one has to fill the page and centre in it, while inside a scroll view
+    /// there is nothing further out to widen the column and nothing to centre
+    /// it against. Written once and framed twice keeps the two branches the
+    /// same drawing.
+    private func setupColumn(_ snapshot: IntervalTimer.Snapshot) -> some View {
         VStack(spacing: metrics.intervalSetupSpacing) {
             ScaleSlider(
                 label: LoopStrings.focus,
@@ -342,7 +445,6 @@ struct IntervalScreen: View {
 
             TotalLine(duration: timers.interval.plannedDuration)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Controls
