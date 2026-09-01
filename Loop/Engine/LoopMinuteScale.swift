@@ -63,6 +63,15 @@ nonisolated struct LoopMinuteScale: Sendable, Equatable {
 
         precondition(isSelectable(range.lowerBound), "The bottom of a scale has to be a selectable value.")
         precondition(isSelectable(range.upperBound), "The top of a scale has to be a selectable value.")
+
+        // `detentOffset(of:)` counts from the first stage's start, so a range
+        // reaching below it would have nothing to count from and would answer
+        // a position that runs backwards. Every scale in the app starts both
+        // at zero; this is the line that says the two are not independent.
+        precondition(
+            self.stages[0].start <= range.lowerBound,
+            "A scale's first stage has to begin at or below the bottom of its range."
+        )
     }
 
     // MARK: - Asking
@@ -144,6 +153,84 @@ nonisolated struct LoopMinuteScale: Sendable, Equatable {
     /// dialled — and as the first half of every `nearest(to:)`.
     func clamped(_ minutes: Int) -> Int {
         min(max(minutes, range.lowerBound), range.upperBound)
+    }
+
+    /// How far apart the detents are at a value — the step of the stage it
+    /// falls in.
+    ///
+    /// For a drawing that has to say something about the step without knowing
+    /// where the boundaries are. Everything else here answers in minutes; this
+    /// is the one question whose answer is the grid itself.
+    func step(at minutes: Int) -> Int {
+        stage(containing: clamped(minutes)).step
+    }
+
+    // MARK: - Position
+
+    /// Where a value sits when the scale is measured in **detents** rather than
+    /// in minutes — the number of selectable values between the bottom of the
+    /// scale and this one.
+    ///
+    /// This is the coordinate a scrolling scale is drawn in. Drawn in minutes,
+    /// four fifths of the distance a finger travels above two hours passes over
+    /// positions that cannot be chosen, and thirty hours costs about thirty
+    /// full-width swipes. In detents every point of travel buys a value, and
+    /// the same thirty hours costs about eight.
+    ///
+    /// Fractional, and monotonic in `minutes`, because a finger is between
+    /// detents for all but an instant of a drag. Inside the one-minute stage a
+    /// detent *is* a minute, so the two coordinates are the same number there
+    /// and nothing about the fine part of a scale changes.
+    ///
+    /// Counted from the first stage's start rather than from `range.lowerBound`
+    /// so that two scales sharing a stage list agree on where a value sits.
+    func detentOffset(of minutes: Double) -> Double {
+        guard minutes.isFinite else { return 0 }
+
+        let value = min(max(minutes, Double(range.lowerBound)), Double(range.upperBound))
+
+        var offset: Double = 0
+        for (index, stage) in stages.enumerated() {
+            let start = Double(stage.start)
+            guard value > start else { break }
+
+            let end = index + 1 < stages.count ? Double(stages[index + 1].start) : .infinity
+            offset += (min(value, end) - start) / Double(stage.step)
+        }
+        return offset
+    }
+
+    /// The value at a position on that same detent coordinate — the inverse of
+    /// `detentOffset(of:)`, which is what turns a scroll position back into a
+    /// duration.
+    ///
+    /// Clamped to the range, so a finger that has run past an end answers the
+    /// end rather than a value the scale does not have.
+    func minutes(atDetentOffset offset: Double) -> Double {
+        guard offset.isFinite else { return Double(range.lowerBound) }
+
+        var remaining = offset
+        var value = Double(stages[0].start)
+
+        for (index, stage) in stages.enumerated() {
+            let start = Double(stage.start)
+            let step = Double(stage.step)
+
+            guard index + 1 < stages.count else {
+                value = start + remaining * step
+                break
+            }
+
+            // How many detents this stage holds before the next one takes over.
+            let span = (Double(stages[index + 1].start) - start) / step
+            if remaining <= span {
+                value = start + remaining * step
+                break
+            }
+            remaining -= span
+        }
+
+        return min(max(value, Double(range.lowerBound)), Double(range.upperBound))
     }
 
     // MARK: - Stages

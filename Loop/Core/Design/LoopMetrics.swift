@@ -184,8 +184,14 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// All three are drawn identically in all four layouts, so unlike nearly
     /// everything else here they take neither the idiom factor nor a landscape
     /// variant: they count minutes, and a minute is not a length. The pitch
-    /// between two minutes is the thing that scales, and that is
-    /// `sliderMinutePitch(width:)`.
+    /// between two detents is the thing that scales, and that is
+    /// `sliderDetentPitch(width:)`.
+    ///
+    /// These are the density of the **one-minute** part of a scale, which is
+    /// the part the export drew. Where the detents are coarser the row is
+    /// numbered in whole hours instead; that rule is `ScaleSlider`'s, because
+    /// it depends on where the scale is standing rather than on which scale it
+    /// is.
     ///
     /// The **ranges** these subdivide belong to the engine, in
     /// `LoopTimerLimits`, and so does which values on them can be picked. How
@@ -211,12 +217,21 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// How many tick slots the export lays across the width of a scale.
     ///
     /// The countdown's duration scale is drawn as 0…60 in sixty-one equal
-    /// `flex:1` slots spanning the content width, so a minute is the width over
+    /// `flex:1` slots spanning the content width, so a slot is the width over
     /// sixty-one. This is the one piece of the scale's geometry that the
     /// scrolling version cannot read straight off the export: a scale running
     /// to thirty hours has no "across the width" left to divide by, so the
     /// density is fixed here at what was drawn and the width decides how much
     /// of the scale is visible instead.
+    ///
+    /// A slot holds **one detent**, not one minute. In the export those are the
+    /// same thing — its scale is one minute per selectable value from end to
+    /// end, and that part is reproduced exactly. Beyond two hours only every
+    /// fifth minute can be chosen, and a slot per minute there would spend four
+    /// fifths of a finger's travel on positions nothing can land on: thirty
+    /// hours would cost about thirty full-width swipes, against about eight for
+    /// a slot per detent. The scale stops stretching over values it does not
+    /// offer.
     ///
     /// The pitch is derived from the width rather than from `scaled(_:)`, and
     /// **not** because the idiom factor comes out of it — it does not. iPhone
@@ -231,8 +246,8 @@ nonisolated struct LoopMetrics: Equatable, Sendable {
     /// widths and would match at most one of them.
     static let sliderTickSlotsAcrossWidth = 61
 
-    /// The distance between two adjacent minutes on a scale of a given width.
-    static func sliderMinutePitch(width: CGFloat) -> CGFloat {
+    /// The distance between two adjacent detents on a scale of a given width.
+    static func sliderDetentPitch(width: CGFloat) -> CGFloat {
         width / CGFloat(sliderTickSlotsAcrossWidth)
     }
 

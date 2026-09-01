@@ -141,28 +141,43 @@ struct LoopMetricsTests {
         // screen. Only the first hour is asserted in full: past sixty minutes
         // the row switches to `h:mm`, and what matters here is the stride, not
         // the wording.
-        let duration = Array(stride(
-            from: 0,
-            through: LoopTimerLimits.duration.range.upperBound,
-            by: LoopMetrics.countdownNumberInterval
-        ))
+        let duration = numbers(on: LoopTimerLimits.duration, every: LoopMetrics.countdownNumberInterval)
         #expect(duration.prefix(5) == [0, 15, 30, 45, 60])
+
+        // Two hours is where the detents stop being minutes, so it is also
+        // where the row stops being quarter-hours: fifteen minutes is three
+        // slots up there and the labels would print on top of each other.
+        #expect(duration.contains(105))
+        #expect(duration.contains(120))
+        #expect(duration.contains(135) == false)
+        #expect(duration.contains(180))
+        #expect(duration.filter { $0 > 120 }.prefix(3) == [180, 240, 300])
         #expect(duration.last == 1_800)
 
-        let breakScale = Array(stride(
-            from: 0,
-            through: LoopTimerLimits.breakLength.range.upperBound,
-            by: LoopMetrics.breakNumberInterval
-        ))
+        let breakScale = numbers(on: LoopTimerLimits.breakLength, every: LoopMetrics.breakNumberInterval)
         #expect(breakScale.prefix(4) == [0, 10, 20, 30])
-        // Both strides divide their scale exactly, so the right-hand end always
-        // carries a number — an unlabelled end reads as a rendering fault
-        // rather than as a choice.
+        // Both scales end on a number, so the right-hand end always carries one
+        // — an unlabelled end reads as a rendering fault rather than as a
+        // choice. The break never leaves the one-minute stage, so its whole row
+        // is the export's own stride.
         #expect(breakScale.last == 120)
+        #expect(breakScale == Array(stride(from: 0, through: 120, by: LoopMetrics.breakNumberInterval)))
     }
 
-    @Test("A minute is the scale's width over the export's 61 slots")
-    func sliderMinutePitch() {
+    /// The whole number row of a scale, built by the rule `ScaleSlider` draws
+    /// it with rather than by a stride the test picks for itself.
+    private func numbers(on scale: LoopMinuteScale, every numberEvery: Int) -> [Int] {
+        var values: [Int] = []
+        var value = scale.range.lowerBound
+        while value <= scale.range.upperBound {
+            values.append(value)
+            value += ScaleSlider.numberInterval(on: scale, every: numberEvery, at: value)
+        }
+        return values
+    }
+
+    @Test("A detent is the scale's width over the export's 61 slots")
+    func sliderDetentPitch() {
         // The export draws the tick row as 61 equal `flex:1` slots — 13 majors
         // and 48 minors — across whatever width the scale is given.
         #expect(LoopMetrics.sliderTickSlotsAcrossWidth == 61)
@@ -173,18 +188,18 @@ struct LoopMetricsTests {
         // have produced: their ratio is 1.89, not the idiom's 1.15.
         let phone = LoopMetrics(isPad: false, isLandscape: false)
         let phoneWidth = 402 - 2 * phone.pagePadding.leading
-        let phonePitch = LoopMetrics.sliderMinutePitch(width: phoneWidth)
+        let phonePitch = LoopMetrics.sliderDetentPitch(width: phoneWidth)
         #expect(abs(phonePitch - phoneWidth / 61) < 0.0001)
 
         let padWidth = LoopMetrics(isPad: true, isLandscape: false).contentColumnWidth ?? 0
-        let padPitch = LoopMetrics.sliderMinutePitch(width: padWidth)
+        let padPitch = LoopMetrics.sliderDetentPitch(width: padWidth)
         #expect(abs(padWidth - 598) < 0.0001)
         #expect(abs(padPitch - padWidth / 61) < 0.0001)
         #expect(padPitch / phonePitch > 1.5)
 
         // A zero width cannot divide into a usable pitch, and the slider guards
         // on the result rather than on the geometry.
-        #expect(LoopMetrics.sliderMinutePitch(width: 0) == 0)
+        #expect(LoopMetrics.sliderDetentPitch(width: 0) == 0)
     }
 
     @Test("The break headline sits the same distance from the time as the line under it")

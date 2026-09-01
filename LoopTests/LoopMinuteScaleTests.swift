@@ -117,6 +117,84 @@ struct LoopMinuteScaleTests {
         #expect(scale.isSelectable(37))
     }
 
+    // MARK: - The detent coordinate
+
+    @Test("Below two hours a detent is a minute, so the drawn scale is unchanged")
+    func detentOffsetInTheFineStage() {
+        // The export lays a scale out in equal slots, one per minute. Every
+        // value the export could draw has to keep the position it had, or the
+        // one part of the geometry that was actually drawn stops matching it.
+        for minutes in stride(from: 0, through: 120, by: 1) {
+            #expect(duration.detentOffset(of: Double(minutes)) == Double(minutes))
+        }
+
+        // And between them, because a finger is between detents for all but an
+        // instant of a drag.
+        #expect(duration.detentOffset(of: 45.5) == 45.5)
+    }
+
+    @Test("Above two hours a slot is five minutes, not one")
+    func detentOffsetInTheCoarseStage() {
+        // 120 minutes of detents, then one per five minutes. The whole point of
+        // the change: the scale stops stretching over values nothing can land
+        // on.
+        #expect(duration.detentOffset(of: 125) == 121)
+        #expect(duration.detentOffset(of: 180) == 132)
+        #expect(duration.detentOffset(of: 122.5) == 120.5)
+
+        // Thirty hours: 120 + (1800 - 120) / 5.
+        #expect(duration.detentOffset(of: 1_800) == 456)
+
+        // Which is what makes it reachable by hand. At the export's density —
+        // 61 slots across the scale — the full range is 456 slots rather than
+        // 1800, so it is a seventh of the dragging it was.
+        #expect(duration.detentOffset(of: 1_800) / 61 < 8)
+    }
+
+    @Test("A position on the scale and the value under it are each other's inverse")
+    func detentOffsetRoundTrips() {
+        for minutes in [0, 1, 59, 119, 120, 121.5, 125, 480, 1_000, 1_799.5, 1_800] as [Double] {
+            let there = duration.detentOffset(of: minutes)
+            #expect(abs(duration.minutes(atDetentOffset: there) - minutes) < 0.000_1)
+        }
+
+        // Monotonic across the boundary, or the scale would run backwards under
+        // the finger somewhere.
+        var previous = -1.0
+        for minutes in stride(from: 0.0, through: 1_800.0, by: 0.5) {
+            let there = duration.detentOffset(of: minutes)
+            #expect(there > previous)
+            previous = there
+        }
+    }
+
+    @Test("A position past either end answers the end")
+    func detentOffsetSaturates() {
+        #expect(duration.minutes(atDetentOffset: -50) == 0)
+        #expect(duration.minutes(atDetentOffset: 10_000) == 1_800)
+        #expect(duration.detentOffset(of: -50) == 0)
+        #expect(duration.detentOffset(of: 10_000) == 456)
+
+        // A non-finite position is a bug upstream and must not become a
+        // duration nobody can explain.
+        #expect(duration.detentOffset(of: .nan) == 0)
+        #expect(duration.minutes(atDetentOffset: .nan) == 0)
+    }
+
+    @Test("The step at a value is the grid the drawing asks for")
+    func stepAtAValue() {
+        // The number row needs to know that the detents have stopped being
+        // minutes without knowing where that happens.
+        #expect(duration.step(at: 0) == 1)
+        #expect(duration.step(at: 119) == 1)
+        #expect(duration.step(at: 120) == 5)
+        #expect(duration.step(at: 1_800) == 5)
+
+        // Out of range answers the nearest end rather than nothing.
+        #expect(duration.step(at: -10) == 1)
+        #expect(duration.step(at: 100_000) == 5)
+    }
+
     // MARK: - Adding a stage
 
     @Test("A third stage needs no change to anything that asks a question")
@@ -138,6 +216,14 @@ struct LoopMinuteScaleTests {
         #expect(scale.isSelectable(24 * 60 + 5) == false)
         #expect(scale.nearest(to: 24 * 60 + 5) == 24 * 60)
         #expect(scale.nearest(to: 24 * 60 + 8) == 24 * 60 + 15)
+
+        // And the position too: 120 one-minute slots, then 264 five-minute
+        // ones, then 96 of a quarter of an hour. A third stage costs the
+        // drawing nothing because it never asks where the boundaries are.
+        #expect(scale.detentOffset(of: Double(24 * 60)) == 384)
+        #expect(scale.detentOffset(of: Double(48 * 60)) == 480)
+        #expect(scale.minutes(atDetentOffset: 384) == Double(24 * 60))
+        #expect(scale.minutes(atDetentOffset: 480) == Double(48 * 60))
 
         // Unsorted input is put in order rather than answering nonsense.
         let unsorted = LoopMinuteScale(
