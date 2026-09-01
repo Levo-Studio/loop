@@ -20,6 +20,23 @@ import SwiftUI
 /// is superseded here; every drawn value it does carry — tick heights and
 /// widths, the five-minute major, the number row, the 3 × 30 pt bar, the
 /// opacities, the landscape variants — is unchanged.
+///
+/// **The scale is laid out in detents, not in minutes.** One slot of the
+/// export's sixty-one is one selectable value wherever you are on the scale, so
+/// below two hours it is a minute — the export exactly — and above it five.
+/// Laid out per minute the coarse part stretches over four values in five that
+/// nothing can land on, and since the scale stops where the finger stops, that
+/// distance is paid for by hand: thirty hours took about thirty full-width
+/// swipes and now takes about eight.
+///
+/// The step change is still visible, and by the same means the export already
+/// uses to say "this is a five-minute mark": the taller, wider, darker major
+/// tick. Below two hours one tick in five is a major; above it *every* detent
+/// is a five-minute value, so every tick is. The scale changes at the boundary
+/// from a rhythm of short hairlines with a tall one every fifth to a solid row
+/// of tall ones — a change of texture rather than of spacing, at exactly the
+/// minute where the step changes, drawn with nothing that was not already
+/// there.
 struct ScaleSlider: View {
 
     let label: LocalizedStringResource
@@ -113,13 +130,15 @@ struct ScaleSlider: View {
     /// have no rising area at all, so the second copy is masked to nothing.
     @State private var scrollMinutes: Double?
 
-    /// Where the scale stood when the current drag's translation was zero.
+    /// Where the scale stood when the current drag's translation was zero, in
+    /// **detents** — the coordinate the scale is laid out in, so that a point
+    /// of travel is a point of travel wherever on the scale it happens.
     ///
     /// Taken once when the finger lands, so that snapping `minutes` mid-drag
     /// does not feed back into where the finger thinks it started — and moved
     /// again only at the ends of the scale, where the finger travels and the
     /// scale cannot follow.
-    @State private var gestureOrigin: Double = 0
+    @State private var gestureOriginDetents: Double = 0
 
     /// Whether a finger is on the scale.
     ///
@@ -201,11 +220,11 @@ struct ScaleSlider: View {
     private var scale: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
-            let pitch = LoopMetrics.sliderMinutePitch(width: width)
-            // Where minute zero sits. Everything on the scale is drawn from
+            let pitch = LoopMetrics.sliderDetentPitch(width: width)
+            // Where detent zero sits. Everything on the scale is drawn from
             // this one number, so the ticks, the numbers and the value under
             // the marker cannot disagree about where the scale is standing.
-            let origin = width / 2 - displayedMinutes * pitch
+            let origin = width / 2 - CGFloat(minuteScale.detentOffset(of: Double(displayedMinutes))) * pitch
 
             ZStack(alignment: .topLeading) {
                 VStack(spacing: 0) {
@@ -252,7 +271,7 @@ struct ScaleSlider: View {
                     // Bottom-aligned in the row, as the export draws it, and
                     // centred on its own minute.
                     .position(
-                        x: origin + CGFloat(minute) * pitch,
+                        x: x(ofMinute: minute, origin: origin, pitch: pitch),
                         y: metrics.sliderTickRowHeight - tickHeight(isMajor: isMajor) / 2
                     )
             }
@@ -262,6 +281,16 @@ struct ScaleSlider: View {
 
     private func tickHeight(isMajor: Bool) -> CGFloat {
         isMajor ? metrics.sliderMajorTickHeight : metrics.sliderMinuteTickHeight
+    }
+
+    /// Where a minute value sits across the scale.
+    ///
+    /// Through the detent coordinate, so a tick, its number and the marker over
+    /// it are placed by one rule. Asking the scale rather than multiplying by
+    /// the value is what keeps this drawing ignorant of where the steps change,
+    /// which is the engine's business and not the picture's.
+    private func x(ofMinute minute: Int, origin: CGFloat, pitch: CGFloat) -> CGFloat {
+        origin + CGFloat(minuteScale.detentOffset(of: Double(minute))) * pitch
     }
 
     private func numbers(origin: CGFloat, pitch: CGFloat, width: CGFloat) -> some View {
@@ -281,7 +310,7 @@ struct ScaleSlider: View {
                     // the label on it — the export's `translateX(-50%)` —
                     // without a slot width to invent or to outgrow.
                     .frame(width: 0)
-                    .offset(x: origin + CGFloat(value) * pitch)
+                    .offset(x: x(ofMinute: value, origin: origin, pitch: pitch))
             }
         }
         .frame(height: metrics.sliderNumberRowHeight)
@@ -302,25 +331,39 @@ struct ScaleSlider: View {
         CGFloat(scrollMinutes ?? Double(minutes))
     }
 
+    /// The minute values at the two edges of the visible width, clamped to the
+    /// scale.
+    ///
+    /// Read back through the detent coordinate, because that is the coordinate
+    /// the scale is laid out in: an edge is so many slots from the origin, and
+    /// how many minutes that is depends on which stage it lands in.
+    private func visibleMinutes(origin: CGFloat, pitch: CGFloat, width: CGFloat) -> ClosedRange<Double> {
+        let leading = minuteScale.minutes(atDetentOffset: Double((-origin) / pitch))
+        let trailing = minuteScale.minutes(atDetentOffset: Double((width - origin) / pitch))
+        return min(leading, trailing)...max(leading, trailing)
+    }
+
     /// The detents that fall inside the visible width, in order.
     ///
     /// Walked with `next(after:)` rather than computed, because the step is the
     /// engine's business and staged: below two hours it is a minute, above it
     /// five, and this has no way to know where the boundary is — nor any need
-    /// to. Drawing a tick per detent rather than per minute is also what makes
-    /// the change of step visible: past the boundary every tick that is left is
-    /// a five-minute major, and the scale visibly opens up.
+    /// to. A slot is a detent, so the walk is also what bounds the loop: sixty
+    /// or so of them cross the width whatever the step is.
+    ///
+    /// The ends are `nearest(to:)` rather than a floor and a ceiling, so at
+    /// most one tick beyond each edge is drawn. That one is behind the clip,
+    /// and it is the cheap way of never leaving a gap at an edge.
     private func visibleDetents(origin: CGFloat, pitch: CGFloat, width: CGFloat) -> [Int] {
         guard pitch > 0 else { return [] }
 
-        let first = max(minuteScale.range.lowerBound, Int(floor((-origin) / pitch)))
-        let last = min(minuteScale.range.upperBound, Int(ceil((width - origin) / pitch)))
-        guard first <= last else { return [] }
+        let minutes = visibleMinutes(origin: origin, pitch: pitch, width: width)
+        let last = minuteScale.nearest(to: minutes.upperBound)
 
         var values: [Int] = []
-        var value = minuteScale.nearest(to: Double(first))
+        var value = minuteScale.nearest(to: minutes.lowerBound)
         while value <= last {
-            if value >= first { values.append(value) }
+            values.append(value)
             let following = minuteScale.next(after: value)
             // A detent rule that does not advance would spin here forever, and
             // the top of the range answers itself by design.
@@ -332,19 +375,57 @@ struct ScaleSlider: View {
 
     /// The numbered values inside the visible width.
     ///
-    /// Numbers stay on their own fixed interval rather than on the detents:
-    /// past two hours the detents are five minutes apart, and a number under
-    /// every one of them would be a wall of digits.
+    /// Numbers stay on a minute interval rather than on the detents: five
+    /// minutes apart is fifteen points on a phone, and a number under every one
+    /// of them would be a wall of digits overlapping each other.
     private func visibleNumbers(origin: CGFloat, pitch: CGFloat, width: CGFloat) -> [Int] {
         guard pitch > 0, numberEvery > 0 else { return [] }
 
-        let first = max(minuteScale.range.lowerBound, Int(floor((-origin) / pitch)))
-        let last = min(minuteScale.range.upperBound, Int(ceil((width - origin) / pitch)))
-        guard first <= last else { return [] }
+        let minutes = visibleMinutes(origin: origin, pitch: pitch, width: width)
+        let first = Int(minutes.lowerBound.rounded(.down))
+        let last = Int(minutes.upperBound.rounded(.up))
 
-        let start = ((first + numberEvery - 1) / numberEvery) * numberEvery
-        guard start <= last else { return [] }
-        return Array(stride(from: start, through: last, by: numberEvery))
+        var values: [Int] = []
+        let interval = numberInterval(at: first)
+        var value = ((first + interval - 1) / interval) * interval
+        while value <= last {
+            values.append(value)
+            value += numberInterval(at: value)
+        }
+        return values
+    }
+
+    /// How often a number is printed at a value.
+    ///
+    /// `numberEvery` — the export's density — wherever the detents are whole
+    /// minutes, which is the whole of the scale the export drew. Where they are
+    /// coarser the row prints whole hours instead.
+    ///
+    /// Two reasons, and the geometric one is the one that forces it. A slot is
+    /// a detent, so above two hours fifteen minutes is three slots: on a phone
+    /// that is sixteen points between labels that are thirty-five wide, which
+    /// is a smear rather than a row. An hour is twelve slots — within a slot or
+    /// three of the density the export draws, so the row does not visibly
+    /// change rhythm at the boundary.
+    ///
+    /// The other is that it is the rule the row already follows. A number
+    /// switches to `h:mm` at an hour because past that point a duration is read
+    /// in hours rather than in minutes; a scale whose detents have stopped
+    /// being minutes is that same reading taken one step further, so it is
+    /// numbered in the unit it is read in.
+    /// Static and `nonisolated` so the rule can be asked without a view: it is
+    /// pure arithmetic over two values, and a row that becomes a smear at one
+    /// end of one scale is not something a rendered check would catch reliably.
+    nonisolated static func numberInterval(
+        on minuteScale: LoopMinuteScale,
+        every numberEvery: Int,
+        at minutes: Int
+    ) -> Int {
+        minuteScale.step(at: minutes) == 1 ? numberEvery : minutesInAnHour
+    }
+
+    private func numberInterval(at minutes: Int) -> Int {
+        Self.numberInterval(on: minuteScale, every: numberEvery, at: minutes)
     }
 
     /// What a number under the scale reads.
@@ -355,7 +436,8 @@ struct ScaleSlider: View {
     /// `1755` under a tick is a number nobody converts in their head. The
     /// switch happens at the hour rather than at the two-hour step change
     /// because it is about reading a duration, not about how far apart the
-    /// detents are.
+    /// detents are. How *often* a number is printed is the other question and
+    /// does turn on the detents; see `numberInterval(at:)`.
     private static func numberLabel(minutes: Int) -> String {
         minutes < minutesInAnHour
             ? String(minutes)
@@ -409,8 +491,9 @@ struct ScaleSlider: View {
                 // after the hand has left is one you have to correct afterwards,
                 // and this one is touched for every timer anybody sets.
                 //
-                // The cost is honest — thirty hours is a long way at the drawn
-                // density — but distance is not paid for by moving on its own.
+                // The distance is paid for by making every point of it buy a
+                // value — a slot is a detent — rather than by the control
+                // carrying on without a hand on it.
                 isDragging = false
 
                 let landed = move(translation: gesture.translation.width, pitch: pitch)
@@ -457,7 +540,7 @@ struct ScaleSlider: View {
         transaction.disablesAnimations = true
         withTransaction(transaction) { scrollMinutes = visible }
 
-        gestureOrigin = visible
+        gestureOriginDetents = minuteScale.detentOffset(of: visible)
         // Landing on the scale is not choosing the detent under it, so the
         // detent the finger arrives on is recorded rather than announced.
         feedback.begin(at: minuteScale.nearest(to: visible))
@@ -469,21 +552,27 @@ struct ScaleSlider: View {
     ///
     /// Dragging left moves the scale left, which brings larger values under the
     /// marker — the direction a physical dial under a fingertip would turn.
+    ///
+    /// Counted in detents throughout and converted to minutes at the end: a
+    /// point of finger travel is a fixed fraction of a slot, and a slot is a
+    /// selectable value. That is the whole of the change — one pitch of drag
+    /// buys one detent above two hours as it always did below it.
     @discardableResult
     private func move(translation: CGFloat, pitch: CGFloat) -> Double {
-        let reached = gestureOrigin - Double(translation / pitch)
-        let held = bounded(reached)
+        let reached = gestureOriginDetents - Double(translation / pitch)
+        let held = boundedDetents(reached)
 
         // Past an end the finger keeps travelling and the scale cannot follow.
         // Moving the origin by exactly that overshoot rather than remembering
         // it is what makes the way back immediate: without this, a finger that
         // has run a screen past zero has to give every point of it back before
         // the scale moves at all, which reads as the control fighting the hand.
-        gestureOrigin += held - reached
+        gestureOriginDetents += held - reached
 
-        scrollMinutes = held
-        settle(on: minuteScale.nearest(to: held))
-        return held
+        let minutes = minuteScale.minutes(atDetentOffset: held)
+        scrollMinutes = minutes
+        settle(on: minuteScale.nearest(to: minutes))
+        return minutes
     }
 
     /// Moves the value to a detent, with the one tap of feedback that detent is
@@ -513,14 +602,21 @@ struct ScaleSlider: View {
         if feedback.arrived(at: value) { LoopHaptics.detent() }
     }
 
-    /// Holds the scale inside its range.
+    /// Holds the scale inside its range, in detents.
     ///
     /// Without this the first and last values could be dragged off the centre
     /// and the scale would show blank under the marker. With it, either end
     /// stops under the marker with half a screen of nothing beyond it, which is
     /// what a fixed centre needs at the edges.
-    private func bounded(_ value: Double) -> Double {
-        min(Double(minuteScale.range.upperBound), max(Double(minuteScale.range.lowerBound), value))
+    ///
+    /// Clamped here rather than after the conversion because the overshoot the
+    /// caller gives back has to be in the units it travelled in; a clamp in
+    /// minutes would hand back five times too little above two hours and the
+    /// scale would lag the finger on the way off an end.
+    private func boundedDetents(_ value: Double) -> Double {
+        let lower = minuteScale.detentOffset(of: Double(minuteScale.range.lowerBound))
+        let upper = minuteScale.detentOffset(of: Double(minuteScale.range.upperBound))
+        return min(upper, max(lower, value))
     }
 
     /// The export prints a leading zero — "05 min", not "5 min" — so the value
