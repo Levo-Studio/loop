@@ -413,6 +413,7 @@ struct ScaleSlider: View {
     /// in hours rather than in minutes; a scale whose detents have stopped
     /// being minutes is that same reading taken one step further, so it is
     /// numbered in the unit it is read in.
+    ///
     /// Static and `nonisolated` so the rule can be asked without a view: it is
     /// pure arithmetic over two values, and a row that becomes a smear at one
     /// end of one scale is not something a rendered check would catch reliably.
