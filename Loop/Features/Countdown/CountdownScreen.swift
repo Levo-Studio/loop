@@ -312,7 +312,11 @@ struct CountdownScreen: View {
                     // one tone that sounds once and stops is a notification,
                     // and a countdown set to run out at a particular moment
                     // has to still be asking when someone reaches the room.
-                    // It rings until the finished state is dismissed.
+                    // It rings until the finished state is dismissed, or
+                    // for a quarter of an hour, whichever comes first — and
+                    // going quiet on the limit changes nothing here: the
+                    // state is still finished and still waiting to be
+                    // acknowledged.
                     LoopAlarm.start(enabled: settings.sound)
                 }
                 return
