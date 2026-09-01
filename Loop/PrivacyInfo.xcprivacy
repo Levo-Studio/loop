@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The privacy manifest. Apple has rejected uploads without one since
+	     1 May 2024 when the binary touches a "required reason" API, and
+	     `UserDefaults` is one of them.
+
+	     It sits at the root of the Loop folder because Apple requires it at
+	     the root of the built bundle (`Loop.app/PrivacyInfo.xcprivacy`), and
+	     the folder is a synchronized group whose top level maps to exactly
+	     that. It joins the target on its own — no project.pbxproj entry, and
+	     nothing to re-add when the file moves.
+
+	     All four top-level keys are present even though three of them are
+	     empty. An absent key is indistinguishable from an oversight, and this
+	     is the one file in the repository whose job is to state, on the
+	     record, what Loop does not do. -->
+
+	<!-- Loop has no network code, no analytics, no identifiers and no
+	     advertising SDK, so there is nothing that could constitute tracking as
+	     the App Store defines it. The domain list is empty because it must be:
+	     Apple only permits entries here when NSPrivacyTracking is true. -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<!-- Nothing is collected. Everything Loop stores — the seconds toggle, the
+	     accent, the running timer's end instant — stays in the app's own
+	     defaults on the device and never leaves it. "Collected" in Apple's
+	     sense means transmitted off-device, and Loop has no code that could
+	     transmit anything. -->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<!-- The one required reason API Loop uses. `LoopSettings` and
+	     `TimerStateStore` both read and write `UserDefaults`, and both use
+	     only the app's own suite: no app group, no shared container, nothing
+	     written by another app or by the system.
+
+	     CA92.1 is the reason code for exactly that case — "access user
+	     defaults to read and write information that is only accessible to the
+	     app itself". 1C8F.1 (App Group) would be wrong here because Loop has
+	     no app group; the widget extension is fed through ActivityKit, not
+	     through shared defaults. If a shared suite is ever introduced, this
+	     code changes with it. -->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
