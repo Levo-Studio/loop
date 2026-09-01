@@ -4,9 +4,20 @@
 <dict>
 	<!-- Everything Xcode can derive from build settings stays in the build
 	     settings; GENERATE_INFOPLIST_FILE merges those keys on top of this
-	     file. It exists only for UIAppFonts, which has no INFOPLIST_KEY_
-	     counterpart. A synchronized resource folder flattens into the bundle
-	     root, so the entries carry no directory. -->
+	     file. So this file holds only the keys that have no INFOPLIST_KEY_
+	     counterpart — currently NSSupportsLiveActivities and UIAppFonts.
+
+	     Export compliance is the counter-example and deliberately not here:
+	     ITSAppUsesNonExemptEncryption does have a counterpart, and it is set
+	     to NO as INFOPLIST_KEY_ITSAppUsesNonExemptEncryption on the Loop
+	     target. Xcode types that setting as a Boolean, so the generated key is
+	     a real <false/> rather than the string "NO" an unknown key would
+	     produce. Loop has no network code and adds no encryption of its own,
+	     which is what makes the answer NO; without the key App Store Connect
+	     asks the same question by hand on every single upload.
+
+	     A synchronized resource folder flattens into the bundle root, so the
+	     UIAppFonts entries carry no directory. -->
 	<!-- Live Activities are opt-in per app, and the key belongs to the app
 	     rather than to the widget extension: ActivityKit reads it when the app
 	     asks for an Activity. It is a declaration, not a capability — no
