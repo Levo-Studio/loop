@@ -39,8 +39,8 @@ buttons to switch modes — five dots at the bottom and that is the navigation.
 1. **Clock** — the current time, seconds optional, weekday and date underneath.
 2. **Count-up** — a stopwatch. Idle, running, paused. No fill, because there is
    no total duration and therefore no progress to show.
-3. **Countdown** — one duration, set on a scale from 0 to 60 minutes, counted
-   down.
+3. **Countdown** — one duration, set on a scale that scrolls from zero to
+   thirty hours, counted down.
 4. **Interval** — focus and break blocks over a number of rounds, with a status
    pill that says which block you are in and which round of how many.
 5. **Settings** — the seconds toggle and four accents: Petrol, Amber, Lilac,
