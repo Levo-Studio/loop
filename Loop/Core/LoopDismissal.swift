@@ -16,8 +16,11 @@ import Foundation
 ///   set to run out at a particular moment, where the whole point is that it
 ///   does not stop demanding attention until someone acknowledges it. That is
 ///   `swipeToDismiss`, and it is on by default. It is literally true now: the
-///   finished state rings until it is dismissed, and the dismissal is a slide
-///   across a drawn track rather than a gesture on the page.
+///   finished state rings, and the dismissal is a slide across a drawn track
+///   rather than a gesture on the page. The ringing gives up after a quarter
+///   of an hour, but this rule does not — a state nobody was there to hear is
+///   still a state waiting to be acknowledged, and the slide is still the way
+///   out of it.
 /// - **The interval never requires a swipe.** Not at a block boundary and not
 ///   at the end. A boundary plays its tone and the run continues on its own;
 ///   making someone wipe the screen to get their break, or to get back to work,

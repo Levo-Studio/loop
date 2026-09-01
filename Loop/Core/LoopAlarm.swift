@@ -2,14 +2,22 @@ import UIKit
 
 // MARK: - Alarm
 
-/// The finished countdown's cue, sounded over and over until it is dismissed.
+/// The finished countdown's cue, sounded over and over until it is dismissed
+/// or until it has been ringing for a quarter of an hour.
 ///
 /// A single tone is a notification; an alarm is a tone that keeps asking. The
 /// countdown is the one timer in Loop that is set to run out at a particular
 /// moment, and the moment it exists for is the one where nobody is looking at
 /// the screen — a duration that finishes in another room has to still be
 /// audible when you get there. `LoopSounds` plays a cue; this decides how often
-/// to ask it to.
+/// to ask it to, and for how long.
+///
+/// **Going quiet is not the same as being dismissed, and changes nothing on
+/// screen.** The countdown is still finished, the slide-to-stop control is
+/// still there and still the only way out of the state. Someone who comes back
+/// twenty minutes late finds the page they would have found at one minute,
+/// silent. The alarm is the part that gives up; the acknowledgement it was
+/// asking for is still owed.
 ///
 /// It owns no audio of its own. Every repetition goes through
 /// `LoopSounds.play(_:enabled:)` exactly as a one-off cue does, which is what
@@ -41,6 +49,9 @@ enum LoopAlarm {
         /// next.
         let gap: TimeInterval
 
+        /// How long the alarm goes on ringing before it gives up.
+        let limit: TimeInterval
+
         /// The finished countdown's alarm.
         ///
         /// The gap is a **cadence, not a design value**: nothing about it is
@@ -60,7 +71,28 @@ enum LoopAlarm {
         /// a separate event and short enough that the pause is never mistaken
         /// for the alarm having given up — which is the failure at the other
         /// end, and the one that gets a timer ignored.
-        static let finished = Schedule(cue: .timerFinished, gap: 1.25)
+        ///
+        /// **The limit is fifteen minutes, and it is borrowed rather than
+        /// chosen.** The brief for this feature was that the countdown behaves
+        /// like the iOS timer, and the iOS timer stops sounding on its own
+        /// after about a quarter of an hour rather than ringing until somebody
+        /// arrives. Matching it is the whole point: a user who has met the
+        /// system's alarm knows how long this one will go on without being
+        /// told, and a number picked here instead would be a second answer to a
+        /// question the platform has already answered.
+        ///
+        /// Two honest notes on the figure. Apple documents no such interval —
+        /// it is what the system timer is observed to do, not a published
+        /// contract — so this is a deliberate imitation of behaviour rather
+        /// than a value read off a spec. And like the gap it is a **cadence,
+        /// not a design value**: nothing about it is drawn and the export
+        /// cannot contain it.
+        ///
+        /// What it is for is the case nobody is present for. An alarm with no
+        /// one to hear it has stopped being an alarm and become a phone lying
+        /// face up on a desk, ringing and ducking whatever else that phone was
+        /// playing, for as long as the battery lasts.
+        static let finished = Schedule(cue: .timerFinished, gap: 1.25, limit: 15 * 60)
 
         /// One sounding plus the silence after it.
         var period: TimeInterval { cue.tone.duration + gap }
@@ -73,6 +105,18 @@ enum LoopAlarm {
         /// itself every three seconds turns a steady alarm into a drifting one.
         func due(repetition: Int, from start: Date) -> Date {
             start.addingTimeInterval(period * Double(repetition))
+        }
+
+        /// Whether the sounding due at `due` falls past the limit — that is,
+        /// whether the alarm has rung for long enough and should give up.
+        ///
+        /// Measured from `start` and nothing else. `due` is itself derived from
+        /// `start`, so the answer cannot drift with the repetitions the way a
+        /// countdown of soundings would: it is the same subtraction on the
+        /// first repetition as on the three-hundredth, and a wake that arrived
+        /// late does not buy the alarm extra time.
+        func isOver(due: Date, from start: Date) -> Bool {
+            due.timeIntervalSince(start) > limit
         }
 
         /// Whether a wake that arrived at `now` for a sounding due at `due` is
@@ -122,13 +166,31 @@ enum LoopAlarm {
                 repetition += 1
 
                 let due = schedule.due(repetition: repetition, from: begun)
+
+                // The quarter of an hour is up and the sounding that just
+                // started is the last one. It is left to ring out rather than
+                // cut short: the alarm is giving up, which is not the same
+                // event as being dismissed and must not sound like it.
+                guard !schedule.isOver(due: due, from: begun) else { break }
+
                 let wait = due.timeIntervalSinceNow
                 if wait > 0 {
                     try? await Task.sleep(for: .seconds(wait))
                 }
 
-                guard !Task.isCancelled, !schedule.isStale(due: due, at: .now) else { return }
+                guard !Task.isCancelled, !schedule.isStale(due: due, at: .now) else { break }
             }
+
+            // The alarm ended itself — it ran out its limit, or came back from
+            // a suspension too late to be worth sounding. Either way nothing
+            // is holding the slot any more, so it is given up here rather than
+            // left pointing at a task that has finished.
+            //
+            // **Only when this loop was not cancelled.** A cancelled loop was
+            // stopped or replaced by someone who already owns the slot, and
+            // clearing it here would drop a run that has become somebody
+            // else's — including the one a `start()` had just put there.
+            if !Task.isCancelled { repeating = nil }
         }
     }
 
