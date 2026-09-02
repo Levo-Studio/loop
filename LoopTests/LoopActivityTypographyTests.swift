@@ -48,17 +48,29 @@ struct LoopActivityTypographyTests {
         }
     }
 
+    /// Rounding, in points over a whole string. The reservation is arithmetic
+    /// on a nominal advance and the drawn width comes back out of Core Text,
+    /// so the two are allowed to disagree by a fraction of a point and by
+    /// nothing more.
+    private static let measurementTolerance: CGFloat = 0.1
+
     @Test("The reservation is the digits' width, not a slot the island has to stretch for")
     func theReservationIsNoWiderThanTheDigits() throws {
-        // A point per character of slack: the role's tracking is negative and
-        // the reservation does not subtract it, so the glyphs come out a shade
-        // narrower than the room by construction. Anything past that is width
-        // the island would be padded out with.
+        // The reservation is the font's own advance times the size; the drawn
+        // string is that same advance with the role's negative tracking taken
+        // off each character. So the whole of the slack the reservation may
+        // carry is the tracking it deliberately does not subtract, and the
+        // bound is that amount rather than a round number that happens to sit
+        // above it. Anything past it is an advance wider than the face
+        // actually has — width the island would be padded out with.
+        let tracking = abs(LoopActivityTypography.compactTime.tracking)
+
         for characters in [5, 7, 8] {
             let reserved = LoopActivityTypography.compactTimeWidth(characters: characters)
             let drawn = try drawnWidth(String(repeating: "0", count: characters))
+            let slack = reserved - drawn
 
-            #expect(reserved - drawn < CGFloat(characters))
+            #expect(slack <= CGFloat(characters) * tracking + Self.measurementTolerance)
         }
     }
 }
