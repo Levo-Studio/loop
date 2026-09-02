@@ -19,31 +19,47 @@ struct LoopActivityWidget: Widget {
             let state = context.shownState
 
             return DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
+                // The bottom region, and nothing either side of the camera.
+                //
+                // The leading and trailing regions are the strips beside the
+                // camera and each is about a quarter of the island's width. The
+                // pill is wider than that on a countdown and more than twice it
+                // on an interval, so the region it was in broke "COUNTDOWN"
+                // across two lines mid-word. A line limit would have hidden
+                // that rather than fixed it: the content is the width it is,
+                // and the bottom region is the only one that has that width.
+                DynamicIslandExpandedRegion(.bottom) {
                     LoopActivitySurface(accentID: state.accentID) {
-                        LoopActivityStatus(state: state)
-                    }
-                }
-
-                DynamicIslandExpandedRegion(.trailing) {
-                    LoopActivitySurface(accentID: state.accentID) {
-                        LoopActivityTime(state: state, style: LoopActivityTypography.time)
+                        // The pill stays on the countdown as well as on the
+                        // interval. The expanded island carries no app name of
+                        // its own, so on a countdown — which has no round for
+                        // the pill to carry either — dropping it would leave
+                        // digits that name neither the app nor the timer they
+                        // belong to.
+                        LoopActivityBody(state: state)
                     }
                 }
             } compactLeading: {
                 LoopActivitySurface(accentID: state.accentID) {
-                    LoopActivityMark()
+                    LoopActivityMark(size: LoopActivityMetrics.compactMarkSize)
                 }
             } compactTrailing: {
                 LoopActivitySurface(accentID: state.accentID) {
-                    LoopActivityTime(state: state, style: LoopActivityTypography.compactTime)
+                    LoopActivityTime(
+                        state: state,
+                        style: LoopActivityTypography.compactTime,
+                        // Without this the slot asks for a width unrelated to
+                        // the digits and the island stretches across the status
+                        // bar. See the function.
+                        width: LoopActivityTypography.compactTimeWidth(characters: state.timeCharacters)
+                    )
                 }
             } minimal: {
                 // The minimal presentation is a circle beside another app's, so
                 // it gets the accent mark rather than digits nobody could read
                 // at that size.
                 LoopActivitySurface(accentID: state.accentID) {
-                    LoopActivityMark()
+                    LoopActivityMark(size: LoopActivityMetrics.minimalMarkSize)
                 }
             }
             .keylineTint(LoopPalette(accent: LoopAccent(rawValue: state.accentID) ?? .default, scheme: .dark).marker)
@@ -82,15 +98,10 @@ private struct LockScreenBody: View {
     @Environment(\.loopPalette) private var palette
 
     var body: some View {
-        VStack(alignment: .leading, spacing: LoopActivityMetrics.stackSpacing) {
-            LoopActivityStatus(state: state)
-
-            LoopActivityTime(state: state, style: LoopActivityTypography.time)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(LoopActivityMetrics.cardPadding)
-        .activityBackgroundTint(palette.background)
-        .activitySystemActionForegroundColor(palette.inkOnBackground.base)
+        LoopActivityBody(state: state)
+            .padding(LoopActivityMetrics.cardPadding)
+            .activityBackgroundTint(palette.background)
+            .activitySystemActionForegroundColor(palette.inkOnBackground.base)
     }
 }
 

@@ -177,5 +177,29 @@ nonisolated struct LoopActivityAttributes: ActivityAttributes {
         /// which the scale allows — prints `30:00:00`. That was checked with an
         /// in-process `ImageRenderer` render of the text, not on a lock screen.
         var showsHours: Bool { duration >= 3_600 }
+
+        /// How many characters the digits can be at their longest.
+        ///
+        /// The compact Dynamic Island has to reserve room for the time
+        /// *before* it exists: iOS draws the digits itself inside the window,
+        /// so there is no string for a layout to measure. Left unreserved, the
+        /// text asks for an ideal width unrelated to what it prints and the
+        /// island stretches across the status bar — see
+        /// `LoopActivityTypography.compactTimeWidth(characters:)`.
+        ///
+        /// Taken from the block's own length rather than from what is left of
+        /// it, and for the same reason `showsHours` is: the value has to hold
+        /// for the whole block, because the app is not awake to change it. A
+        /// block that starts at `1:29:59` therefore keeps room for seven
+        /// characters after it narrows to `59:59`, which is a still island
+        /// rather than one that jumps a character narrower at the hour mark.
+        var timeCharacters: Int {
+            // "MM:SS" under an hour, "H:MM:SS" over it — with as many hour
+            // digits as the block actually needs, so a 90-minute interval does
+            // not reserve the width a thirty-hour countdown does.
+            guard showsHours else { return 5 }
+
+            return String(Int(duration / 3_600)).count + 6
+        }
     }
 }

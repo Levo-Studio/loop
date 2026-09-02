@@ -32,7 +32,26 @@ enum LoopActivityTypography {
     /// engine can produce, at the size the shortest one is drawn.
     static let timeMinimumScale: CGFloat = 5.0 / 8.0
 
-    /// The time in the compact and minimal Dynamic Island, where the strip
-    /// beside the camera is all the room there is.
+    /// The time in the compact Dynamic Island, where the strip beside the
+    /// camera is all the room there is.
     static let compactTime = LoopTextStyle(weight: .regular, size: 14, trackingEm: timeTrackingEm)
+
+    /// The room the compact time is given, for a string of `characters`.
+    ///
+    /// **This is what keeps the island the size of an island.** A compact slot
+    /// sizes to its content, and `Text(timerInterval:)` has no content to size
+    /// to — iOS renders the digits itself, so SwiftUI is measuring a text it
+    /// cannot see and asks for far more width than the digits use. The result
+    /// was the whole reason this function exists: a black pill across most of
+    /// the status bar with `4:48` adrift in the middle of it.
+    ///
+    /// Reserved rather than measured, because there is nothing to measure. The
+    /// count comes from
+    /// `LoopActivityAttributes.ContentState.timeCharacters`, and the width is
+    /// the font's own advance times the size — no tracking subtracted, so the
+    /// negative tracking of the role leaves a hair of slack rather than
+    /// clipping the last digit.
+    static func compactTimeWidth(characters: Int) -> CGFloat {
+        CGFloat(characters) * compactTime.size * LoopFonts.advanceEm
+    }
 }

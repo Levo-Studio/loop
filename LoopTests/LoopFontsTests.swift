@@ -34,4 +34,25 @@ struct LoopFontsTests {
             #expect(font?.fontName == weight.postScriptName)
         }
     }
+
+    /// `LoopFonts.advanceEm` is what the compact Dynamic Island reserves room
+    /// with, and it reserves it for digits iOS has not drawn yet. Nothing at
+    /// runtime would notice the constant drifting from the face — the island
+    /// would simply start clipping a digit or padding itself out — so the two
+    /// are held together here.
+    @Test("One glyph is as wide as the layout is told it is, in every weight")
+    func theAdvanceMatchesTheFace() throws {
+        let size: CGFloat = 100
+
+        for weight in [LoopFonts.Weight.light, .regular, .medium] {
+            let font = try #require(UIFont(name: weight.postScriptName, size: size))
+
+            // Monospaced, so a digit, a colon and a letter all measure the
+            // same — and that is the assumption the reservation rests on.
+            for glyph in ["0", ":", "M"] {
+                let width = NSAttributedString(string: glyph, attributes: [.font: font]).size().width
+                #expect(abs(width - size * LoopFonts.advanceEm) < 0.01)
+            }
+        }
+    }
 }

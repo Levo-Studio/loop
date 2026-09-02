@@ -16,4 +16,28 @@ enum LoopActivityMetrics {
 
     /// Gap between the pill and the time.
     static let stackSpacing: CGFloat = 8
+
+    // MARK: - The accent mark
+
+    /// The accent dot in the compact Dynamic Island.
+    ///
+    /// The pill draws a 6 pt dot beside an 11 pt label, and it is that
+    /// proportion — not the 6 pt — that makes it read as a mark rather than a
+    /// bullet. The compact slot sets the time at 14 pt, so the dot follows it
+    /// by the same ratio instead of carrying the pill's absolute value onto a
+    /// surface the export never drew.
+    static let compactMarkSize: CGFloat = 14 * markRatio
+
+    /// The accent dot in the minimal Dynamic Island.
+    ///
+    /// The minimal presentation is a circle of roughly 22 pt that Loop shares
+    /// with another app's, and it has no text for the dot to be proportional
+    /// to. Half the circle is the size that reads as a mark inside it: smaller
+    /// is a speck at a glance, and larger fills the region into a solid disc
+    /// that looks like the region itself rather than like something Loop drew.
+    static let minimalMarkSize: CGFloat = 11
+
+    /// `LoopMetrics.pillDotSize` over `LoopTypography.statusPill`'s size, both
+    /// at the phone's scale — the one place the two are related.
+    private static let markRatio: CGFloat = 6.0 / 11.0
 }
