@@ -52,8 +52,41 @@ struct NavigationStripTests {
         let strip = strip(index: 0, travel: 0.25)
 
         #expect(strip.position == 0.25)
-        #expect(strip.weight(of: 0) == 0.75)
-        #expect(strip.weight(of: 1) == 0.25)
+        #expect(strip.weight(of: 0) < 1)
+        #expect(strip.weight(of: 1) > 0)
+    }
+
+    @Test("The row keeps its answer through most of the swipe")
+    func easedRatherThanLinear() {
+        // Straight off the offset a quarter of a swipe would put the dot being
+        // left at 0.75 and the one arriving at 0.25 — and the middle third at
+        // roughly 0.6 each, where neither reads as the current page. Eased, the
+        // dot being left is still unambiguous a quarter of the way in.
+        let quarter = strip(index: 0, travel: 0.25)
+
+        #expect(quarter.weight(of: 0) > 0.8)
+        #expect(quarter.weight(of: 1) < 0.2)
+
+        // And it still moves from the first moment of the swipe: nothing waits
+        // for a halfway mark.
+        let nudged = strip(index: 0, travel: 0.05)
+
+        #expect(nudged.weight(of: 0) < 1)
+        #expect(nudged.weight(of: 1) > 0)
+    }
+
+    @Test("The active state only ever moves one way through a swipe")
+    func monotonic() {
+        var previous = strip(index: 0, travel: 0).weight(of: 1)
+
+        for step in 1...20 {
+            let weight = strip(index: 0, travel: CGFloat(step) / 20).weight(of: 1)
+
+            #expect(weight >= previous)
+            previous = weight
+        }
+
+        #expect(previous == 1)
     }
 
     @Test("Every page reads the same position, so the two rows on screen agree")
