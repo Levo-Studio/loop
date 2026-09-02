@@ -82,12 +82,17 @@ struct PageScaffold<Status: View, Content: View, Controls: View>: View {
                 controls()
                     .frame(maxWidth: .infinity)
 
-                NavigationDots(count: LoopPage.allCases.count, currentIndex: page.rawValue)
+                NavigationDots(count: LoopPage.allCases.count, index: page.rawValue)
             }
             .frame(maxWidth: metrics.contentColumnWidth ?? .infinity)
             .frame(maxWidth: .infinity)
             .padding(pagePadding)
         }
+        // The dots hold still while the pages slide under them, and the page is
+        // the frame they hold still against. It is named here because this is
+        // the view whose bounds are exactly one page — the scroll view's own
+        // coordinate space knows where the window is but not where a page ends.
+        .coordinateSpace(NavigationDots.pageSpace)
     }
 
     /// The design padding, widened where a device's safe area needs more.
