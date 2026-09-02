@@ -29,17 +29,9 @@ struct RootShell: View {
     /// The page the user chose, and the only thing that decides where the strip
     /// stands after the geometry moves.
     ///
-    /// Deliberately not the scroll view's own position. A rotation resizes every
-    /// page, and the scroll view settles the offset inside whatever content it
-    /// has at that moment — which is not a scroll, so nothing puts the strip
-    /// back afterwards and the user rotates the phone onto a screen they never
-    /// asked for. Measured on an iPhone 17 Pro from the interval page: portrait
-    /// offset 1206 of 2010, and after a turn to landscape and back, 804 — the
-    /// countdown page.
-    ///
-    /// Keeping the intent separate is what makes it recoverable: only a settled
-    /// gesture writes this, and a change of size re-asserts it.
-    @State private var page: LoopPage = .clock
+    /// Deliberately not the scroll view's own position — `LoopPaging` holds the
+    /// reason and the rule, so that both can be asked without a device to turn.
+    @State private var paging = LoopPaging()
 
     /// The scroll view's position. Imperative on purpose — re-asserting the
     /// page after a resize means scrolling to an id the binding already holds,
@@ -65,7 +57,7 @@ struct RootShell: View {
                 // nobody asked for, so it is also the moment the chosen page is
                 // put back. Same page, new geometry: the scroll is a jump and
                 // there is nothing to animate.
-                .onChange(of: size) { position.scrollTo(id: page) }
+                .onChange(of: size) { position.scrollTo(id: paging.destinationAfterResize) }
                 .environment(\.loopMetrics, metrics)
                 .environment(\.loopSafeAreaInsets, insets)
                 .environment(\.loopTypography, LoopTypography(scale: metrics.scale, isLandscape: metrics.isLandscape))
@@ -138,12 +130,10 @@ struct RootShell: View {
         .scrollTargetBehavior(.paging)
         .scrollIndicators(.hidden)
         .scrollPosition($position)
-        // Only a gesture that has come to rest counts as a choice. A clamp
-        // during a resize moves the strip without ever going through a scroll
-        // phase, which is exactly the difference this is here to keep.
+        // The only place the chosen page is ever written. Which movements of
+        // the strip count as a choice is `LoopPaging`'s answer, not this view's.
         .onScrollPhaseChange { _, phase in
-            guard phase == .idle, let landed = position.viewID(type: LoopPage.self) else { return }
-            page = landed
+            paging.scrollPhaseChanged(to: phase, standingOn: position.viewID(type: LoopPage.self))
         }
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
         // Only the scroll view goes edge to edge. The reader above it stays
