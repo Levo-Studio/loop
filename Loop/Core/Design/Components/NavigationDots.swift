@@ -71,8 +71,21 @@ nonisolated struct NavigationStrip: Equatable, Sendable {
     /// The weights of two neighbours always add to one, which is what keeps the
     /// row exactly as wide mid-swipe as the export draws it at rest: the size a
     /// dot gains is the size the one beside it gives up.
+    ///
+    /// **The share is eased, and that is the whole difference between an
+    /// indicator and a smear.** Straight off the scroll offset, the middle
+    /// third of every swipe puts two dots at around 60 % — neither of them
+    /// readable as the current page, on the one row that is the app's only
+    /// answer to where you are. Eased, the row holds its answer for most of the
+    /// gesture and changes it quickly through the middle, while still moving at
+    /// every point of the swipe rather than flipping once at the halfway mark.
+    ///
+    /// Smoothstep specifically, because it is symmetric about its midpoint:
+    /// `f(t) + f(1 − t)` is exactly 1, so easing costs nothing of the width
+    /// above and every resting value stays the export's.
     func weight(of dot: Int) -> Double {
-        max(0, 1 - abs(position - Double(dot)))
+        let share = max(0, 1 - abs(position - Double(dot)))
+        return share * share * (3 - 2 * share)
     }
 }
 
