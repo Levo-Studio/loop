@@ -463,7 +463,11 @@ struct ScaleSlider: View {
     /// Not a design value and not a limit: it is the point at which a duration
     /// stops being said in minutes in ordinary speech, which is why the header
     /// and the row share it rather than each carrying a literal.
-    private static let minutesInAnHour = 60
+    ///
+    /// `nonisolated` because sixty minutes are an hour whoever is asking. It is
+    /// a fact about the calendar, not state of this view, and the numbering rule
+    /// above is `nonisolated` precisely so it can be asked without one.
+    private nonisolated static let minutesInAnHour = 60
 
     /// What VoiceOver reads for the current value.
     ///
