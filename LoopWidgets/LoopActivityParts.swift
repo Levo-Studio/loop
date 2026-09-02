@@ -16,6 +16,14 @@ struct LoopActivityTime: View {
     let state: LoopActivityAttributes.ContentState
     let style: LoopTextStyle
 
+    /// The room to reserve, or `nil` where the surface gives the text a width
+    /// of its own.
+    ///
+    /// Only the compact Dynamic Island passes one, and it has to: a compact
+    /// slot sizes to its content, and this text has none to size to. See
+    /// `LoopActivityTypography.compactTimeWidth(characters:)`.
+    var width: CGFloat?
+
     var body: some View {
         Text(
             timerInterval: state.window,
@@ -27,6 +35,7 @@ struct LoopActivityTime: View {
         .monospacedDigit()
         .lineLimit(1)
         .minimumScaleFactor(LoopActivityTypography.timeMinimumScale)
+        .frame(width: width)
     }
 }
 
@@ -81,17 +90,45 @@ struct LoopActivityStatus: View {
 
 // MARK: - Accent mark
 
-/// The pill's dot on its own, for the compact Dynamic Island where there is no
-/// room for the pill. It names the accent, which is the one thing the compact
-/// presentation can carry of Loop's look.
+/// The pill's dot on its own, for the compact and minimal Dynamic Island where
+/// there is no room for the pill. It names the accent, which is the one thing
+/// those two presentations can carry of Loop's look.
+///
+/// The size is given rather than taken from `LoopMetrics.pillDotSize`: that
+/// value is measured against the pill's 11 pt label, and neither island slot
+/// has one. See `LoopActivityMetrics`.
 struct LoopActivityMark: View {
 
+    let size: CGFloat
+
     @Environment(\.loopPalette) private var palette
-    @Environment(\.loopMetrics) private var metrics
 
     var body: some View {
         Circle()
             .fill(palette.marker)
-            .frame(width: metrics.pillDotSize, height: metrics.pillDotSize)
+            .frame(width: size, height: size)
+    }
+}
+
+// MARK: - Body
+
+/// The pill above the time: the app's timer page, with everything this surface
+/// cannot carry taken out — the rising area does not come with them, see the
+/// note above.
+///
+/// Shared by the lock screen and the expanded Dynamic Island, which draw the
+/// same two things at the same sizes. One view rather than two so they cannot
+/// drift apart.
+struct LoopActivityBody: View {
+
+    let state: LoopActivityAttributes.ContentState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: LoopActivityMetrics.stackSpacing) {
+            LoopActivityStatus(state: state)
+
+            LoopActivityTime(state: state, style: LoopActivityTypography.time)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

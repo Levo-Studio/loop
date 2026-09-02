@@ -26,6 +26,17 @@ nonisolated enum LoopFonts {
         }
     }
 
+    /// The advance width of one glyph, as a fraction of the point size.
+    ///
+    /// IBM Plex Mono is monospaced: every glyph — digit, colon, letter —
+    /// occupies 600 of the font's 1000 units per em, so a string's width is its
+    /// character count times this. It is written down here rather than measured
+    /// at a call site because a layout that has to reserve room for a string
+    /// nobody has drawn yet — the compact Dynamic Island, whose digits iOS
+    /// renders on its own — has no text to measure. `LoopFontsTests` checks it
+    /// against the face itself, so a font swap cannot quietly invalidate it.
+    static let advanceEm: CGFloat = 0.6
+
     /// A font at an exact point size.
     ///
     /// `fixedSize` rather than `size`, so Dynamic Type does not rescale it. The

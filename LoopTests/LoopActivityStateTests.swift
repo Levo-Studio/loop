@@ -149,4 +149,20 @@ struct LoopActivityStateTests {
         #expect(state(remaining: 60, duration: 3_600).showsHours)
         #expect(!state(remaining: 60, duration: 1_500).showsHours)
     }
+
+    // MARK: - Reserving room for the digits
+
+    @Test("The longest string a block can print is counted from the block, not from what is left")
+    func theDigitsAreCountedFromTheBlock() {
+        // "25:00"
+        #expect(state(remaining: 60, duration: 1_500).timeCharacters == 5)
+
+        // "1:00:00", and still seven once it has narrowed to "59:59" — the
+        // island holds its width rather than jumping a character at the hour.
+        #expect(state(remaining: 60, duration: 3_600).timeCharacters == 7)
+        #expect(state(remaining: 60, duration: 5_400).timeCharacters == 7)
+
+        // "30:00:00", the top of the countdown scale.
+        #expect(state(remaining: 60, duration: 30 * 3_600).timeCharacters == 8)
+    }
 }
