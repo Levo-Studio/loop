@@ -23,10 +23,12 @@ enum LoopActivityMetrics {
     ///
     /// The pill draws a 6 pt dot beside an 11 pt label, and it is that
     /// proportion — not the 6 pt — that makes it read as a mark rather than a
-    /// bullet. The compact slot sets the time at 14 pt, so the dot follows it
-    /// by the same ratio instead of carrying the pill's absolute value onto a
-    /// surface the export never drew.
-    static let compactMarkSize: CGFloat = 14 * markRatio
+    /// bullet. The compact slot sets the time at its own size, so the dot
+    /// follows that size by the same ratio instead of carrying the pill's
+    /// absolute value onto a surface the export never drew. Taken from the
+    /// role rather than restated, so the dot stays proportional to a time
+    /// whose size is changed.
+    static let compactMarkSize: CGFloat = LoopActivityTypography.compactTime.size * markRatio
 
     /// The accent dot in the minimal Dynamic Island.
     ///
@@ -39,5 +41,13 @@ enum LoopActivityMetrics {
 
     /// `LoopMetrics.pillDotSize` over `LoopTypography.statusPill`'s size, both
     /// at the phone's scale — the one place the two are related.
-    private static let markRatio: CGFloat = 6.0 / 11.0
+    ///
+    /// Read from the two roles rather than written as `6.0 / 11.0`: a ratio
+    /// copied out of its sources is a ratio that goes quietly wrong the day one
+    /// of them moves. The phone's scale is the right reading of both because
+    /// the ratio is what is wanted here, and `scale` cancels out of it — the
+    /// Dynamic Island has no idiom of its own to ask for.
+    private static let markRatio: CGFloat =
+        LoopMetrics(isPad: false, isLandscape: false).pillDotSize
+        / LoopTypography(scale: 1, isLandscape: false).statusPill.size
 }
