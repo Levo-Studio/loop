@@ -60,6 +60,34 @@ final class LoopActivityController {
 
     private var owner: Owner?
 
+    // MARK: - When a screen has something to say
+
+    /// What a screen watches to know it is worth calling the controller.
+    ///
+    /// The instant carries every move of a run — a tick, a start, a pause, a
+    /// resume, a skip, a stop — because all of them write the screen's `now`.
+    /// The accent does not, and a colour changed on the settings page while a
+    /// run is held would otherwise sit on the lock screen until the next tick,
+    /// which on a held run never comes.
+    ///
+    /// **Watched on the draw path rather than driven from a tick, and that is
+    /// the defect this type is named after.** The countdown used to call the
+    /// controller from inside its tick loop, and that loop returns as soon as
+    /// the phase stops being `.running`. So the one frame that had to arrive —
+    /// the stopped one, the held one — was the frame the loop never reached,
+    /// and whether the card left the lock screen came down to whether a tick
+    /// happened to fire between the tap and SwiftUI cancelling the task. A
+    /// value the body watches has no such gap: every phase the screen draws is
+    /// a phase the controller is told about, stopped and held included.
+    ///
+    /// It lives here rather than on either screen because both watch the same
+    /// two values, and a second copy is the one that would be missing the
+    /// accent.
+    nonisolated struct Frame: Equatable {
+        let now: Date
+        let accent: LoopAccent
+    }
+
     // MARK: - Countdown
 
     /// Brings the Live Activity in line with a countdown frame.

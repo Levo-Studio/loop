@@ -78,6 +78,21 @@ struct CountdownScreen: View {
         // The tick sits on the screen rather than in a slot, because a slot is
         // built twice and would run two of them.
         .task(id: snapshot.phase) { await run(phase: snapshot.phase) }
+        // The lock screen and the Dynamic Island, from the same snapshot the
+        // page is drawn from. On the draw path rather than inside the tick
+        // below, and that is the whole of the lifecycle fix: the tick returns
+        // as soon as the phase stops being `.running`, so the stopped frame and
+        // the held frame — the two the card most has to be told about — were
+        // the two it never reached. Whether a Stop took the card off the lock
+        // screen came down to whether a tick fired between the tap and SwiftUI
+        // cancelling the task.
+        //
+        // Called on every frame rather than on a transition: the controller
+        // pushes only when something the card draws has moved, and a second
+        // opinion about that here would be the copy that is wrong.
+        .onChange(of: LoopActivityController.Frame(now: now, accent: settings.accent), initial: true) {
+            LoopActivityController.shared.update(countdown: snapshot, accent: settings.accent, at: now)
+        }
         // The alarm is a repeating cue and this screen is the only thing that
         // starts one, so it is also the only thing that can be sure it ends.
         // A page torn down while it rings would otherwise leave a task
@@ -289,12 +304,6 @@ struct CountdownScreen: View {
             // the value and the task ends with the phase it produced.
             let instant = act { $0.commitTransitions(at: $1) }
             let frame = timers.countdown.snapshot(at: instant)
-            // The lock screen and the Dynamic Island, off the same snapshot the
-            // tick already has. Called every tick rather than on a transition:
-            // the controller pushes only when something it shows has moved, and
-            // a second opinion about that here would be the copy that is wrong.
-            // It sees the finished frame too, which is what ends the Activity.
-            LoopActivityController.shared.update(countdown: frame, accent: settings.accent, at: instant)
 
             guard frame.phase == .running else {
                 // The one place the finish is observed. Everything inside a
