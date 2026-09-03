@@ -44,23 +44,45 @@ final class LoopActivityController {
     /// Activity, and a running one only reaches ActivityKit when something the
     /// lock screen draws has actually moved.
     func update(countdown snapshot: CountdownTimer.Snapshot, accent: LoopAccent, at now: Date) {
-        switch snapshot.phase {
-        case .idle, .finished:
+        guard let state = Self.state(countdown: snapshot, accent: accent, at: now) else {
             end()
+            return
+        }
+
+        apply(state)
+    }
+
+    /// The card a countdown frame asks for, or `nil` where it asks for none.
+    ///
+    /// **Whether the card belongs on the lock screen at all is a value, not a
+    /// side effect.** It is the one thing this controller decides that has no
+    /// business needing a simulator, a lock screen or an ActivityKit
+    /// authorisation to check, and split out like this every phase of both
+    /// timers is one `#expect` in `LoopTests`.
+    nonisolated static func state(
+        countdown snapshot: CountdownTimer.Snapshot,
+        accent: LoopAccent,
+        at now: Date
+    ) -> LoopActivityAttributes.ContentState? {
+        switch snapshot.phase {
+        // Idle is a countdown that was stopped or reset; finished is one that
+        // ran out and has been acknowledged. Neither is a run, so neither has a
+        // card — which covers Stop, Reset, the slide off a ringing finish, and
+        // the run reaching zero on its own.
+        case .idle, .finished:
+            nil
 
         case .running, .paused:
-            apply(
-                LoopActivityAttributes.ContentState(
-                    block: .countdown,
-                    round: 1,
-                    rounds: 1,
-                    window: Self.window(remaining: snapshot.remaining, duration: snapshot.duration, at: now),
-                    pausedAt: snapshot.phase == .paused ? now : nil,
-                    accentID: accent.rawValue,
-                    // A countdown is one block. There is nothing after it, so
-                    // there is no boundary it could be asleep through.
-                    upcoming: []
-                )
+            LoopActivityAttributes.ContentState(
+                block: .countdown,
+                round: 1,
+                rounds: 1,
+                window: window(remaining: snapshot.remaining, duration: snapshot.duration, at: now),
+                pausedAt: snapshot.phase == .paused ? now : nil,
+                accentID: accent.rawValue,
+                // A countdown is one block. There is nothing after it, so there
+                // is no boundary it could be asleep through.
+                upcoming: []
             )
         }
     }
@@ -70,23 +92,39 @@ final class LoopActivityController {
     /// Brings the Live Activity in line with an interval frame. Same contract as
     /// the countdown's: call it on the tick and it does the right nothing.
     func update(interval snapshot: IntervalTimer.Snapshot, accent: LoopAccent, at now: Date) {
-        switch snapshot.phase {
-        case .setup, .finished:
+        guard let state = Self.state(interval: snapshot, accent: accent, at: now) else {
             end()
+            return
+        }
+
+        apply(state)
+    }
+
+    /// The card an interval frame asks for, or `nil` where it asks for none.
+    /// See the countdown's for why this is a value.
+    nonisolated static func state(
+        interval snapshot: IntervalTimer.Snapshot,
+        accent: LoopAccent,
+        at now: Date
+    ) -> LoopActivityAttributes.ContentState? {
+        switch snapshot.phase {
+        // Setup is an interval that was stopped or reset, finished is one whose
+        // schedule is over — including the end reached by skipping the last
+        // break, which finishes the run rather than opening another round.
+        case .setup, .finished:
+            return nil
 
         case .running, .paused:
-            let window = Self.window(remaining: snapshot.remaining, duration: snapshot.blockDuration, at: now)
+            let window = window(remaining: snapshot.remaining, duration: snapshot.blockDuration, at: now)
 
-            apply(
-                LoopActivityAttributes.ContentState(
-                    block: snapshot.blockKind == .focus ? .focus : .rest,
-                    round: snapshot.round,
-                    rounds: snapshot.rounds,
-                    window: window,
-                    pausedAt: snapshot.phase == .paused ? now : nil,
-                    accentID: accent.rawValue,
-                    upcoming: Self.upcoming(after: snapshot, endingAt: window.upperBound)
-                )
+            return LoopActivityAttributes.ContentState(
+                block: snapshot.blockKind == .focus ? .focus : .rest,
+                round: snapshot.round,
+                rounds: snapshot.rounds,
+                window: window,
+                pausedAt: snapshot.phase == .paused ? now : nil,
+                accentID: accent.rawValue,
+                upcoming: upcoming(after: snapshot, endingAt: window.upperBound)
             )
         }
     }
