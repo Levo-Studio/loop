@@ -73,4 +73,18 @@ struct LoopActivityTypographyTests {
             #expect(slack <= CGFloat(characters) * tracking + Self.measurementTolerance)
         }
     }
+
+    // MARK: - The mark beside it
+
+    @Test("Holding a run does not widen the mark, so the island keeps its width")
+    func theHeldMarkIsTheDotsOwnWidth() {
+        // The two bars of the pause mark and the gap between them are written
+        // as fractions of the accent dot's diameter, and they have to come to
+        // exactly it. The compact island reserves its width rather than
+        // measuring it, so a mark that grew by a point when a run was held
+        // would move the digits beside it every time somebody paused.
+        let width = 2 * LoopActivityMetrics.pauseBarWidthRatio + LoopActivityMetrics.pauseBarGapRatio
+
+        #expect(abs(width - 1) < 0.000_1)
+    }
 }

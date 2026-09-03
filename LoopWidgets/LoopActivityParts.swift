@@ -61,8 +61,14 @@ struct LoopActivityTime: View {
 
 // MARK: - Status
 
-/// The pill from the app: the block, and the round counter beside it on an
-/// interval.
+/// The pill from the app: the block, the round counter beside it on an interval,
+/// and on a held run the page's own way of saying so.
+///
+/// **A held card says it in words, and the words are the page's.** The digits
+/// cannot say it: `Text(pauseTime:)` freezes them, and frozen digits are exactly
+/// what a stopped timer shows too, so a card without the pill saying it leaves
+/// the two states looking identical. Both wordings are lifted from the screens
+/// rather than invented here, so the card reads as the page it mirrors.
 struct LoopActivityStatus: View {
 
     let state: LoopActivityAttributes.ContentState
@@ -71,20 +77,34 @@ struct LoopActivityStatus: View {
         StatusPill(label: label, detail: detail)
     }
 
+    /// A held interval gives the label to "Paused" and moves the block down
+    /// into the detail, exactly as the interval page does. A held countdown
+    /// does not: it has no round for the detail to carry, so the page keeps its
+    /// name in the label and puts "paused" beside it.
     private var label: LocalizedStringResource {
+        state.isPaused && state.block != .countdown ? LoopStrings.pausedStatus : blockName
+    }
+
+    private var detail: LocalizedStringResource? {
+        guard state.block != .countdown else {
+            // The countdown has no rounds, so a running card's pill is the page
+            // name on its own, exactly as on the screen.
+            return state.isPaused ? LoopStrings.pausedDetail : nil
+        }
+
+        return state.isPaused
+            ? LoopStrings.blockAndRound(blockName, current: state.round, total: state.rounds)
+            : LoopStrings.roundCounter(current: state.round, total: state.rounds)
+    }
+
+    /// The block's own name, which is the pill's label while a run goes and
+    /// moves into the detail while an interval is held.
+    private var blockName: LocalizedStringResource {
         switch state.block {
         case .countdown: LoopStrings.countdown
         case .focus: LoopStrings.focus
         case .rest: LoopStrings.breakBlock
         }
-    }
-
-    /// The countdown has no rounds, so it has no detail — the pill is the page
-    /// name alone, exactly as on the screen.
-    private var detail: LocalizedStringResource? {
-        state.block == .countdown
-            ? nil
-            : LoopStrings.roundCounter(current: state.round, total: state.rounds)
     }
 }
 
@@ -101,12 +121,43 @@ struct LoopActivityMark: View {
 
     let size: CGFloat
 
+    /// Whether the run behind the card is held.
+    ///
+    /// **This is the whole of what the compact and minimal presentations can
+    /// say about it.** The compact island has room for a mark and a time and
+    /// nothing else, and the time cannot carry the state: iOS freezes the
+    /// digits at the held instant, and a stopped run prints frozen digits too.
+    /// The minimal presentation has no time at all. So the mark takes it on,
+    /// and it changes shape rather than colour — colour is what names the
+    /// accent here, and a mark that changed it would say "held" by dropping the
+    /// one thing these two presentations carry of Loop's look.
+    var isPaused: Bool = false
+
     @Environment(\.loopPalette) private var palette
 
     var body: some View {
-        Circle()
+        Group {
+            if isPaused {
+                HStack(spacing: size * LoopActivityMetrics.pauseBarGapRatio) {
+                    bar
+                    bar
+                }
+            } else {
+                Circle()
+                    .fill(palette.marker)
+            }
+        }
+        // Both marks are drawn in the dot's own box, so the compact island
+        // keeps its width when a run is held. See `pauseBarWidthRatio`.
+        .frame(width: size, height: size)
+    }
+
+    /// A capsule rather than a rectangle: it is the dot's own roundness at a
+    /// different aspect, so the two marks read as one drawing in two states.
+    private var bar: some View {
+        Capsule()
             .fill(palette.marker)
-            .frame(width: size, height: size)
+            .frame(width: size * LoopActivityMetrics.pauseBarWidthRatio)
     }
 }
 
@@ -123,11 +174,25 @@ struct LoopActivityBody: View {
 
     let state: LoopActivityAttributes.ContentState
 
+    @Environment(\.loopTypography) private var typography
+
     var body: some View {
         VStack(alignment: .leading, spacing: LoopActivityMetrics.stackSpacing) {
             LoopActivityStatus(state: state)
 
-            LoopActivityTime(state: state, style: LoopActivityTypography.time)
+            VStack(alignment: .leading, spacing: LoopActivityMetrics.heldLineSpacing) {
+                LoopActivityTime(state: state, style: LoopActivityTypography.time)
+
+                if state.isPaused {
+                    // The page's second word for being held, under the time
+                    // where the page puts it. The pill above already says
+                    // "paused", and the export draws two different words for
+                    // exactly that reason — one names the state, this one says
+                    // what has happened to the time.
+                    Text(LoopStrings.onHold)
+                        .loopTextStyle(typography.secondaryLine)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
