@@ -29,12 +29,36 @@ final class LoopActivityController {
 
     /// Set when a request was refused, and cleared when the run ends.
     ///
-    /// `apply` is called on the screen's tick, so without this a request that
-    /// throws — Live Activities switched off, the per-app limit reached, a
-    /// state over budget — would be retried once a second for the length of the
-    /// run. The answer will not have changed by the next tick, and the run that
-    /// failed to start one is not the run that should keep asking.
+    /// `apply` is called on every frame a screen draws, so without this a
+    /// request that throws — Live Activities switched off, the per-app limit
+    /// reached, a state over budget — would be retried once a second for the
+    /// length of the run. The answer will not have changed by the next frame,
+    /// and the run that failed to start one is not the run that should keep
+    /// asking.
     private var isRefused = false
+
+    // MARK: - Who the card belongs to
+
+    /// The timer a card was started for.
+    ///
+    /// The shell builds all five pages at once, so both timer screens are alive
+    /// whichever one is on screen, and both call the controller from their own
+    /// draw path — the idle one as often as the running one. Without an owner,
+    /// an interval sitting in setup answers "no card" for the card a countdown
+    /// has just started and takes it off the lock screen; the run puts it back
+    /// on its next frame, so what the user sees is a card that blinks rather
+    /// than one that is gone, which is the harder kind to notice and report.
+    ///
+    /// So a card is ended only by the timer that started it. The other timer
+    /// can still **take it over** — a run begun on the second screen replaces
+    /// the first one's card rather than adding a second, because only one
+    /// Activity may be on the lock screen at a time.
+    enum Owner: Sendable {
+        case countdown
+        case interval
+    }
+
+    private var owner: Owner?
 
     // MARK: - Countdown
 
@@ -44,12 +68,7 @@ final class LoopActivityController {
     /// Activity, and a running one only reaches ActivityKit when something the
     /// lock screen draws has actually moved.
     func update(countdown snapshot: CountdownTimer.Snapshot, accent: LoopAccent, at now: Date) {
-        guard let state = Self.state(countdown: snapshot, accent: accent, at: now) else {
-            end()
-            return
-        }
-
-        apply(state)
+        apply(Self.state(countdown: snapshot, accent: accent, at: now), for: .countdown)
     }
 
     /// The card a countdown frame asks for, or `nil` where it asks for none.
@@ -92,12 +111,7 @@ final class LoopActivityController {
     /// Brings the Live Activity in line with an interval frame. Same contract as
     /// the countdown's: call it on the tick and it does the right nothing.
     func update(interval snapshot: IntervalTimer.Snapshot, accent: LoopAccent, at now: Date) {
-        guard let state = Self.state(interval: snapshot, accent: accent, at: now) else {
-            end()
-            return
-        }
-
-        apply(state)
+        apply(Self.state(interval: snapshot, accent: accent, at: now), for: .interval)
     }
 
     /// The card an interval frame asks for, or `nil` where it asks for none.
@@ -213,13 +227,14 @@ final class LoopActivityController {
     /// because the user stopped or finished it, and they are looking at the app
     /// while it happens. A card that outlives the screen it mirrors reads as one
     /// that is still running.
-    func end() {
-        guard let activity else { return }
-
-        self.activity = nil
+    private func end() {
+        owner = nil
         pushed = nil
         isRefused = false
 
+        guard let activity else { return }
+
+        self.activity = nil
         enqueue { await activity.end(nil, dismissalPolicy: .immediate) }
     }
 
@@ -246,19 +261,38 @@ final class LoopActivityController {
 
     // MARK: - Pushing
 
-    private func apply(_ state: LoopActivityAttributes.ContentState) {
-        guard let pushed else {
+    private func apply(_ state: LoopActivityAttributes.ContentState?, for owner: Owner) {
+        guard let state else {
+            // Only the timer that started the card takes it away. The other
+            // screen is drawing its own setup or idle state at the same time
+            // and asks for no card on every frame of it; see `Owner`.
+            if self.owner == owner { end() }
+            return
+        }
+
+        // A run begun on the other screen takes the card over. `pushed`
+        // describes the run being replaced, so it is no longer something the
+        // new frame can be compared against.
+        let isTakeover = self.owner != owner
+        self.owner = owner
+
+        guard let activity else {
+            // A refusal belongs to the run that was refused, and a run on the
+            // other timer is a different run: it gets its own attempt rather
+            // than inheriting the first one's answer.
+            if isTakeover { isRefused = false }
             guard !isRefused else { return }
+
             start(state)
             return
         }
 
-        guard Self.hasMoved(from: pushed, to: state) else { return }
+        if !isTakeover, let pushed, !Self.hasMoved(from: pushed, to: state) { return }
 
-        self.pushed = state
+        pushed = state
         let content = Self.content(state)
 
-        enqueue { [activity] in await activity?.update(content) }
+        enqueue { await activity.update(content) }
     }
 
     // MARK: - Ordering
