@@ -60,33 +60,6 @@ final class LoopActivityController {
 
     private var owner: Owner?
 
-    /// Set while the controller holds a card that no run of this process has
-    /// claimed. See `init`.
-    private var isUnclaimed = false
-
-    // MARK: - Life cycle
-
-    /// Takes back the card a previous process left behind.
-    ///
-    /// An Activity outlives the app that requested it — that is what it is
-    /// for — so a run that was going when iOS reclaimed the app comes back to a
-    /// card the new process holds no handle on. Without the handle the
-    /// controller can neither update that card nor end it, and the two failures
-    /// are different: a run still going would be given a *second* card on its
-    /// first frame, and a run that finished while the app was dead would leave
-    /// the first one sitting on the lock screen counting nothing, until
-    /// ActivityKit's own eight hours ran out.
-    ///
-    /// Adopted rather than ended, because ending and re-requesting is a card
-    /// that visibly blinks every time a running timer is relaunched. Which
-    /// timer it belonged to is not recoverable from the payload — nothing in it
-    /// names a page — so it is held unclaimed: the first frame of a run takes
-    /// it over, and the first frame that wants no card at all takes it away.
-    private init() {
-        activity = Activity<LoopActivityAttributes>.activities.first
-        isUnclaimed = activity != nil
-    }
-
     // MARK: - When a screen has something to say
 
     /// What a screen watches to know it is worth calling the controller.
@@ -286,7 +259,6 @@ final class LoopActivityController {
         owner = nil
         pushed = nil
         isRefused = false
-        isUnclaimed = false
 
         guard let activity else { return }
 
@@ -322,20 +294,15 @@ final class LoopActivityController {
             // Only the timer that started the card takes it away. The other
             // screen is drawing its own setup or idle state at the same time
             // and asks for no card on every frame of it; see `Owner`.
-            //
-            // A card left by a previous process belongs to no timer here, so
-            // either of them saying "no card" is enough to take it away.
-            if self.owner == owner || isUnclaimed { end() }
+            if self.owner == owner { end() }
             return
         }
 
-        // A run begun on the other screen takes the card over, and so does the
-        // first run to claim a card adopted at launch. `pushed` describes the
-        // run being replaced, so it is no longer something the new frame can be
-        // compared against.
+        // A run begun on the other screen takes the card over. `pushed`
+        // describes the run being replaced, so it is no longer something the
+        // new frame can be compared against.
         let isTakeover = self.owner != owner
         self.owner = owner
-        isUnclaimed = false
 
         guard let activity else {
             // A refusal belongs to the run that was refused, and a run on the
