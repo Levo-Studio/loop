@@ -39,6 +39,38 @@ enum LoopActivityMetrics {
     /// that looks like the region itself rather than like something Loop drew.
     static let minimalMarkSize: CGFloat = 11
 
+    // MARK: - The pause mark
+
+    /// One bar of the pause mark, as a fraction of the accent dot's diameter.
+    ///
+    /// The compact and minimal presentations have room for one glyph, so the
+    /// glyph is where they say a run is held. Two bars and the gap between them
+    /// come to exactly `1`, which is the point of writing them as fractions:
+    /// the mark keeps the dot's own footprint, so holding a run does not resize
+    /// the compact island — the one presentation that cannot take a resize,
+    /// since its width is reserved rather than measured.
+    static let pauseBarWidthRatio: CGFloat = 0.38
+
+    /// The gap between the two bars, on the same fraction of the dot.
+    static let pauseBarGapRatio: CGFloat = 0.24
+
+    // MARK: - The held line
+
+    /// Gap between the time and the "on hold" line under it.
+    ///
+    /// The app draws 14 pt under a 104 pt time, and this is that proportion at
+    /// the 34 pt this surface sets the time at. Read from the two roles rather
+    /// than written out, for the same reason `markRatio` is: a ratio copied out
+    /// of its sources goes quietly wrong the day one of them moves.
+    static let heldLineSpacing: CGFloat = LoopActivityTypography.time.size * heldLineRatio
+
+    /// `LoopMetrics.timeBlockSpacing` over the big time's own size, both at the
+    /// phone's scale and at the five characters the type scale takes as its
+    /// reference length.
+    private static let heldLineRatio: CGFloat =
+        LoopMetrics(isPad: false, isLandscape: false).timeBlockSpacing
+        / LoopTypography(scale: 1, isLandscape: false).bigTime(characterCount: 5).size
+
     /// `LoopMetrics.pillDotSize` over `LoopTypography.statusPill`'s size, both
     /// at the phone's scale — the one place the two are related.
     ///

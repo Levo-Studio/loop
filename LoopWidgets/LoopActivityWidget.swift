@@ -41,7 +41,7 @@ struct LoopActivityWidget: Widget {
                 }
             } compactLeading: {
                 LoopActivitySurface(accentID: state.accentID) {
-                    LoopActivityMark(size: LoopActivityMetrics.compactMarkSize)
+                    LoopActivityMark(size: LoopActivityMetrics.compactMarkSize, isPaused: state.isPaused)
                 }
             } compactTrailing: {
                 LoopActivitySurface(accentID: state.accentID) {
@@ -59,7 +59,7 @@ struct LoopActivityWidget: Widget {
                 // it gets the accent mark rather than digits nobody could read
                 // at that size.
                 LoopActivitySurface(accentID: state.accentID) {
-                    LoopActivityMark(size: LoopActivityMetrics.minimalMarkSize)
+                    LoopActivityMark(size: LoopActivityMetrics.minimalMarkSize, isPaused: state.isPaused)
                 }
             }
             .keylineTint(LoopPalette(accent: LoopAccent(rawValue: state.accentID) ?? .default, scheme: .dark).marker)
